@@ -1044,7 +1044,7 @@
 
 // Simulated teacher info (in production, from PHP session)
 const TEACHER = {
-    name: sessionStorage.getItem('teacherName') || 'John Doe',
+    name: sessionStorage.getItem('teacherName') || 'Bhagyashree Ambulkar',
     id: sessionStorage.getItem('teacherId') || 'TCH001',
     dept: sessionStorage.getItem('teacherDept') || 'CSE'
 };
@@ -1271,10 +1271,10 @@ function startQRScanner() {
 
 function simulateDemoScans() {
     const demoStudents = [
-        {id:'25CSECSE1001', name:'Alice Johnson'},
-        {id:'25CSECSE1002', name:'Bob Smith'},
-        {id:'25CSECSE1003', name:'Charlie Brown'},
-        {id:'25CSECSE1004', name:'Diana Prince'},
+        {id:'25CSECSE1001', name:'Nilesh Gale'},
+        {id:'25CSECSE1002', name:'Parinita Paigwar'},
+        {id:'25CSECSE1003', name:'Mohit kawre'},
+        {id:'25CSECSE1004', name:'Prajwal Pimple'},
     ];
     let i = 0;
     scanInterval = setInterval(() => {
@@ -1649,10 +1649,10 @@ function downloadMarksRecord() {
 
     // Demo data matching what's in the view-edit section
     const students = [
-        {name:'Alice Johnson', regId:'25CSECSE1001', cprog:93.3, java:90.0, python:88.5, sql:82.1, cyber:91.2},
-        {name:'Bob Smith',     regId:'25CSECSE1002', cprog:76.7, java:83.3, python:80.0, sql:93.3, cyber:73.3},
-        {name:'Charlie Brown', regId:'25CSECSE1003', cprog:56.7, java:63.3, python:66.7, sql:70.0, cyber:60.0},
-        {name:'Diana Prince',  regId:'25CSECSE1004', cprog:96.7, java:96.7, python:93.3, sql:96.7, cyber:96.7},
+        {name:'Nilesh Gale', regId:'25CSECSE1001', cprog:93.3, java:90.0, python:88.5, sql:82.1, cyber:91.2},
+        {name:'Parinita Paigwar',     regId:'25CSECSE1002', cprog:76.7, java:83.3, python:80.0, sql:93.3, cyber:73.3},
+        {name:'Mohit Kawre', regId:'25CSECSE1003', cprog:56.7, java:63.3, python:66.7, sql:70.0, cyber:60.0},
+        {name:'Prajwal Pimple',  regId:'25CSECSE1004', cprog:96.7, java:96.7, python:93.3, sql:96.7, cyber:96.7},
     ];
     const rows = [
         ['Student Name','Reg ID','C Programming (%)','Java (%)','Python (%)','SQL (%)','Cyber Security (%)','Overall (%)']
@@ -1693,7 +1693,7 @@ function searchStudentForEdit() {
     .catch(() => {
         // Demo fallback
         displayStudentEditResults(
-            {name:'Alice Johnson', reg_id:regId, branch:'CSE'},
+            {name:'Nilesh Gale', reg_id:regId, branch:'CSE'},
             [
                 {subject_name:'C Programming', total:30, present:26, absent:4},
                 {subject_name:'Java',           total:28, present:24, absent:4},
@@ -1807,7 +1807,7 @@ function searchStudentAttendance() {
     .catch(() => {
         // Demo fallback
         const demoData = {
-            student: { name: 'John Doe', regId: '22CSEA001', class: 'CSE-2A' },
+            student: { name: 'Nilesh Gale', regId: '22CSEA008', class: 'CSE-2A' },
             attendance: [
                 { subject: 'C Programming',    total: 45, present: 42, absent: 3,  percentage: 93.3 },
                 { subject: 'Java Programming', total: 40, present: 38, absent: 2,  percentage: 95.0 },
