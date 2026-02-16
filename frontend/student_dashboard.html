@@ -455,7 +455,7 @@ function loadUserInfo() {
     // Navbar avatar
     const navAvatar = document.getElementById('navAvatar');
     if (STUDENT.photo) {
-        navAvatar.outerHTML = `<img src="../${STUDENT.photo}" class="nav-avatar" onclick="toggleProfileMenu()" id="navAvatar" alt="Profile" onerror="this.outerHTML='<div class=nav-avatar-placeholder onclick=toggleProfileMenu() id=navAvatar>${initials}</div>'">`;
+        navAvatar.outerHTML = `<img src="../uploads/photos/guari.jpg" class="nav-avatar" onclick="toggleProfileMenu()" id="navAvatar" alt="Profile" onerror="this.outerHTML='<div class=nav-avatar-placeholder onclick=toggleProfileMenu() id=navAvatar>${initials}</div>'">`;
     } else {
         navAvatar.textContent = initials;
     }
@@ -605,10 +605,48 @@ function downloadQR(format) {
     }
 
     if (format === 'png') {
-        buildBorderedCanvas(exp => {
+        buildBorderedCanvas(qrExp => {
+            // Build final canvas: QR + footer with name & reg ID
+            const FOOTER = 60;
+            const final = document.createElement('canvas');
+            final.width  = TOTAL;
+            final.height = TOTAL + FOOTER;
+            const ctx = final.getContext('2d');
+
+            // White background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, final.width, final.height);
+
+            // Draw bordered QR
+            ctx.drawImage(qrExp, 0, 0);
+
+            // Divider
+            ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(16, TOTAL + 8);
+            ctx.lineTo(TOTAL - 16, TOTAL + 8);
+            ctx.stroke();
+
+            // Full name
+            ctx.fillStyle = '#1e3a5f';
+            ctx.font = 'bold 14px Segoe UI, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(STUDENT.name, TOTAL / 2, TOTAL + 26);
+
+            // Reg ID in cyan
+            ctx.fillStyle = '#00BCD4';
+            ctx.font = 'bold 12px Courier New, monospace';
+            ctx.fillText(STUDENT.regId, TOTAL / 2, TOTAL + 44);
+
+            // Hint
+            ctx.fillStyle = '#9ca3af';
+            ctx.font = '10px Segoe UI, sans-serif';
+            ctx.fillText('Attendify · Show to teacher for attendance', TOTAL / 2, TOTAL + 58);
+            ctx.textAlign = 'left';
+
             const link = document.createElement('a');
             link.download = 'QR_' + STUDENT.regId + '.png';
-            link.href = exp.toDataURL('image/png');
+            link.href = final.toDataURL('image/png');
             link.click();
         });
     } else {
@@ -709,22 +747,51 @@ function renderStudentCharts() {
     });
 }
 
-// ── DOWNLOAD CHART as PNG with white background (fixes black bg issue) ────────
-function downloadChartWhite(canvasId, name) {
+// ── DOWNLOAD CHART PNG — white bg + name & reg ID footer ─────────────────────
+function downloadChartWhite(canvasId, chartTitle) {
     const original = document.getElementById(canvasId);
-    // Create a new canvas with white background
-    const exportCanvas = document.createElement('canvas');
-    exportCanvas.width  = original.width;
-    exportCanvas.height = original.height;
-    const ctx = exportCanvas.getContext('2d');
-    // Fill white background FIRST
+    const PAD = 16, FOOTER = 52;
+    const W = original.width + PAD * 2;
+    const H = original.height + PAD + FOOTER;
+
+    const exp = document.createElement('canvas');
+    exp.width = W; exp.height = H;
+    const ctx = exp.getContext('2d');
+
+    // White bg
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-    // Draw original chart on top
-    ctx.drawImage(original, 0, 0);
+    ctx.fillRect(0, 0, W, H);
+
+    // Chart
+    ctx.drawImage(original, PAD, PAD / 2, original.width, original.height);
+
+    // Divider
+    ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(PAD, original.height + PAD);
+    ctx.lineTo(W - PAD, original.height + PAD);
+    ctx.stroke();
+
+    // Full name
+    ctx.fillStyle = '#1e3a5f';
+    ctx.font = 'bold 13px Segoe UI, sans-serif';
+    ctx.fillText(STUDENT.name, PAD, original.height + PAD + 20);
+
+    // Reg ID
+    ctx.fillStyle = '#00BCD4';
+    ctx.font = 'bold 11px Courier New, monospace';
+    ctx.fillText(STUDENT.regId, PAD, original.height + PAD + 38);
+
+    // Date right-aligned
+    ctx.fillStyle = '#9ca3af';
+    ctx.font = '10px Segoe UI, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('Attendify · ' + new Date().toLocaleDateString('en-IN'), W - PAD, original.height + PAD + 38);
+    ctx.textAlign = 'left';
+
     const link = document.createElement('a');
-    link.download = name + '_' + new Date().toISOString().slice(0,10) + '.png';
-    link.href = exportCanvas.toDataURL('image/png');
+    link.download = chartTitle + '_' + STUDENT.regId + '_' + new Date().toISOString().slice(0,10) + '.png';
+    link.href = exp.toDataURL('image/png');
     link.click();
 }
 
@@ -754,34 +821,52 @@ function renderHistory() {
         </table>`;
 }
 
-// ── DOWNLOAD HISTORY CSV ──────────────────────────────────────────────────────
+// ── DOWNLOAD HISTORY CSV — name & reg ID in header rows ──────────────────────
 function downloadHistoryCSV() {
     if(!historyRows.length){showToast('No data to download',true);return;}
-    const csv = 'Date,Subject,Status\n' + historyRows.map(r=>`${r.date},${r.subject},${r.status}`).join('\n');
+    const header = [
+        `Student Name,${STUDENT.name}`,
+        `Registration ID,${STUDENT.regId}`,
+        `Generated,${new Date().toLocaleDateString('en-IN')}`,
+        ``,
+        `Date,Subject,Status`,
+        ...historyRows.map(r=>`${r.date},${r.subject},${r.status==='present'?'Present':'Absent'}`)
+    ].join('\n');
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    link.href = URL.createObjectURL(new Blob([header],{type:'text/csv'}));
     link.download = 'Attendance_History_' + STUDENT.regId + '_' + new Date().toISOString().slice(0,10) + '.csv';
     link.click();
 }
 
-// ── DOWNLOAD HISTORY PDF ──────────────────────────────────────────────────────
+// ── DOWNLOAD HISTORY PDF — name & reg ID in header + page footer ─────────────
 function downloadHistoryPDF() {
     if(!historyRows.length){showToast('No data to download',true);return;}
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
 
-    // Header
+    // ── Header ──
     doc.setFillColor(30,58,95);
-    doc.rect(0,0,210,28,'F');
+    doc.rect(0,0,pageW,32,'F');
     doc.setTextColor(255,255,255);
-    doc.setFontSize(18); doc.setFont('helvetica','bold');
-    doc.text('Attendify — Attendance Report', 14, 12);
-    doc.setFontSize(9); doc.setFont('helvetica','normal');
-    doc.text(`Student: ${STUDENT.name}   |   Reg ID: ${STUDENT.regId}   |   Generated: ${new Date().toLocaleDateString('en-IN')}`, 14, 22);
+    doc.setFontSize(16); doc.setFont('helvetica','bold');
+    doc.text('Attendify — Attendance Report', 14, 13);
+    // Name line
+    doc.setFontSize(9); doc.setFont('helvetica','bold');
+    doc.text(STUDENT.name, 14, 22);
+    // Reg ID in cyan
+    doc.setTextColor(0,188,212);
+    doc.setFont('courier','bold');
+    doc.text(STUDENT.regId, 14, 28);
+    // Date right-aligned
+    doc.setTextColor(200,220,255);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    doc.text('Generated: ' + new Date().toLocaleDateString('en-IN'), pageW - 14, 28, {align:'right'});
 
-    // Table
+    // ── Table ──
     doc.autoTable({
-        startY: 34,
+        startY: 38,
         head: [['Date','Subject','Status']],
         body: historyRows.map(r=>[r.date, r.subject, r.status==='present'?'Present':'Absent']),
         headStyles: { fillColor:[0,188,212], textColor:255, fontStyle:'bold' },
@@ -792,6 +877,21 @@ function downloadHistoryPDF() {
                 data.cell.styles.textColor = data.cell.raw==='Present'?[16,185,129]:[239,68,68];
                 data.cell.styles.fontStyle = 'bold';
             }
+        },
+        // Footer on every page
+        didDrawPage: (data) => {
+            const y = pageH - 10;
+            doc.setDrawColor(229,231,235);
+            doc.line(14, y - 4, pageW - 14, y - 4);
+            doc.setFontSize(7); doc.setFont('helvetica','bold');
+            doc.setTextColor(30,58,95);
+            doc.text(STUDENT.name, 14, y);
+            doc.setFont('courier','bold');
+            doc.setTextColor(0,188,212);
+            doc.text(STUDENT.regId, 14 + doc.getTextWidth(STUDENT.name + '  '), y);
+            doc.setFont('helvetica','normal');
+            doc.setTextColor(156,163,175);
+            doc.text('Attendify · Page ' + data.pageNumber, pageW - 14, y, {align:'right'});
         }
     });
 
@@ -809,6 +909,7 @@ function confirmLogout() {
 // ── PASSWORD ──────────────────────────────────────────────────────────────────
 function showChangePassword()  { document.getElementById('changePasswordModal').classList.add('show'); }
 function closeChangePassword() { document.getElementById('changePasswordModal').classList.remove('show'); }
+
 function submitPasswordChange(e) {
     e.preventDefault();
     const np=document.getElementById('newPassword').value, cp=document.getElementById('confirmPassword').value;

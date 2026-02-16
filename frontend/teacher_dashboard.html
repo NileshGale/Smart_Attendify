@@ -17,11 +17,15 @@
             --purple-accent: #7c3aed;
             --success: #10b981;
             --error: #ef4444;
+            --danger: #ef4444;
             --warning: #f59e0b;
             --text: #1f2937;
             --text-light: #6b7280;
+            --text-muted: #6b7280;
             --border: #e5e7eb;
             --white: #ffffff;
+            --bg: #f8fafc;
+            --surface: #ffffff;
             --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
             --shadow-md: 0 4px 12px rgba(0,0,0,.1);
             --shadow-lg: 0 8px 30px rgba(0,0,0,.12);
@@ -65,6 +69,23 @@
             font-size:.75rem;
             font-weight:600;
         }
+        .nav-center {
+            position:absolute; left:50%; transform:translateX(-50%);
+            display:flex; align-items:center; gap:.75rem;
+        }
+        .nav-user-info {
+            display:flex; align-items:center; gap:.625rem;
+            background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25);
+            padding:.375rem .875rem .375rem .5rem; border-radius:24px;
+        }
+        .nav-user-avatar {
+            width:28px; height:28px; border-radius:50%;
+            background:rgba(255,255,255,.3);
+            display:flex; align-items:center; justify-content:center;
+            font-weight:800; font-size:.8rem; color:white; flex-shrink:0;
+        }
+        .nav-user-name { font-weight:700; font-size:.825rem; color:white; }
+        .nav-user-id { font-size:.72rem; color:rgba(255,255,255,.75); font-family:'Courier New',monospace; font-weight:600; }
         .nav-right { display:flex; align-items:center; gap:1rem; }
 
         .profile-dropdown { position:relative; }
@@ -620,17 +641,23 @@
 <body>
 
 <!-- ─── NAVBAR ─── -->
-<nav class="navbar">
+<nav class="navbar" style="position:relative">
     <div class="nav-brand">
         <div class="logo-icon">A</div>
         <h1>Attendify</h1>
         <span class="teacher-chip">Teacher</span>
     </div>
+    <!-- Centered user info -->
+    <div class="nav-center">
+        <div class="nav-user-info">
+            <div class="nav-user-avatar" id="navUserAvatar">T</div>
+            <div>
+                <div class="nav-user-name" id="navUserName">Loading…</div>
+                <div class="nav-user-id" id="navUserId">---</div>
+            </div>
+        </div>
+    </div>
     <div class="nav-right">
-        <button onclick="logout()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.35);color:white;padding:.4rem .9rem;border-radius:8px;cursor:pointer;font-size:.8rem;font-weight:600;display:flex;align-items:center;gap:.4rem;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.25)'" onmouseout="this.style.background='rgba(255,255,255,.15)'">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            Logout
-        </button>
         <div class="profile-dropdown">
             <button class="profile-btn" onclick="toggleProfileMenu()">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -865,23 +892,51 @@
                     <option>CSE-2A</option><option>CSE-2B</option><option>CSE-2C</option>
                     <option>CSE-3A</option><option>CSE-3B</option>
                 </select>
+                <button class="btn-primary" onclick="downloadAllGraphs()" style="display:flex;align-items:center;gap:.4rem;margin-left:auto">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Download Graphs
+                </button>
+                <button onclick="downloadAttendanceCSV()" style="background:linear-gradient(135deg,var(--success),#059669);color:white;border:none;padding:.5rem 1rem;border-radius:8px;cursor:pointer;font-weight:600;font-size:.875rem;display:flex;align-items:center;gap:.4rem;transition:all .2s" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    Download Attendance CSV
+                </button>
             </div>
             <div class="stats-row" id="analyticsStats"></div>
             <div class="chart-grid">
                 <div class="chart-card">
-                    <h4>📈 Daily Attendance Trend (Line)</h4>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+                        <h4 style="margin-bottom:0">📈 Daily Attendance Trend (Line)</h4>
+                        <button onclick="downloadSingleGraph('lineChart','attendance_trend')" title="Download chart" style="background:none;border:1px solid var(--border);border-radius:6px;padding:.25rem .5rem;cursor:pointer;font-size:.75rem;color:var(--text-muted);display:flex;align-items:center;gap:.3rem">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>PNG
+                        </button>
+                    </div>
                     <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
                 </div>
                 <div class="chart-card">
-                    <h4>🔵 Present vs Absent (Scatter)</h4>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+                        <h4 style="margin-bottom:0">🔵 Present vs Absent (Scatter)</h4>
+                        <button onclick="downloadSingleGraph('scatterChart','present_vs_absent')" title="Download chart" style="background:none;border:1px solid var(--border);border-radius:6px;padding:.25rem .5rem;cursor:pointer;font-size:.75rem;color:var(--text-muted);display:flex;align-items:center;gap:.3rem">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>PNG
+                        </button>
+                    </div>
                     <div class="chart-wrap"><canvas id="scatterChart"></canvas></div>
                 </div>
                 <div class="chart-card">
-                    <h4>📊 Subject-wise Attendance</h4>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+                        <h4 style="margin-bottom:0">📊 Subject-wise Attendance</h4>
+                        <button onclick="downloadSingleGraph('barChart','subject_attendance')" title="Download chart" style="background:none;border:1px solid var(--border);border-radius:6px;padding:.25rem .5rem;cursor:pointer;font-size:.75rem;color:var(--text-muted);display:flex;align-items:center;gap:.3rem">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>PNG
+                        </button>
+                    </div>
                     <div class="chart-wrap"><canvas id="barChart"></canvas></div>
                 </div>
                 <div class="chart-card">
-                    <h4>🍩 Attendance Distribution</h4>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+                        <h4 style="margin-bottom:0">🍩 Attendance Distribution</h4>
+                        <button onclick="downloadSingleGraph('doughnutChart','attendance_distribution')" title="Download chart" style="background:none;border:1px solid var(--border);border-radius:6px;padding:.25rem .5rem;cursor:pointer;font-size:.75rem;color:var(--text-muted);display:flex;align-items:center;gap:.3rem">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>PNG
+                        </button>
+                    </div>
                     <div class="chart-wrap"><canvas id="doughnutChart"></canvas></div>
                 </div>
             </div>
@@ -897,6 +952,10 @@
                 <div class="search-row">
                     <input type="text" id="studentSearchEdit" placeholder="Enter Registration ID or Name">
                     <button class="btn-primary" onclick="searchStudentForEdit()">🔍 Search</button>
+                    <button onclick="downloadMarksRecord()" style="background:linear-gradient(135deg,var(--success),#059669);color:white;border:none;padding:.625rem 1.25rem;border-radius:8px;cursor:pointer;font-weight:600;font-size:.875rem;display:flex;align-items:center;gap:.4rem;transition:all .2s;white-space:nowrap" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Download Marks & Attendance
+                    </button>
                 </div>
             </div>
             <div id="studentEditResults" style="display:none;margin-top:1rem"></div>
@@ -993,6 +1052,10 @@ const TEACHER = {
 // ─── INIT ───
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('profileName').textContent = TEACHER.name;
+    // Populate centered navbar user info
+    document.getElementById('navUserName').textContent = TEACHER.name;
+    document.getElementById('navUserId').textContent = TEACHER.id;
+    document.getElementById('navUserAvatar').textContent = TEACHER.name.charAt(0).toUpperCase();
     renderSchedule();
     document.getElementById('scanDate').textContent = new Date().toLocaleDateString('en-IN');
     document.getElementById('codeDate').textContent = new Date().toLocaleDateString('en-IN');
@@ -1499,19 +1562,133 @@ function renderCharts() {
 
 function refreshCharts() { renderCharts(); }
 
+// ─── DOWNLOAD SINGLE GRAPH ───
+function downloadSingleGraph(canvasId, filename) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) { showToast('Chart not rendered yet. Please open Analytics first.', true); return; }
+    const link = document.createElement('a');
+    link.download = filename + '_' + new Date().toISOString().split('T')[0] + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('📥 Downloaded: ' + link.download);
+}
+
+// ─── DOWNLOAD ALL GRAPHS ───
+function downloadAllGraphs() {
+    const charts = [
+        {id:'lineChart', name:'attendance_trend'},
+        {id:'scatterChart', name:'present_vs_absent'},
+        {id:'barChart', name:'subject_attendance'},
+        {id:'doughnutChart', name:'attendance_distribution'},
+    ];
+    let downloaded = 0;
+    charts.forEach((c, i) => {
+        setTimeout(() => {
+            const canvas = document.getElementById(c.id);
+            if (canvas) {
+                const link = document.createElement('a');
+                link.download = c.name + '_' + new Date().toISOString().split('T')[0] + '.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                downloaded++;
+                if (downloaded === charts.length) showToast('📥 All ' + downloaded + ' graphs downloaded!');
+            }
+        }, i * 400); // stagger downloads
+    });
+}
+
+// ─── DOWNLOAD ATTENDANCE CSV ───
+function downloadAttendanceCSV() {
+    const subject = document.getElementById('graphSubjectFilter').value;
+    const range   = document.getElementById('graphRange').value;
+    const cls     = document.getElementById('graphClass').value;
+    const today   = new Date().toISOString().split('T')[0];
+
+    // Try backend first
+    fetch(`attendance_api.php?action=downloadAttendanceCSV&subject=${encodeURIComponent(subject)}&range=${range}&class=${encodeURIComponent(cls)}&attendance_date=${today}`)
+    .then(res => {
+        if (!res.ok) throw new Error('Backend not available');
+        return res.blob();
+    })
+    .then(blob => {
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href  = url;
+        link.download = 'attendance_' + today + '.csv';
+        link.click();
+        URL.revokeObjectURL(url);
+        showToast('📥 Attendance CSV downloaded!');
+    })
+    .catch(() => {
+        // Fallback: generate CSV from current analytics data
+        const range = document.getElementById('graphRange').value;
+        const {labels, present, absent} = generateMockData(range);
+        const rows = [['Date','Present','Absent','Total','Percentage']];
+        labels.forEach((label, i) => {
+            const total = present[i] + absent[i];
+            const pct   = total > 0 ? ((present[i] / total) * 100).toFixed(1) : '0.0';
+            rows.push([label, present[i], absent[i], total, pct + '%']);
+        });
+        const csv = rows.map(r => r.join(',')).join('\n');
+        const blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8;'});
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href  = url;
+        link.download = 'attendance_report_' + today + '.csv';
+        link.click();
+        URL.revokeObjectURL(url);
+        showToast('📥 Attendance report exported as CSV!');
+    });
+}
+
+// ─── DOWNLOAD MARKS ATTENDANCE RECORD ───
+function downloadMarksRecord() {
+    const subject = document.getElementById('graphSubjectFilter').value;
+    const cls     = document.getElementById('graphClass').value;
+    const today   = new Date().toISOString().split('T')[0];
+
+    // Demo data matching what's in the view-edit section
+    const students = [
+        {name:'Alice Johnson', regId:'25CSECSE1001', cprog:93.3, java:90.0, python:88.5, sql:82.1, cyber:91.2},
+        {name:'Bob Smith',     regId:'25CSECSE1002', cprog:76.7, java:83.3, python:80.0, sql:93.3, cyber:73.3},
+        {name:'Charlie Brown', regId:'25CSECSE1003', cprog:56.7, java:63.3, python:66.7, sql:70.0, cyber:60.0},
+        {name:'Diana Prince',  regId:'25CSECSE1004', cprog:96.7, java:96.7, python:93.3, sql:96.7, cyber:96.7},
+    ];
+    const rows = [
+        ['Student Name','Reg ID','C Programming (%)','Java (%)','Python (%)','SQL (%)','Cyber Security (%)','Overall (%)']
+    ];
+    students.forEach(s => {
+        const avg = ((s.cprog + s.java + s.python + s.sql + s.cyber) / 5).toFixed(1);
+        rows.push([s.name, s.regId, s.cprog, s.java, s.python, s.sql, s.cyber, avg]);
+    });
+    const csv  = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8;'});
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href  = url;
+    link.download = 'marks_attendance_' + today + '.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast('📥 Marks & attendance record downloaded!');
+}
+
 // ─── VIEW & EDIT ───
 function searchStudentForEdit() {
     const regId = document.getElementById('studentSearchEdit').value.trim();
-    if (!regId) { showToast('Please enter a Registration ID', true); return; }
+    if (!regId) { showToast('Please enter a Registration ID or Name', true); return; }
 
-    fetch('get_student_attendance.php', {
-        method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
-        body:'regId=' + encodeURIComponent(regId)
-    })
+    const container = document.getElementById('studentEditResults');
+    container.style.display = 'block';
+    container.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted)"><div style="display:inline-block;width:36px;height:36px;border:4px solid var(--border);border-top-color:var(--primary-cyan);border-radius:50%;animation:spin 1s linear infinite"></div><p style="margin-top:.75rem">Searching…</p></div>`;
+
+    fetch('attendance_api.php?action=getStudentReport&reg_id=' + encodeURIComponent(regId))
     .then(r => r.json())
     .then(data => {
-        if (data.success) displayStudentEditResults(data.student, data.attendance);
-        else showToast('Student not found', true);
+        if (data.success && data.student) {
+            displayStudentEditResults(data.student, data.attendance || data.report || []);
+        } else {
+            throw new Error('Not found');
+        }
     })
     .catch(() => {
         // Demo fallback
@@ -1519,8 +1696,8 @@ function searchStudentForEdit() {
             {name:'Alice Johnson', reg_id:regId, branch:'CSE'},
             [
                 {subject_name:'C Programming', total:30, present:26, absent:4},
-                {subject_name:'Java', total:28, present:24, absent:4},
-                {subject_name:'Python', total:25, present:22, absent:3},
+                {subject_name:'Java',           total:28, present:24, absent:4},
+                {subject_name:'Python',         total:25, present:22, absent:3},
             ]
         );
     });
@@ -1609,7 +1786,6 @@ function searchStudentAttendance() {
         return;
     }
     
-    // Show loading state
     resultDiv.style.display = 'block';
     resultDiv.innerHTML = `
         <div style="text-align:center;padding:2rem;color:var(--text-muted)">
@@ -1618,112 +1794,86 @@ function searchStudentAttendance() {
         </div>
     `;
     
-    // Simulate API call - replace with actual backend call
-    setTimeout(() => {
-        // Demo data - replace with actual fetch call
-        const demoData = {
-            success: true,
-            student: {
-                name: 'John Doe',
-                regId: '22CSEA001',
-                class: 'CSE-2A',
-                photo: 'assets/default-avatar.png'
-            },
-            attendance: [
-                { subject: 'C Programming', total: 45, present: 42, absent: 3, percentage: 93.3 },
-                { subject: 'Java Programming', total: 40, present: 38, absent: 2, percentage: 95.0 },
-                { subject: 'Data Structures', total: 48, present: 40, absent: 8, percentage: 83.3 },
-                { subject: 'Web Development', total: 35, present: 32, absent: 3, percentage: 91.4 },
-                { subject: 'Python Programming', total: 42, present: 39, absent: 3, percentage: 92.9 }
-            ]
-        };
-        
-        if (demoData.success) {
-            const student = demoData.student;
-            const attendance = demoData.attendance;
-            const totalPresent = attendance.reduce((sum, a) => sum + a.present, 0);
-            const totalClasses = attendance.reduce((sum, a) => sum + a.total, 0);
-            const overallPercentage = ((totalPresent / totalClasses) * 100).toFixed(1);
-            
-            resultDiv.innerHTML = `
-                <div style="border:2px solid var(--border);border-radius:12px;padding:1.5rem;background:white">
-                    <div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:1.5rem;flex-wrap:wrap">
-                        <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg, var(--primary-cyan), var(--purple-accent));display:flex;align-items:center;justify-content:center;color:white;font-size:2rem;font-weight:800;box-shadow:0 4px 12px rgba(0,188,212,0.3)">
-                            ${student.name.charAt(0)}
-                        </div>
-                        <div style="flex:1">
-                            <h3 style="font-size:1.25rem;font-weight:800;color:var(--navy-dark);margin-bottom:.25rem">${student.name}</h3>
-                            <p style="color:var(--text-muted);font-size:.875rem;margin-bottom:.25rem">📋 ${student.regId}</p>
-                            <p style="color:var(--text-muted);font-size:.875rem">🎓 ${student.class}</p>
-                        </div>
-                        <div style="text-align:center;padding:1rem;background:linear-gradient(135deg, rgba(0, 188, 212, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);border-radius:12px">
-                            <div style="font-size:2rem;font-weight:900;color:${overallPercentage >= 75 ? 'var(--success)' : overallPercentage >= 65 ? 'var(--warning)' : 'var(--error)'}">${overallPercentage}%</div>
-                            <div style="font-size:.75rem;color:var(--text-muted);margin-top:.25rem">Overall Attendance</div>
-                        </div>
-                    </div>
-                    
-                    <h4 style="font-weight:700;margin-bottom:1rem;color:var(--navy-dark)">Subject-wise Attendance</h4>
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Subject</th>
-                                    <th style="text-align:center">Total Classes</th>
-                                    <th style="text-align:center">Present</th>
-                                    <th style="text-align:center">Absent</th>
-                                    <th style="text-align:center">Percentage</th>
-                                    <th style="text-align:center">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${attendance.map(a => `
-                                    <tr>
-                                        <td style="font-weight:600">${a.subject}</td>
-                                        <td style="text-align:center">${a.total}</td>
-                                        <td style="text-align:center;color:var(--success);font-weight:600">${a.present}</td>
-                                        <td style="text-align:center;color:var(--error);font-weight:600">${a.absent}</td>
-                                        <td style="text-align:center;font-weight:700;color:${a.percentage >= 75 ? 'var(--success)' : a.percentage >= 65 ? 'var(--warning)' : 'var(--error)'}">${a.percentage.toFixed(1)}%</td>
-                                        <td style="text-align:center">
-                                            <span class="badge ${a.percentage >= 75 ? 'badge-present' : 'badge-warn'}" style="${a.percentage < 75 ? 'background:rgba(239,68,68,.12);color:var(--error)' : ''}">
-                                                ${a.percentage >= 75 ? '✓ Good' : a.percentage >= 65 ? '⚠ Low' : '✗ Critical'}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
-        } else {
-            resultDiv.innerHTML = `
-                <div style="text-align:center;padding:2rem;color:var(--text-muted)">
-                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.3;margin-bottom:1rem">
-                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                    <p style="font-weight:600;margin-bottom:.5rem">No student found</p>
-                    <p style="font-size:.875rem">Please check the name or registration ID and try again</p>
-                </div>
-            `;
-        }
-    }, 800);
-    
-    // Uncomment and use this for real backend integration:
-    /*
-    fetch('search_student_attendance.php', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: `query=${encodeURIComponent(query)}`
-    })
+    // Try real backend first
+    fetch('attendance_api.php?action=getStudentReport&reg_id=' + encodeURIComponent(query))
     .then(r => r.json())
     .then(data => {
-        // Handle response similar to demo above
+        if (data.success && (data.report || data.attendance)) {
+            const att = data.report || data.attendance;
+            const studentInfo = data.student || {name: query, regId: query, class: 'N/A'};
+            renderStudentAttendanceResult(resultDiv, studentInfo, att);
+        } else throw new Error('not found');
     })
-    .catch(err => {
-        showToast('Error fetching student data', true);
-        resultDiv.style.display = 'none';
+    .catch(() => {
+        // Demo fallback
+        const demoData = {
+            student: { name: 'John Doe', regId: '22CSEA001', class: 'CSE-2A' },
+            attendance: [
+                { subject: 'C Programming',    total: 45, present: 42, absent: 3,  percentage: 93.3 },
+                { subject: 'Java Programming', total: 40, present: 38, absent: 2,  percentage: 95.0 },
+                { subject: 'Data Structures',  total: 48, present: 40, absent: 8,  percentage: 83.3 },
+                { subject: 'Web Development',  total: 35, present: 32, absent: 3,  percentage: 91.4 },
+                { subject: 'Python Programming',total:42, present: 39, absent: 3,  percentage: 92.9 }
+            ]
+        };
+        renderStudentAttendanceResult(resultDiv, demoData.student, demoData.attendance);
     });
-    */
+}
+
+function renderStudentAttendanceResult(resultDiv, student, attendance) {
+    const name  = student.name || student.full_name || '';
+    const regId = student.regId || student.reg_id || '';
+    const cls   = student.class || student.branch || '';
+    const totalPresent  = attendance.reduce((s, a) => s + (parseInt(a.present)||parseInt(a.present_count)||0), 0);
+    const totalClasses  = attendance.reduce((s, a) => s + (parseInt(a.total)||parseInt(a.total_classes)||0), 0);
+    const overallPct    = totalClasses > 0 ? ((totalPresent / totalClasses) * 100).toFixed(1) : '0.0';
+    
+    resultDiv.innerHTML = `
+        <div style="border:2px solid var(--border);border-radius:12px;padding:1.5rem;background:white">
+            <div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:1.5rem;flex-wrap:wrap">
+                <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg, var(--primary-cyan), var(--purple-accent));display:flex;align-items:center;justify-content:center;color:white;font-size:2rem;font-weight:800;box-shadow:0 4px 12px rgba(0,188,212,0.3)">
+                    ${name.charAt(0)}
+                </div>
+                <div style="flex:1">
+                    <h3 style="font-size:1.25rem;font-weight:800;color:var(--navy-dark);margin-bottom:.25rem">${name}</h3>
+                    <p style="color:var(--text-muted);font-size:.875rem;margin-bottom:.25rem">📋 ${regId}</p>
+                    <p style="color:var(--text-muted);font-size:.875rem">🎓 ${cls}</p>
+                </div>
+                <div style="text-align:center;padding:1rem;background:linear-gradient(135deg, rgba(0, 188, 212, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);border-radius:12px">
+                    <div style="font-size:2rem;font-weight:900;color:${overallPct >= 75 ? 'var(--success)' : overallPct >= 65 ? 'var(--warning)' : 'var(--error)'}">${overallPct}%</div>
+                    <div style="font-size:.75rem;color:var(--text-muted);margin-top:.25rem">Overall Attendance</div>
+                </div>
+            </div>
+            <h4 style="font-weight:700;margin-bottom:1rem;color:var(--navy-dark)">Subject-wise Attendance</h4>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Subject</th><th style="text-align:center">Total Classes</th><th style="text-align:center">Present</th><th style="text-align:center">Absent</th><th style="text-align:center">Percentage</th><th style="text-align:center">Status</th></tr>
+                    </thead>
+                    <tbody>
+                        ${attendance.map(a => {
+                            const pres = parseInt(a.present || a.present_count || 0);
+                            const tot  = parseInt(a.total   || a.total_classes || 0);
+                            const abs  = parseInt(a.absent  || a.absent_count  || (tot - pres));
+                            const pct  = parseFloat(a.percentage || a.pct || (tot > 0 ? (pres/tot*100) : 0)).toFixed(1);
+                            return `<tr>
+                                <td style="font-weight:600">${a.subject||a.subject_name}</td>
+                                <td style="text-align:center">${tot}</td>
+                                <td style="text-align:center;color:var(--success);font-weight:600">${pres}</td>
+                                <td style="text-align:center;color:var(--error);font-weight:600">${abs}</td>
+                                <td style="text-align:center;font-weight:700;color:${pct >= 75 ? 'var(--success)' : pct >= 65 ? 'var(--warning)' : 'var(--error)'}">${pct}%</td>
+                                <td style="text-align:center">
+                                    <span class="badge ${pct >= 75 ? 'badge-present' : pct >= 65 ? 'badge-warn' : 'badge-absent'}">
+                                        ${pct >= 75 ? '✓ Good' : pct >= 65 ? '⚠ Low' : '✗ Critical'}
+                                    </span>
+                                </td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
 }
 
 function logout() {

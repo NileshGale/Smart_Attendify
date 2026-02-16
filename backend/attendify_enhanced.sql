@@ -478,3 +478,9 @@ DELIMITER ;
 SELECT '✓ Attendify Enhanced Database Created Successfully!' AS status;
 SELECT 'Default Password for all users: admin123' AS note;
 SELECT '⚠️  Change passwords after first login!' AS warning;
+
+
+
+-- Updated
+ALTER TABLE users ADD COLUMN photo_path VARCHAR(255) DEFAULT NULL;
+ALTER TABLE users ADD COLUMN dob DATE DEFAULT NULL;
