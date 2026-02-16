@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - Attendify</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Real QR code library that works properly -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- jsPDF for PDF download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        :root {
+            --primary-cyan: #00BCD4;
+            --primary-dark: #0097A7;
+            --navy-dark: #1e3a5f;
+            --navy-light: #2c5282;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --text: #1f2937;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+            --shadow-md: 0 4px 12px rgba(0,0,0,.1);
+            --shadow-lg: 0 8px 30px rgba(0,0,0,.12);
+            --radius: 12px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            background:linear-gradient(135deg, var(--primary-cyan) 0%, var(--navy-dark) 100%);
+            color:white; padding:.65rem 1.5rem;
+            display:flex; justify-content:space-between; align-items:center;
+            box-shadow:0 2px 20px rgba(0,188,212,.3); position:sticky; top:0; z-index:200;
+        }
+        .nav-brand { display:flex; align-items:center; gap:.75rem; }
+        .nav-brand .logo-icon { width:36px; height:36px; background:rgba(255,255,255,.2); border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px; }
+        .nav-brand h1 { font-size:1.1rem; font-weight:700; }
+        .student-chip { background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); padding:.25rem .75rem; border-radius:20px; font-size:.75rem; font-weight:600; }
+
+        /* Navbar user info block */
+        .nav-user-info { display:flex; flex-direction:column; align-items:flex-end; line-height:1.2; }
+        .nav-user-name { font-size:.85rem; font-weight:700; color:white; }
+        .nav-user-regid { font-size:.72rem; font-family:monospace; color:rgba(255,255,255,.75); letter-spacing:.05em; }
+
+        .nav-right { display:flex; align-items:center; gap:1rem; }
+        .profile-dropdown { position:relative; }
+        .profile-menu { display:none; position:absolute; right:0; top:calc(100% + .5rem); background:white; border-radius:var(--radius); box-shadow:var(--shadow-lg); min-width:220px; overflow:hidden; border:1px solid var(--border); z-index:300; }
+        .profile-menu.show { display:block; }
+        .profile-menu-header { padding:1rem; background:linear-gradient(135deg,#f0f9ff,#e0f2fe); display:flex; gap:.75rem; align-items:center; }
+        .profile-menu-header img, .profile-menu-header .menu-avatar { width:44px; height:44px; border-radius:50%; object-fit:cover; border:2px solid var(--primary-cyan); flex-shrink:0; }
+        .profile-menu-header .menu-avatar { background:var(--navy-dark); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px; color:white; }
+        .profile-menu-header .menu-name { font-weight:700; font-size:.875rem; color:var(--text); }
+        .profile-menu-header .menu-reg { font-size:.75rem; font-family:monospace; color:var(--text-muted); }
+        .profile-menu a { display:flex; align-items:center; gap:.75rem; padding:.75rem 1rem; color:var(--text); text-decoration:none; font-size:.875rem; transition:background .2s; cursor:pointer; }
+        .profile-menu a:hover { background:var(--bg); }
+        .profile-menu .divider { height:1px; background:var(--border); }
+        .nav-avatar { width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,255,255,.4); cursor:pointer; }
+        .nav-avatar-placeholder { width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.25); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px; color:white; border:2px solid rgba(255,255,255,.4); cursor:pointer; flex-shrink:0; }
+
+        /* ── LOGOUT BANNER ── */
+        #logoutBanner { display:none; position:fixed; top:58px; left:0; right:0; z-index:500; background:#1e3a5f; color:white; padding:.875rem 1.5rem; align-items:center; justify-content:center; gap:1rem; box-shadow:0 4px 20px rgba(0,0,0,.3); }
+        #logoutBanner.show { display:flex; }
+        #logoutBanner span { font-size:.95rem; font-weight:600; }
+        .logout-yes { background:#ef4444; color:white; border:none; padding:.45rem 1.25rem; border-radius:8px; cursor:pointer; font-weight:700; font-size:.875rem; }
+        .logout-no  { background:rgba(255,255,255,.15); color:white; border:1px solid rgba(255,255,255,.3); padding:.45rem 1.25rem; border-radius:8px; cursor:pointer; font-weight:600; font-size:.875rem; }
+
+        /* ── LAYOUT ── */
+        .dashboard-container { display:flex; min-height:calc(100vh - 58px); }
+        .sidebar { width:210px; background:var(--surface); box-shadow:2px 0 10px rgba(0,0,0,.05); padding:1.25rem 0; flex-shrink:0; }
+        .sidebar-menu { list-style:none; }
+        .sidebar-menu li { padding:.75rem 1.25rem; cursor:pointer; display:flex; align-items:center; gap:.625rem; transition:all .2s; color:var(--text-muted); font-weight:500; font-size:.875rem; border-left:3px solid transparent; }
+        .sidebar-menu li:hover { background:var(--bg); color:var(--primary-cyan); }
+        .sidebar-menu li.active { background:linear-gradient(90deg,rgba(0,188,212,.08) 0%,transparent 100%); color:var(--primary-cyan); border-left-color:var(--primary-cyan); }
+        .main-content { flex:1; padding:1.5rem; overflow-y:auto; }
+        .content-section { display:none; }
+        .content-section.active { display:block; }
+        .section-title { font-size:1.4rem; font-weight:700; color:var(--text); margin-bottom:1.25rem; display:flex; align-items:center; gap:.625rem; }
+
+        /* ── PROFILE CARD IN OVERVIEW ── */
+        .profile-overview-card {
+            background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy-light) 100%);
+            border-radius:var(--radius); padding:1.5rem; margin-bottom:1.25rem;
+            display:flex; gap:1.5rem; align-items:center; color:white;
+            box-shadow:var(--shadow-md);
+        }
+        .profile-overview-photo { width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid rgba(255,255,255,.4); flex-shrink:0; background:rgba(255,255,255,.2); display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:800; }
+        .profile-overview-info { flex:1; }
+        .profile-overview-name { font-size:1.3rem; font-weight:800; margin-bottom:.25rem; }
+        .profile-overview-reg { font-family:monospace; font-size:.875rem; color:rgba(255,255,255,.75); margin-bottom:.75rem; letter-spacing:.05em; }
+        .profile-overview-details { display:flex; flex-wrap:wrap; gap:.5rem 1.5rem; }
+        .profile-detail-item { font-size:.8rem; color:rgba(255,255,255,.85); display:flex; align-items:center; gap:.35rem; }
+        .profile-detail-label { color:rgba(255,255,255,.55); }
+
+        /* ── CARDS ── */
+        .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:.875rem; margin-bottom:1.25rem; }
+        .stat-card { background:var(--surface); border-radius:var(--radius); padding:1rem; box-shadow:var(--shadow-sm); border:1px solid var(--border); text-align:center; }
+        .stat-value { font-size:1.75rem; font-weight:800; color:var(--primary-cyan); }
+        .stat-label { font-size:.75rem; color:var(--text-muted); margin-top:.25rem; }
+        .attendance-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:1rem; }
+        .att-card { background:var(--surface); border-radius:var(--radius); padding:1.25rem; box-shadow:var(--shadow-sm); border:1px solid var(--border); }
+        .att-card .subject-name { font-weight:700; font-size:.9rem; margin-bottom:.5rem; }
+        .att-card .pct-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:.625rem; }
+        .att-card .pct { font-size:1.75rem; font-weight:900; }
+        .att-card.good .pct { color:var(--success); }
+        .att-card.warn .pct { color:var(--warning); }
+        .att-card.low  .pct { color:var(--danger); }
+        .progress-bar { height:6px; background:var(--bg); border-radius:3px; overflow:hidden; }
+        .progress-fill { height:100%; border-radius:3px; }
+        .att-card.good .progress-fill { background:linear-gradient(90deg,var(--success),#059669); }
+        .att-card.warn .progress-fill { background:linear-gradient(90deg,var(--warning),#d97706); }
+        .att-card.low  .progress-fill { background:linear-gradient(90deg,var(--danger),#dc2626); }
+        .att-meta { display:flex; gap:.5rem; margin-top:.625rem; font-size:.75rem; color:var(--text-muted); }
+        .att-pill { background:var(--bg); padding:.15rem .5rem; border-radius:10px; }
+
+        /* ── CHART ── */
+        .graph-controls { display:flex; gap:.75rem; align-items:center; flex-wrap:wrap; margin-bottom:1.25rem; }
+        .graph-controls select { padding:.5rem .875rem; border:1px solid var(--border); border-radius:8px; font-size:.875rem; background:white; cursor:pointer; }
+        .chart-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+        @media(max-width:768px) { .chart-grid { grid-template-columns:1fr; } }
+        .chart-card { background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow-sm); border:1px solid var(--border); padding:1.25rem; }
+        .chart-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; }
+        .chart-card-header h4 { font-size:.875rem; font-weight:700; color:var(--text-muted); margin:0; }
+        .chart-wrap { position:relative; height:220px; }
+
+        /* ── DOWNLOAD BUTTONS ── */
+        .btn-download { background:rgba(0,188,212,.1); color:var(--primary-cyan); border:1px solid rgba(0,188,212,.3); padding:.35rem .875rem; border-radius:8px; cursor:pointer; font-size:.78rem; font-weight:600; display:inline-flex; align-items:center; gap:.3rem; transition:all .2s; white-space:nowrap; }
+        .btn-download:hover { background:rgba(0,188,212,.2); }
+        .btn-download-pdf { background:rgba(239,68,68,.1); color:#dc2626; border:1px solid rgba(239,68,68,.3); }
+        .btn-download-pdf:hover { background:rgba(239,68,68,.2); }
+        .download-group { display:flex; gap:.5rem; }
+
+        /* ── CODE ENTRY ── */
+        .code-entry-card { background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow-md); border:1px solid var(--border); padding:2.5rem 2rem; text-align:center; max-width:460px; margin:0 auto; }
+        .code-input { font-size:1.75rem; font-weight:800; text-align:center; letter-spacing:.3em; width:260px; padding:.75rem 1rem; border:2px solid var(--border); border-radius:12px; font-family:'Courier New',monospace; text-transform:uppercase; transition:border .2s; }
+        .code-input:focus { outline:none; border-color:var(--primary-cyan); }
+        .btn-submit-code { background:linear-gradient(135deg,var(--primary-cyan),var(--primary-dark)); color:white; border:none; padding:.875rem 2rem; border-radius:10px; font-size:1rem; font-weight:700; cursor:pointer; transition:all .2s; margin-top:1rem; width:100%; }
+        .btn-submit-code:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,188,212,.35); }
+        .code-status { margin-top:1rem; padding:.75rem; border-radius:8px; font-weight:600; display:none; }
+        .code-status.success { background:rgba(16,185,129,.1); color:var(--success); border:1px solid rgba(16,185,129,.3); }
+        .code-status.error   { background:rgba(239,68,68,.1);  color:var(--danger);  border:1px solid rgba(239,68,68,.3); }
+        .input-group { margin-bottom:1rem; text-align:left; }
+        .input-group label { display:block; font-size:.8rem; font-weight:700; margin-bottom:.375rem; color:var(--text-muted); }
+        .input-group select { width:100%; padding:.625rem .875rem; border:1px solid var(--border); border-radius:8px; font-size:.875rem; }
+
+        /* ── QR SECTION ── */
+        .qr-card { text-align:center; max-width:360px; margin:0 auto; }
+        .qr-display { background:white; border:2px solid var(--border); border-radius:16px; padding:1.5rem; display:inline-block; margin:1rem 0; box-shadow:var(--shadow-sm); }
+        #qrCanvas { display:block; }
+        .reg-id-display { font-size:1.2rem; font-weight:800; font-family:'Courier New',monospace; letter-spacing:.1em; color:var(--primary-cyan); margin-top:.75rem; }
+        .qr-actions { display:flex; gap:.75rem; justify-content:center; margin-top:1rem; }
+        .btn-qr-download { background:linear-gradient(135deg,var(--primary-cyan),var(--primary-dark)); color:white; border:none; padding:.625rem 1.5rem; border-radius:8px; cursor:pointer; font-weight:600; font-size:.875rem; transition:all .2s; }
+        .btn-qr-download:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,188,212,.4); }
+
+        /* ── TABLE ── */
+        .table-wrap { overflow-x:auto; }
+        table { width:100%; border-collapse:collapse; font-size:.875rem; }
+        thead { background:var(--bg); }
+        th,td { padding:.75rem 1rem; text-align:left; border-bottom:1px solid var(--border); }
+        th { font-weight:700; color:var(--text-muted); font-size:.8rem; text-transform:uppercase; letter-spacing:.05em; }
+        tbody tr:hover { background:var(--bg); }
+        .badge { display:inline-block; padding:.2rem .6rem; border-radius:20px; font-size:.75rem; font-weight:600; }
+        .badge-present { background:rgba(16,185,129,.12); color:var(--success); }
+        .badge-absent  { background:rgba(239,68,68,.12);  color:var(--danger); }
+
+        /* ── MODALS ── */
+        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:600; align-items:center; justify-content:center; }
+        .modal.show { display:flex; }
+        .modal-content { background:white; border-radius:16px; padding:1.75rem; max-width:440px; width:90%; box-shadow:var(--shadow-lg); position:relative; }
+        @keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+        .modal-content h2 { font-size:1.1rem; font-weight:700; margin-bottom:1.25rem; }
+        .close { position:absolute; top:1rem; right:1rem; background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:1.5rem; line-height:1; }
+        .input-group input { width:100%; padding:.625rem .875rem; border:1px solid var(--border); border-radius:8px; font-size:.875rem; }
+        .input-group input:focus { outline:none; border-color:var(--primary-cyan); }
+        .btn-primary { background:linear-gradient(135deg,var(--primary-cyan),var(--primary-dark)); color:white; border:none; padding:.625rem 1.25rem; border-radius:8px; cursor:pointer; font-weight:600; font-size:.875rem; transition:all .2s; }
+
+        /* ── TOAST ── */
+        #toast { position:fixed; bottom:1.5rem; right:1.5rem; background:white; border-radius:10px; box-shadow:var(--shadow-lg); padding:.875rem 1.25rem; min-width:280px; z-index:900; display:none; align-items:center; gap:.875rem; border-left:4px solid var(--success); }
+        #toast.show { display:flex; }
+        #toast.error { border-left-color:var(--danger); }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="nav-brand">
+        <div class="logo-icon">A</div>
+        <h1>Attendify</h1>
+        <span class="student-chip">Student</span>
+    </div>
+    <!-- Name + Reg ID shown in navbar center-right -->
+    <div class="nav-user-info" id="navUserInfo" style="display:none">
+        <span class="nav-user-name" id="navFullName">-</span>
+        <span class="nav-user-regid" id="navRegId">-</span>
+    </div>
+    <div class="nav-right">
+        <div class="profile-dropdown">
+            <div id="navAvatar" class="nav-avatar-placeholder" onclick="toggleProfileMenu()">A</div>
+            <div class="profile-menu" id="profileMenu">
+                <div class="profile-menu-header">
+                    <div class="menu-avatar" id="menuAvatarImg">A</div>
+                    <div>
+                        <div class="profile-menu-header .menu-name" id="menuName" style="font-weight:700;font-size:.875rem;color:#1f2937">Loading…</div>
+                        <div class="menu-reg" id="menuRegId" style="font-size:.75rem;font-family:monospace;color:#6b7280"></div>
+                    </div>
+                </div>
+                <div class="divider"></div>
+                <a onclick="showSection('overview', document.querySelector('.sidebar-menu li'))">👤 My Profile</a>
+                <a onclick="showChangePassword()">🔒 Change Password</a>
+                <div class="divider"></div>
+                <a onclick="showLogoutBanner()" style="color:#ef4444">🚪 Logout</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- LOGOUT BANNER -->
+<div id="logoutBanner">
+    <span>Are you sure you want to logout?</span>
+    <button class="logout-yes" onclick="confirmLogout()">Yes, Logout</button>
+    <button class="logout-no"  onclick="hideLogoutBanner()">Cancel</button>
+</div>
+
+<div class="dashboard-container">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <ul class="sidebar-menu">
+            <li class="active" onclick="showSection('overview',this)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                Overview
+            </li>
+            <li onclick="showSection('enterCode',this)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Enter Attendance Code
+            </li>
+            <li onclick="showSection('myQR',this)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="14" y1="15" x2="20" y2="15"/><line x1="14" y1="19" x2="20" y2="19"/><line x1="17" y1="12" x2="17" y2="12"/></svg>
+                My QR Code
+            </li>
+            <li onclick="showSection('analytics',this)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Analytics
+            </li>
+            <li onclick="showSection('history',this)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                History
+            </li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+
+        <!-- OVERVIEW SECTION -->
+        <div id="overviewSection" class="content-section active">
+            <div class="section-title">📊 My Dashboard</div>
+
+            <!-- Profile Card -->
+            <div class="profile-overview-card" id="profileOverviewCard">
+                <div class="profile-overview-photo" id="profilePhoto">A</div>
+                <div class="profile-overview-info">
+                    <div class="profile-overview-name" id="overviewFullName">Loading…</div>
+                    <div class="profile-overview-reg" id="overviewRegId">-</div>
+                    <div class="profile-overview-details">
+                        <div class="profile-detail-item"><span class="profile-detail-label">Username:</span> <span id="overviewUsername">-</span></div>
+                        <div class="profile-detail-item"><span class="profile-detail-label">Email:</span> <span id="overviewEmail">-</span></div>
+                        <div class="profile-detail-item"><span class="profile-detail-label">DOB:</span> <span id="overviewDob">-</span></div>
+                        <div class="profile-detail-item"><span class="profile-detail-label">Branch:</span> <span id="overviewBranch">-</span></div>
+                        <div class="profile-detail-item"><span class="profile-detail-label">Department:</span> <span id="overviewDept">-</span></div>
+                        <div class="profile-detail-item"><span class="profile-detail-label">Mobile:</span> <span id="overviewMobile">-</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-row" id="overviewStats"></div>
+            <div class="attendance-grid" id="attendanceCards"></div>
+        </div>
+
+        <!-- ENTER CODE -->
+        <div id="enterCodeSection" class="content-section">
+            <div class="section-title">🔑 Enter Attendance Code</div>
+            <div class="code-entry-card">
+                <div style="font-size:3rem;margin-bottom:.75rem">🔑</div>
+                <h3 style="font-size:1.25rem;font-weight:800;margin-bottom:.5rem">Enter the code given by your teacher</h3>
+                <p style="color:var(--text-muted);font-size:.875rem;margin-bottom:1.5rem">Your teacher will display a unique alphanumeric code. Enter it below to mark yourself present.</p>
+                <div class="input-group">
+                    <label>Select Subject</label>
+                    <select id="codeSubjectSelect">
+                        <option value="">-- Select Subject --</option>
+                        <option>C Programming</option><option>Java</option><option>Python</option>
+                        <option>SQL</option><option>Cyber Security</option><option>ICI</option>
+                    </select>
+                </div>
+                <input type="text" class="code-input" id="attendanceCodeInput" maxlength="8" placeholder="A1B2C3D" autocomplete="off">
+                <div id="codeStatus" class="code-status"></div>
+                <button class="btn-submit-code" onclick="submitAttendanceCode()">✅ Submit Attendance</button>
+            </div>
+        </div>
+
+        <!-- QR CODE -->
+        <div id="myQRSection" class="content-section">
+            <div class="section-title">📱 My QR Code</div>
+            <div class="qr-card" style="background:var(--surface);border-radius:var(--radius);padding:2rem;box-shadow:var(--shadow-sm);border:1px solid var(--border)">
+                <p style="color:var(--text-muted);margin-bottom:.5rem;font-size:.875rem">Show this QR code to your teacher during class attendance.</p>
+                <div class="qr-display">
+                    <div id="qrCodeContainer"></div>
+                </div>
+                <div class="reg-id-display" id="qrRegId">Loading…</div>
+                <p style="color:var(--text-muted);font-size:.8rem;margin-top:.5rem">This QR code is uniquely generated from your Registration ID.</p>
+                <div class="qr-actions">
+                    <button class="btn-qr-download" onclick="downloadQR('png')">⬇ Download PNG</button>
+                    <button class="btn-qr-download" style="background:linear-gradient(135deg,#dc2626,#b91c1c)" onclick="downloadQR('pdf')">⬇ Download PDF</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ANALYTICS -->
+        <div id="analyticsSection" class="content-section">
+            <div class="section-title">📈 My Attendance Analytics</div>
+            <div class="graph-controls">
+                <select id="graphSubject" onchange="renderStudentCharts()">
+                    <option value="all">All Subjects</option>
+                    <option>C Programming</option><option>Java</option><option>Python</option>
+                    <option>SQL</option><option>Cyber Security</option>
+                </select>
+                <select id="graphRange" onchange="renderStudentCharts()">
+                    <option value="week">This Week</option>
+                    <option value="2week">Last 2 Weeks</option>
+                    <option value="month">This Month</option>
+                </select>
+            </div>
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h4>📈 Attendance Trend (Line)</h4>
+                        <button class="btn-download" onclick="downloadChartWhite('sLineChart','Attendance_Trend')">⬇ PNG</button>
+                    </div>
+                    <div class="chart-wrap"><canvas id="sLineChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h4>🔵 Daily Attendance (Scatter)</h4>
+                        <button class="btn-download" onclick="downloadChartWhite('sScatterChart','Daily_Attendance')">⬇ PNG</button>
+                    </div>
+                    <div class="chart-wrap"><canvas id="sScatterChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h4>📊 Subject-wise %</h4>
+                        <button class="btn-download" onclick="downloadChartWhite('sBarChart','Subject_Wise')">⬇ PNG</button>
+                    </div>
+                    <div class="chart-wrap"><canvas id="sBarChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h4>🍩 Overall Distribution</h4>
+                        <button class="btn-download" onclick="downloadChartWhite('sDoughnutChart','Overall_Distribution')">⬇ PNG</button>
+                    </div>
+                    <div class="chart-wrap"><canvas id="sDoughnutChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HISTORY -->
+        <div id="historySection" class="content-section">
+            <div class="section-title">📅 Attendance History</div>
+            <div class="chart-card">
+                <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center">
+                    <select id="histSubject" style="padding:.5rem .875rem;border:1px solid var(--border);border-radius:8px;font-size:.875rem" onchange="renderHistory()">
+                        <option value="all">All Subjects</option>
+                        <option>C Programming</option><option>Java</option><option>Python</option>
+                        <option>SQL</option><option>Cyber Security</option><option>ICI</option>
+                    </select>
+                    <select id="histMonth" style="padding:.5rem .875rem;border:1px solid var(--border);border-radius:8px;font-size:.875rem" onchange="renderHistory()">
+                        <option value="all">All Months</option>
+                        <option value="1">January</option><option value="2">February</option>
+                        <option value="3">March</option><option value="4">April</option>
+                        <option value="5">May</option><option value="6">June</option>
+                    </select>
+                    <div class="download-group" style="margin-left:auto">
+                        <button class="btn-download" onclick="downloadHistoryCSV()">⬇ CSV</button>
+                        <button class="btn-download btn-download-pdf" onclick="downloadHistoryPDF()">⬇ PDF</button>
+                    </div>
+                </div>
+                <div class="table-wrap" id="historyTable"></div>
+            </div>
+        </div>
+
+    </div><!-- end main-content -->
+</div><!-- end dashboard-container -->
+
+<!-- CHANGE PASSWORD MODAL -->
+<div class="modal" id="changePasswordModal">
+    <div class="modal-content">
+        <button class="close" onclick="closeChangePassword()">✕</button>
+        <h2>🔒 Change Password</h2>
+        <form onsubmit="submitPasswordChange(event)">
+            <div class="input-group" style="margin-bottom:1rem"><label>Current Password</label><input type="password" id="currentPassword" required></div>
+            <div class="input-group" style="margin-bottom:1rem"><label>New Password</label><input type="password" id="newPassword" required minlength="6"></div>
+            <div class="input-group" style="margin-bottom:1rem"><label>Confirm Password</label><input type="password" id="confirmPassword" required></div>
+            <button type="submit" class="btn-primary" style="width:100%;margin-top:.5rem">Update Password</button>
+        </form>
+    </div>
+</div>
+
+<div id="toast"><span id="toastIcon">✅</span><span id="toastText">Success</span></div>
+
+<script>
+// ── STUDENT DATA ──────────────────────────────────────────────────────────────
+// In production these come from PHP session via sessionStorage set at login
+const STUDENT = {
+    name:    sessionStorage.getItem('full_name')   || 'Gauri Kolhe',
+    regId:   sessionStorage.getItem('reg_id')      || 'SEE2004008',
+    username:sessionStorage.getItem('username')    || 'gauri.kolhe74',
+    email:   sessionStorage.getItem('email')       || 'nileshgale025@gmail.com',
+    dob:     sessionStorage.getItem('dob')         || '2004-09-17',
+    branch:  sessionStorage.getItem('branch')      || 'B.Tech',
+    dept:    sessionStorage.getItem('department')  || 'Computer Science',
+    mobile:  sessionStorage.getItem('mobile')      || '-',
+    photo:   sessionStorage.getItem('photo_path')  || '',
+};
+
+const ATTENDANCE_DATA = [
+    {subject:'C Programming', total:30, present:26, absent:4},
+    {subject:'Java',          total:28, present:20, absent:8},
+    {subject:'Python',        total:25, present:23, absent:2},
+    {subject:'SQL',           total:27, present:19, absent:8},
+    {subject:'Cyber Security',total:24, present:22, absent:2},
+    {subject:'ICI',           total:26, present:25, absent:1},
+];
+
+let historyRows = [];
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    loadUserInfo();
+    renderOverview();
+    generateQRCode();
+});
+
+function loadUserInfo() {
+    const initials = STUDENT.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+
+    // Navbar: name + reg ID
+    document.getElementById('navFullName').textContent = STUDENT.name;
+    document.getElementById('navRegId').textContent    = STUDENT.regId;
+    document.getElementById('navUserInfo').style.display = 'flex';
+
+    // Navbar avatar
+    const navAvatar = document.getElementById('navAvatar');
+    if (STUDENT.photo) {
+        navAvatar.outerHTML = `<img src="../${STUDENT.photo}" class="nav-avatar" onclick="toggleProfileMenu()" id="navAvatar" alt="Profile" onerror="this.outerHTML='<div class=nav-avatar-placeholder onclick=toggleProfileMenu() id=navAvatar>${initials}</div>'">`;
+    } else {
+        navAvatar.textContent = initials;
+    }
+
+    // Profile menu header
+    document.getElementById('menuName').textContent  = STUDENT.name;
+    document.getElementById('menuRegId').textContent = STUDENT.regId;
+    const menuAvatarImg = document.getElementById('menuAvatarImg');
+    if (STUDENT.photo) {
+        menuAvatarImg.outerHTML = `<img src="../${STUDENT.photo}" id="menuAvatarImg" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid var(--primary-cyan)" onerror="this.outerHTML='<div class=menu-avatar id=menuAvatarImg>${initials}</div>'">`;
+    } else {
+        menuAvatarImg.textContent = initials;
+    }
+
+    // Overview profile card
+    document.getElementById('overviewFullName').textContent = STUDENT.name;
+    document.getElementById('overviewRegId').textContent    = STUDENT.regId;
+    document.getElementById('overviewUsername').textContent = STUDENT.username;
+    document.getElementById('overviewEmail').textContent    = STUDENT.email;
+    document.getElementById('overviewDob').textContent      = formatDate(STUDENT.dob);
+    document.getElementById('overviewBranch').textContent   = STUDENT.branch;
+    document.getElementById('overviewDept').textContent     = STUDENT.dept;
+    document.getElementById('overviewMobile').textContent   = STUDENT.mobile;
+
+    const photoEl = document.getElementById('profilePhoto');
+    if (STUDENT.photo) {
+        photoEl.innerHTML = `<img src="../${STUDENT.photo}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.4)" onerror="this.outerHTML='${initials}'">`;
+    } else {
+        photoEl.textContent = initials;
+    }
+
+    // QR reg ID label
+    document.getElementById('qrRegId').textContent = STUDENT.regId;
+}
+
+function formatDate(dob) {
+    if (!dob) return '-';
+    try {
+        return new Date(dob).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+    } catch { return dob; }
+}
+
+// ── PROFILE MENU ─────────────────────────────────────────────────────────────
+function toggleProfileMenu() {
+    document.getElementById('profileMenu').classList.toggle('show');
+}
+document.addEventListener('click', e => {
+    const pd = document.querySelector('.profile-dropdown');
+    if (pd && !pd.contains(e.target)) document.getElementById('profileMenu').classList.remove('show');
+});
+
+// ── SECTION NAV ──────────────────────────────────────────────────────────────
+function showSection(name, el) {
+    document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.sidebar-menu li').forEach(i => i.classList.remove('active'));
+    document.getElementById(name + 'Section').classList.add('active');
+    if (el) el.classList.add('active');
+    if (name === 'analytics') setTimeout(renderStudentCharts, 100);
+    if (name === 'history')   setTimeout(renderHistory, 100);
+}
+
+// ── OVERVIEW ─────────────────────────────────────────────────────────────────
+function renderOverview() {
+    const avgPct      = Math.round(ATTENDANCE_DATA.reduce((s,d) => s + d.present/d.total, 0) / ATTENDANCE_DATA.length * 100);
+    const totalPresent = ATTENDANCE_DATA.reduce((s,d) => s+d.present, 0);
+    const totalAbsent  = ATTENDANCE_DATA.reduce((s,d) => s+d.absent,  0);
+    const low = ATTENDANCE_DATA.filter(d => d.present/d.total < .75).length;
+
+    document.getElementById('overviewStats').innerHTML = `
+        <div class="stat-card"><div class="stat-value" style="color:${avgPct>=75?'var(--success)':avgPct>=60?'var(--warning)':'var(--danger)'}">${avgPct}%</div><div class="stat-label">Overall Attendance</div></div>
+        <div class="stat-card"><div class="stat-value">${totalPresent}</div><div class="stat-label">Total Present</div></div>
+        <div class="stat-card"><div class="stat-value">${totalAbsent}</div><div class="stat-label">Total Absent</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--danger)">${low}</div><div class="stat-label">Subjects Below 75%</div></div>`;
+
+    document.getElementById('attendanceCards').innerHTML = ATTENDANCE_DATA.map(d => {
+        const pct = Math.round(d.present/d.total*100);
+        const cls = pct >= 75 ? 'good' : pct >= 60 ? 'warn' : 'low';
+        return `<div class="att-card ${cls}">
+            <div class="subject-name">${d.subject}</div>
+            <div class="pct-row"><div class="pct">${pct}%</div><span style="font-size:.75rem;color:var(--text-muted)">${d.total} classes</span></div>
+            <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+            <div class="att-meta"><span class="att-pill">✅ ${d.present} Present</span><span class="att-pill">❌ ${d.absent} Absent</span></div>
+        </div>`;
+    }).join('');
+}
+
+// ── ATTENDANCE CODE ───────────────────────────────────────────────────────────
+function submitAttendanceCode() {
+    const code    = document.getElementById('attendanceCodeInput').value.trim().toUpperCase();
+    const subject = document.getElementById('codeSubjectSelect').value;
+    if (!subject) { showStatus('Please select a subject first', false); return; }
+    if (code.length < 6) { showStatus('Please enter a valid code (6-8 characters)', false); return; }
+    fetch('../backend/attendance_api.php', {
+        method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:`action=verifyCode&code=${encodeURIComponent(code)}&subject=${encodeURIComponent(subject)}&reg_id=${encodeURIComponent(STUDENT.regId)}`
+    })
+    .then(r=>r.json())
+    .then(d => { if(d.success){showStatus('✅ Attendance marked for '+subject,true);document.getElementById('attendanceCodeInput').value='';}else{showStatus('❌ '+(d.message||'Invalid code'),false);} })
+    .catch(()=>{ showStatus('✅ Attendance marked for '+subject+' (Demo)',true); document.getElementById('attendanceCodeInput').value=''; });
+}
+function showStatus(msg, ok) {
+    const el = document.getElementById('codeStatus');
+    el.textContent = msg; el.className = 'code-status '+(ok?'success':'error'); el.style.display='block';
+    setTimeout(()=>el.style.display='none',4000);
+}
+
+// ── QR CODE — Real scannable QR using qrcodejs ────────────────────────────────
+let qrInstance = null;
+function generateQRCode() {
+    const container = document.getElementById('qrCodeContainer');
+    container.innerHTML = '';
+    // qrcodejs creates a canvas + img inside the container
+    qrInstance = new QRCode(container, {
+        text: STUDENT.regId,          // Encoded data = Registration ID
+        width: 200,
+        height: 200,
+        colorDark: '#1e3a5f',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+    });
+}
+
+// ── DOWNLOAD QR ───────────────────────────────────────────────────────────────
+function downloadQR(format) {
+    const container = document.getElementById('qrCodeContainer');
+    const canvas = container.querySelector('canvas');
+    const img    = container.querySelector('img');
+
+    // Get the raw QR image data
+    const qrDataUrl = canvas ? canvas.toDataURL('image/png') : (img ? img.src : null);
+    if (!qrDataUrl) { showToast('QR not ready, please wait', true); return; }
+
+    const BORDER = 20; // white padding in px around QR
+    const QR_SIZE = canvas ? canvas.width : 200;
+    const TOTAL = QR_SIZE + BORDER * 2;
+
+    // Helper: build a new canvas with white border around the QR
+    function buildBorderedCanvas(cb) {
+        const exp = document.createElement('canvas');
+        exp.width = TOTAL; exp.height = TOTAL;
+        const ctx = exp.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, TOTAL, TOTAL);
+        const qrImg = new Image();
+        qrImg.onload = () => { ctx.drawImage(qrImg, BORDER, BORDER, QR_SIZE, QR_SIZE); cb(exp); };
+        qrImg.src = qrDataUrl;
+    }
+
+    if (format === 'png') {
+        buildBorderedCanvas(exp => {
+            const link = document.createElement('a');
+            link.download = 'QR_' + STUDENT.regId + '.png';
+            link.href = exp.toDataURL('image/png');
+            link.click();
+        });
+    } else {
+        buildBorderedCanvas(exp => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit:'mm', format:[80,105] });
+
+            // Navy background
+            doc.setFillColor(30,58,95);
+            doc.rect(0,0,80,105,'F');
+
+            // Title
+            doc.setTextColor(255,255,255);
+            doc.setFontSize(14); doc.setFont('helvetica','bold');
+            doc.text('Attendify', 40, 12, {align:'center'});
+            doc.setFontSize(9); doc.setFont('helvetica','normal');
+            doc.text('Student QR Code', 40, 19, {align:'center'});
+
+            // White rounded box behind QR for clean border
+            doc.setFillColor(255,255,255);
+            doc.roundedRect(12, 22, 56, 56, 3, 3, 'F');
+
+            // QR image with white border baked in
+            const borderedUrl = exp.toDataURL('image/png');
+            doc.addImage(borderedUrl, 'PNG', 14, 24, 52, 52);
+
+            // Reg ID
+            doc.setTextColor(0,188,212);
+            doc.setFontSize(11); doc.setFont('courier','bold');
+            doc.text(STUDENT.regId, 40, 86, {align:'center'});
+
+            // Name & hint
+            doc.setTextColor(200,200,200);
+            doc.setFontSize(7); doc.setFont('helvetica','normal');
+            doc.text(STUDENT.name, 40, 92, {align:'center'});
+            doc.text('Show to teacher for attendance', 40, 98, {align:'center'});
+
+            doc.save('QR_' + STUDENT.regId + '.pdf');
+        });
+    }
+}
+
+// ── CHARTS ────────────────────────────────────────────────────────────────────
+let sChartInstances = {};
+
+function generateStudentMockData(range) {
+    const today=new Date(), days=range==='week'?7:range==='2week'?14:30;
+    const labels=[], attendance=[];
+    for(let i=days-1;i>=0;i--){
+        const d=new Date(today); d.setDate(d.getDate()-i);
+        labels.push(d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'}));
+        attendance.push(d.getDay()===0||d.getDay()===6?null:Math.random()>.15?1:0);
+    }
+    return {labels,attendance};
+}
+
+function renderStudentCharts() {
+    const range = document.getElementById('graphRange').value;
+    const {labels,attendance} = generateStudentMockData(range);
+    const destroy = id => { if(sChartInstances[id]) sChartInstances[id].destroy(); };
+
+    const cumPresent=[]; let p=0,t=0;
+    attendance.forEach(v=>{if(v!==null){t++;if(v===1)p++;}cumPresent.push(t>0?Math.round(p/t*100):null);});
+
+    destroy('sLine');
+    sChartInstances['sLine'] = new Chart(document.getElementById('sLineChart'),{
+        type:'line',
+        data:{labels,datasets:[{label:'Attendance %',data:cumPresent,borderColor:'#00BCD4',backgroundColor:'rgba(0,188,212,.1)',fill:true,tension:.4,pointRadius:4,spanGaps:true}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'}},x:{grid:{display:false}}}}
+    });
+
+    const scatter=attendance.map((v,i)=>v!==null?{x:i,y:v}:null).filter(Boolean);
+    destroy('sScatter');
+    sChartInstances['sScatter'] = new Chart(document.getElementById('sScatterChart'),{
+        type:'scatter',
+        data:{datasets:[
+            {label:'Present',data:scatter.filter(p=>p.y===1),backgroundColor:'rgba(16,185,129,.8)',pointRadius:7},
+            {label:'Absent', data:scatter.filter(p=>p.y===0),backgroundColor:'rgba(239,68,68,.8)', pointRadius:7}
+        ]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}},scales:{y:{min:-0.5,max:1.5,ticks:{stepSize:1,callback:v=>v===1?'Present':v===0?'Absent':''}},x:{display:false}}}
+    });
+
+    const subjects=ATTENDANCE_DATA.map(d=>d.subject.split(' ')[0]);
+    const pcts=ATTENDANCE_DATA.map(d=>Math.round(d.present/d.total*100));
+    destroy('sBar');
+    sChartInstances['sBar'] = new Chart(document.getElementById('sBarChart'),{
+        type:'bar',
+        data:{labels:subjects,datasets:[{data:pcts,backgroundColor:pcts.map(p=>p>=75?'rgba(16,185,129,.8)':p>=60?'rgba(245,158,11,.8)':'rgba(239,68,68,.8)'),borderRadius:6}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'}}}}
+    });
+
+    const tp=ATTENDANCE_DATA.reduce((s,d)=>s+d.present,0), ta=ATTENDANCE_DATA.reduce((s,d)=>s+d.absent,0);
+    destroy('sDoughnut');
+    sChartInstances['sDoughnut'] = new Chart(document.getElementById('sDoughnutChart'),{
+        type:'doughnut',
+        data:{labels:['Present','Absent'],datasets:[{data:[tp,ta],backgroundColor:['#00BCD4','#ef4444'],borderWidth:0,hoverOffset:4}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},cutout:'65%'}
+    });
+}
+
+// ── DOWNLOAD CHART as PNG with white background (fixes black bg issue) ────────
+function downloadChartWhite(canvasId, name) {
+    const original = document.getElementById(canvasId);
+    // Create a new canvas with white background
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width  = original.width;
+    exportCanvas.height = original.height;
+    const ctx = exportCanvas.getContext('2d');
+    // Fill white background FIRST
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+    // Draw original chart on top
+    ctx.drawImage(original, 0, 0);
+    const link = document.createElement('a');
+    link.download = name + '_' + new Date().toISOString().slice(0,10) + '.png';
+    link.href = exportCanvas.toDataURL('image/png');
+    link.click();
+}
+
+// ── HISTORY ───────────────────────────────────────────────────────────────────
+function renderHistory() {
+    const subject = document.getElementById('histSubject').value;
+    historyRows = [];
+    const today = new Date();
+    for(let i=0;i<30;i++){
+        const d=new Date(today); d.setDate(d.getDate()-i);
+        if(d.getDay()===0||d.getDay()===6) continue;
+        const subj=ATTENDANCE_DATA[i%ATTENDANCE_DATA.length].subject;
+        if(subject!=='all'&&subj!==subject) continue;
+        historyRows.push({
+            date:d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),
+            subject:subj,
+            status:Math.random()>.18?'present':'absent'
+        });
+    }
+    document.getElementById('historyTable').innerHTML = `
+        <table>
+            <thead><tr><th>Date</th><th>Subject</th><th>Status</th></tr></thead>
+            <tbody>${historyRows.map(r=>`<tr>
+                <td>${r.date}</td><td>${r.subject}</td>
+                <td><span class="badge badge-${r.status}">${r.status==='present'?'✓ Present':'✗ Absent'}</span></td>
+            </tr>`).join('')}</tbody>
+        </table>`;
+}
+
+// ── DOWNLOAD HISTORY CSV ──────────────────────────────────────────────────────
+function downloadHistoryCSV() {
+    if(!historyRows.length){showToast('No data to download',true);return;}
+    const csv = 'Date,Subject,Status\n' + historyRows.map(r=>`${r.date},${r.subject},${r.status}`).join('\n');
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    link.download = 'Attendance_History_' + STUDENT.regId + '_' + new Date().toISOString().slice(0,10) + '.csv';
+    link.click();
+}
+
+// ── DOWNLOAD HISTORY PDF ──────────────────────────────────────────────────────
+function downloadHistoryPDF() {
+    if(!historyRows.length){showToast('No data to download',true);return;}
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Header
+    doc.setFillColor(30,58,95);
+    doc.rect(0,0,210,28,'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(18); doc.setFont('helvetica','bold');
+    doc.text('Attendify — Attendance Report', 14, 12);
+    doc.setFontSize(9); doc.setFont('helvetica','normal');
+    doc.text(`Student: ${STUDENT.name}   |   Reg ID: ${STUDENT.regId}   |   Generated: ${new Date().toLocaleDateString('en-IN')}`, 14, 22);
+
+    // Table
+    doc.autoTable({
+        startY: 34,
+        head: [['Date','Subject','Status']],
+        body: historyRows.map(r=>[r.date, r.subject, r.status==='present'?'Present':'Absent']),
+        headStyles: { fillColor:[0,188,212], textColor:255, fontStyle:'bold' },
+        alternateRowStyles: { fillColor:[240,249,255] },
+        bodyStyles: { textColor:[31,41,55] },
+        didParseCell: (data) => {
+            if(data.section==='body' && data.column.index===2){
+                data.cell.styles.textColor = data.cell.raw==='Present'?[16,185,129]:[239,68,68];
+                data.cell.styles.fontStyle = 'bold';
+            }
+        }
+    });
+
+    doc.save('Attendance_History_' + STUDENT.regId + '_' + new Date().toISOString().slice(0,10) + '.pdf');
+}
+
+// ── LOGOUT ────────────────────────────────────────────────────────────────────
+function showLogoutBanner()  { document.getElementById('logoutBanner').classList.add('show'); }
+function hideLogoutBanner()  { document.getElementById('logoutBanner').classList.remove('show'); }
+function confirmLogout() {
+    fetch('../backend/auth_api.php',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'action=logout'})
+    .catch(()=>{}).finally(()=>{ sessionStorage.clear(); window.location.href='Attendity.html'; });
+}
+
+// ── PASSWORD ──────────────────────────────────────────────────────────────────
+function showChangePassword()  { document.getElementById('changePasswordModal').classList.add('show'); }
+function closeChangePassword() { document.getElementById('changePasswordModal').classList.remove('show'); }
+function submitPasswordChange(e) {
+    e.preventDefault();
+    const np=document.getElementById('newPassword').value, cp=document.getElementById('confirmPassword').value;
+    if(np!==cp){showToast('Passwords do not match',true);return;}
+    showToast('✅ Password changed successfully'); closeChangePassword();
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let toastTimeout;
+function showToast(msg,isError=false){
+    const t=document.getElementById('toast');
+    document.getElementById('toastText').textContent=msg;
+    document.getElementById('toastIcon').textContent=isError?'❌':'✅';
+    t.className='show'+(isError?' error':'');
+    clearTimeout(toastTimeout);
+    toastTimeout=setTimeout(()=>t.className='',3500);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendify - Register New User</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-cyan: #00BCD4;
+            --primary-dark: #0097A7;
+            --navy-dark: #1e3a5f;
+            --navy-light: #2c5282;
+            --purple-accent: #7c3aed;
+            --success: #10b981;
+            --error: #ef4444;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --border: #e5e7eb;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--primary-cyan) 0%, var(--navy-dark) 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background: var(--white);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 50px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo-circle {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, var(--primary-cyan), var(--purple-accent));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 10px 30px rgba(0, 188, 212, 0.4);
+        }
+
+        h1 {
+            color: var(--navy-dark);
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--text-light);
+            font-size: 18px;
+        }
+
+        /* Email Verification Section */
+        .email-section {
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+            border: 2px solid var(--primary-cyan);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 40px;
+        }
+
+        .email-section h3 {
+            color: var(--navy-dark);
+            font-size: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .email-section h3::before {
+            content: '📧';
+            font-size: 24px;
+        }
+
+        .email-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .otp-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 15px;
+        }
+
+        .otp-section {
+            display: none;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px dashed var(--primary-cyan);
+        }
+
+        .otp-section.active {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Form Horizontal Layout */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            color: var(--navy-dark);
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .required {
+            color: var(--error);
+            margin-left: 4px;
+        }
+
+        input,
+        select {
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 15px;
+            color: var(--text);
+            transition: all 0.3s ease;
+            font-family: inherit;
+            background: var(--white);
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary-cyan);
+            box-shadow: 0 0 0 4px rgba(0, 188, 212, 0.1);
+        }
+
+        input:disabled,
+        select:disabled {
+            background: #f3f4f6;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .help-text {
+            color: var(--text-light);
+            font-size: 13px;
+            margin-top: 6px;
+        }
+
+        /* Photo Upload */
+        .photo-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-radius: 12px;
+            border: 2px dashed var(--primary-cyan);
+        }
+
+        .photo-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 4px solid var(--primary-cyan);
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .photo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-placeholder {
+            font-size: 48px;
+            color: var(--primary-cyan);
+        }
+
+        .photo-upload-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .photo-upload-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 188, 212, 0.4);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-dark));
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 188, 212, 0.4);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 188, 212, 0.5);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--navy-dark);
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--navy-light);
+        }
+
+        .btn-link {
+            background: none;
+            color: var(--primary-cyan);
+            padding: 0;
+            text-decoration: underline;
+            font-size: 14px;
+        }
+
+        .submit-section {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
+        .submit-btn {
+            min-width: 250px;
+            padding: 18px;
+            font-size: 18px;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: var(--text-light);
+            text-decoration: none;
+            text-align: center;
+            margin-top: 20px;
+            font-size: 15px;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: var(--primary-cyan);
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: white;
+            padding: 18px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 320px;
+            z-index: 10000;
+            animation: slideInRight 0.3s ease;
+            border-left: 4px solid var(--success);
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .toast.error {
+            border-left-color: var(--error);
+        }
+
+        .toast-icon {
+            font-size: 24px;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top-color: var(--primary-cyan);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Success Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.hidden {
+            display: none;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            padding: 50px;
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+            animation: scaleIn 0.3s ease;
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, var(--success), #059669);
+            border-radius: 50%;
+            margin: 0 auto 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+        }
+
+        .modal-title {
+            font-size: 32px;
+            color: var(--navy-dark);
+            margin-bottom: 16px;
+        }
+
+        .credentials-box {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 2px solid var(--primary-cyan);
+        }
+
+        .credential-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid #cbd5e1;
+        }
+
+        .credential-item:last-child {
+            border-bottom: none;
+        }
+
+        .credential-label {
+            color: var(--text-light);
+            font-size: 15px;
+        }
+
+        .credential-value {
+            color: var(--navy-dark);
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .form-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .email-row,
+            .otp-row {
+                grid-template-columns: 1fr;
+            }
+
+            .photo-section {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .submit-section {
+                flex-direction: column;
+            }
+
+            .submit-btn {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 20px 10px;
+            }
+
+            .container {
+                padding: 20px 15px;
+            }
+
+            .modal-content {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-circle">A</div>
+            <h1>Create Your Account</h1>
+            <p class="subtitle">Join Attendify Attendance Management System</p>
+        </div>
+
+        <form id="registrationForm" enctype="multipart/form-data">
+            <!-- Email Verification Section -->
+            <div class="email-section">
+                <h3>Step 1: Verify Your Email</h3>
+                
+                <div class="email-row">
+                    <input type="email" id="email" name="email" required placeholder="Enter your email address">
+                    <button type="button" class="btn btn-primary" id="sendOtpBtn">Send OTP</button>
+                </div>
+
+                <div class="otp-section" id="otpSection">
+                    <p class="help-text" style="margin-bottom: 15px;">Enter the 6-digit code sent to your email</p>
+                    <div class="otp-row">
+                        <input type="text" id="otpInput" maxlength="6" placeholder="000000" disabled>
+                        <button type="button" class="btn btn-primary" id="verifyOtpBtn" disabled>Verify OTP</button>
+                    </div>
+                    <div style="margin-top: 12px; text-align: center;">
+                        <span class="help-text">Didn't receive code? </span>
+                        <button type="button" class="btn-link" id="resendOtp" disabled>Resend OTP</button>
+                        <span class="help-text" id="otpTimer"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Registration Form -->
+            <div class="form-grid">
+                <!-- Row 1 -->
+                <div class="form-group">
+                    <label for="fullName">Full Name <span class="required">*</span></label>
+                    <input type="text" id="fullName" name="full_name" required placeholder="John Doe" disabled>
+                </div>
+
+                <div class="form-group">
+                    <label for="mobile">Mobile Number <span class="required">*</span></label>
+                    <input type="tel" id="mobile" name="mobile" required placeholder="10-digit mobile" pattern="[0-9]{10}" maxlength="10" disabled>
+                </div>
+
+                <div class="form-group">
+                    <label for="role">Role <span class="required">*</span></label>
+                    <select id="role" name="role" required disabled>
+                        <option value="">-- Select Role --</option>
+                        <option value="student">Student</option>
+                        <option value="teacher">Teacher</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+
+                <!-- Row 2 -->
+                <div class="form-group" id="departmentGroup" style="display: none;">
+                    <label for="department">Department <span class="required">*</span></label>
+                    <select id="department" name="department" disabled>
+                        <option value="">-- Select Department --</option>
+                        <option value="Computer Science">Computer Science</option>
+                        <option value="Information Technology">Information Technology</option>
+                        <option value="Electronics">Electronics & Communication</option>
+                        <option value="Mechanical">Mechanical Engineering</option>
+                        <option value="Civil">Civil Engineering</option>
+                        <option value="Electrical">Electrical Engineering</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="branchGroup" style="display: none;">
+                    <label for="branch">Branch <span class="required">*</span></label>
+                    <select id="branch" name="branch" disabled>
+                        <option value="">-- Select Branch --</option>
+                        <option value="B.Tech">B.Tech</option>
+                        <option value="M.Tech">M.Tech</option>
+                        <option value="B.Sc">B.Sc</option>
+                        <option value="M.Sc">M.Sc</option>
+                        <option value="BCA">BCA</option>
+                        <option value="MCA">MCA</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="dob">Date of Birth</label>
+                    <input type="date" id="dob" name="dob" disabled>
+                    <span class="help-text">Must be at least 18 years old</span>
+                </div>
+
+                <!-- Row 3 - Password -->
+                <div class="form-group">
+                    <label for="password">Password <span class="required">*</span></label>
+                    <input type="password" id="password" name="password" required placeholder="Min 6 characters" minlength="6" disabled>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
+                    <input type="password" id="confirmPassword" name="confirm_password" required placeholder="Re-enter password" disabled>
+                </div>
+            </div>
+
+            <!-- Photo Upload Section -->
+            <div class="form-group full-width">
+                <label>Upload Your Photo <span class="required">*</span></label>
+                <div class="photo-section">
+                    <div class="photo-preview" id="photoPreview">
+                        <span class="photo-placeholder" id="photoPlaceholder">📷</span>
+                        <img id="previewImage" src="" alt="Preview" style="display: none;">
+                    </div>
+                    <div style="flex: 1;">
+                        <input type="file" id="userPhoto" name="user_photo" accept="image/*" style="display: none;" disabled>
+                        <button type="button" class="photo-upload-btn" id="uploadPhotoBtn" disabled>Choose Photo</button>
+                        <p class="help-text" style="margin-top: 10px;">JPG, JPEG or PNG (Max 2MB)</p>
+                        <button type="button" class="btn-link" id="removePhoto" style="display: none; margin-top: 10px;">Remove Photo</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Section -->
+            <div class="submit-section">
+                <button type="submit" class="btn btn-primary submit-btn" id="registerBtn" disabled>
+                    Complete Registration
+                </button>
+            </div>
+
+            
+        </form>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal hidden" id="successModal">
+        <div class="modal-content">
+            <div class="modal-icon">✓</div>
+            <h2 class="modal-title">Registration Successful!</h2>
+            <p style="color: var(--text-light); font-size: 16px; margin-bottom: 20px;">
+                Your account has been created successfully.
+            </p>
+            <div class="credentials-box">
+                <div class="credential-item">
+                    <span class="credential-label">Username:</span>
+                    <span class="credential-value" id="usernameDisplay">-</span>
+                </div>
+                <div class="credential-item">
+                    <span class="credential-label">Registration ID:</span>
+                    <span class="credential-value" id="regIdDisplay">-</span>
+                </div>
+                <div class="credential-item">
+                    <span class="credential-label">Email:</span>
+                    <span class="credential-value" id="emailDisplay">-</span>
+                </div>
+            </div>
+            <p style="color: var(--text-light); font-size: 14px; margin-bottom: 30px;">
+                📧 Check your email for complete login details
+            </p>
+            <button class="btn btn-primary" id="closeModal" style="width: 100%; padding: 16px;">
+                Go to Login Page
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div style="text-align: center;">
+            <div class="loading-spinner"></div>
+            <p style="color: white; margin-top: 20px; font-size: 16px;" id="loadingText">Please wait...</p>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const form = document.getElementById('registrationForm');
+        const emailInput = document.getElementById('email');
+        const sendOtpBtn = document.getElementById('sendOtpBtn');
+        const otpSection = document.getElementById('otpSection');
+        const otpInput = document.getElementById('otpInput');
+        const verifyOtpBtn = document.getElementById('verifyOtpBtn');
+        const resendOtp = document.getElementById('resendOtp');
+        const otpTimer = document.getElementById('otpTimer');
+        const registerBtn = document.getElementById('registerBtn');
+        const roleSelect = document.getElementById('role');
+        const departmentGroup = document.getElementById('departmentGroup');
+        const branchGroup = document.getElementById('branchGroup');
+        const uploadPhotoBtn = document.getElementById('uploadPhotoBtn');
+        const userPhotoInput = document.getElementById('userPhoto');
+        const photoPreview = document.getElementById('photoPreview');
+        const photoPlaceholder = document.getElementById('photoPlaceholder');
+        const previewImage = document.getElementById('previewImage');
+        const removePhoto = document.getElementById('removePhoto');
+        const successModal = document.getElementById('successModal');
+        const closeModal = document.getElementById('closeModal');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+
+        // Form Fields
+        const formFields = [
+            document.getElementById('fullName'),
+            document.getElementById('mobile'),
+            roleSelect,
+            document.getElementById('department'),
+            document.getElementById('branch'),
+            document.getElementById('dob'),
+            userPhotoInput,
+            document.getElementById('password'),
+            document.getElementById('confirmPassword'),
+            uploadPhotoBtn
+        ];
+
+        // State Variables
+        let isEmailVerified = false;
+        let otpTimerInterval = null;
+        let selectedPhotoFile = null;
+
+        // Toast Notification
+        function showToast(message, type = 'success') {
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) existingToast.remove();
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <span class="toast-icon">${type === 'success' ? '✓' : '⚠'}</span>
+                <span style="flex: 1; font-size: 15px; color: var(--text);">${message}</span>
+            `;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideInRight 0.3s ease reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Loading Overlay
+        function showLoading(message = 'Please wait...') {
+            loadingText.textContent = message;
+            loadingOverlay.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            loadingOverlay.classList.add('hidden');
+        }
+
+        // Send OTP
+        sendOtpBtn.addEventListener('click', async () => {
+            const email = emailInput.value.trim();
+            
+            if (!email) {
+                showToast('Please enter your email address', 'error');
+                return;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showToast('Please enter a valid email address', 'error');
+                return;
+            }
+
+            showLoading('Sending verification code...');
+            sendOtpBtn.disabled = true;
+
+            try {
+                const formData = new FormData();
+                formData.append('action', 'requestRegOtp');
+                formData.append('email', email);
+
+                const response = await fetch('../backend/send_otp.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('Verification code sent to your email!', 'success');
+                    otpSection.classList.add('active');
+                    emailInput.disabled = true;
+                    otpInput.disabled = false;
+                    verifyOtpBtn.disabled = false;
+                    sendOtpBtn.textContent = '✓ Code Sent';
+                    sendOtpBtn.style.background = 'var(--success)';
+
+                    startOtpTimer();
+
+                    if (data.otp) {
+                        console.log('OTP (DEV MODE):', data.otp);
+                    }
+                } else {
+                    showToast(data.message || 'Failed to send OTP', 'error');
+                    sendOtpBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('OTP send error:', error);
+                showToast('An error occurred. Please try again.', 'error');
+                sendOtpBtn.disabled = false;
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Verify OTP
+        verifyOtpBtn.addEventListener('click', async () => {
+            const email = emailInput.value.trim();
+            const otp = otpInput.value.trim();
+
+            if (!otp || otp.length !== 6) {
+                showToast('Please enter the 6-digit OTP', 'error');
+                return;
+            }
+
+            showLoading('Verifying code...');
+            verifyOtpBtn.disabled = true;
+
+            try {
+                const formData = new FormData();
+                formData.append('action', 'verifyOtp');
+                formData.append('email', email);
+                formData.append('otp', otp);
+
+                const response = await fetch('../backend/send_otp.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('Email verified successfully!', 'success');
+                    isEmailVerified = true;
+                    verifyOtpBtn.textContent = '✓ Verified';
+                    verifyOtpBtn.style.background = 'var(--success)';
+                    otpInput.disabled = true;
+                    
+                    // Enable all form fields
+                    formFields.forEach(field => field.disabled = false);
+                    registerBtn.disabled = false;
+
+                    if (otpTimerInterval) {
+                        clearInterval(otpTimerInterval);
+                        otpTimer.textContent = '';
+                    }
+                } else {
+                    showToast(data.message || 'Invalid OTP. Please try again.', 'error');
+                    verifyOtpBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('OTP verify error:', error);
+                showToast('Verification failed. Please try again.', 'error');
+                verifyOtpBtn.disabled = false;
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // OTP Timer
+        function startOtpTimer() {
+            let timeLeft = 60;
+            resendOtp.disabled = true;
+
+            otpTimerInterval = setInterval(() => {
+                timeLeft--;
+                otpTimer.textContent = `(${timeLeft}s)`;
+
+                if (timeLeft <= 0) {
+                    clearInterval(otpTimerInterval);
+                    resendOtp.disabled = false;
+                    otpTimer.textContent = '';
+                }
+            }, 1000);
+        }
+
+        // Resend OTP
+        resendOtp.addEventListener('click', () => {
+            otpInput.value = '';
+            sendOtpBtn.click();
+        });
+
+        // OTP Auto-verify on Enter
+        otpInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && otpInput.value.length === 6) {
+                verifyOtpBtn.click();
+            }
+        });
+
+        // Role Change Handler
+        roleSelect.addEventListener('change', () => {
+            const role = roleSelect.value;
+            const deptField = document.getElementById('department');
+            const branchField = document.getElementById('branch');
+
+            if (role === 'student') {
+                departmentGroup.style.display = 'block';
+                branchGroup.style.display = 'block';
+                deptField.required = true;
+                branchField.required = true;
+            } else if (role === 'teacher') {
+                departmentGroup.style.display = 'block';
+                branchGroup.style.display = 'none';
+                deptField.required = true;
+                branchField.required = false;
+            } else {
+                departmentGroup.style.display = 'none';
+                branchGroup.style.display = 'none';
+                deptField.required = false;
+                branchField.required = false;
+            }
+        });
+
+        // Photo Upload
+        uploadPhotoBtn.addEventListener('click', () => {
+            if (!userPhotoInput.disabled) {
+                userPhotoInput.click();
+            }
+        });
+
+        userPhotoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            
+            if (!file) return;
+
+            if (file.size > 2 * 1024 * 1024) {
+                showToast('File size must be less than 2MB', 'error');
+                userPhotoInput.value = '';
+                return;
+            }
+
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+            if (!validTypes.includes(file.type)) {
+                showToast('Only JPG, JPEG, and PNG files are allowed', 'error');
+                userPhotoInput.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                photoPlaceholder.style.display = 'none';
+                previewImage.src = event.target.result;
+                previewImage.style.display = 'block';
+                removePhoto.style.display = 'inline-block';
+                selectedPhotoFile = file;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        removePhoto.addEventListener('click', (e) => {
+            e.preventDefault();
+            userPhotoInput.value = '';
+            photoPlaceholder.style.display = 'block';
+            previewImage.style.display = 'none';
+            removePhoto.style.display = 'none';
+            previewImage.src = '';
+            selectedPhotoFile = null;
+        });
+
+        // Form Validation
+        function validateForm() {
+            if (!isEmailVerified) {
+                showToast('Please verify your email first', 'error');
+                return false;
+            }
+
+            const fullName = document.getElementById('fullName').value.trim();
+            const mobile = document.getElementById('mobile').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const role = roleSelect.value;
+
+            if (fullName.length < 3) {
+                showToast('Full name must be at least 3 characters', 'error');
+                return false;
+            }
+
+            if (!/^[0-9]{10}$/.test(mobile)) {
+                showToast('Please enter a valid 10-digit mobile number', 'error');
+                return false;
+            }
+
+            if (!selectedPhotoFile) {
+                showToast('Please upload your photo', 'error');
+                return false;
+            }
+
+            if (password.length < 6) {
+                showToast('Password must be at least 6 characters', 'error');
+                return false;
+            }
+
+            if (password !== confirmPassword) {
+                showToast('Passwords do not match', 'error');
+                return false;
+            }
+
+            if (role === 'student' && !document.getElementById('branch').value) {
+                showToast('Please select a branch', 'error');
+                return false;
+            }
+
+            return true;
+        }
+
+        // Form Submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!validateForm()) {
+                return;
+            }
+
+            showLoading('Creating your account...');
+
+            try {
+                const formData = new FormData(form);
+                formData.append('action', 'register');
+                formData.append('email', emailInput.value.trim());
+
+                if (selectedPhotoFile) {
+                    formData.append('user_photo', selectedPhotoFile);
+                }
+
+                const response = await fetch('../backend/register_api.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('usernameDisplay').textContent = data.username || '-';
+                    document.getElementById('regIdDisplay').textContent = data.reg_id || '-';
+                    document.getElementById('emailDisplay').textContent = emailInput.value;
+                    successModal.classList.remove('hidden');
+
+                    form.reset();
+                    photoPlaceholder.style.display = 'block';
+                    previewImage.style.display = 'none';
+                    removePhoto.style.display = 'none';
+                    selectedPhotoFile = null;
+                    departmentGroup.style.display = 'none';
+                    branchGroup.style.display = 'none';
+                    otpSection.classList.remove('active');
+                    emailInput.disabled = false;
+                    sendOtpBtn.disabled = false;
+                    sendOtpBtn.textContent = 'Send OTP';
+                    sendOtpBtn.style.background = '';
+                    isEmailVerified = false;
+                    formFields.forEach(field => field.disabled = true);
+                    registerBtn.disabled = true;
+                } else {
+                    showToast(data.message || 'Registration failed', 'error');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showToast('An error occurred. Please try again.', 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Modal Close
+        closeModal.addEventListener('click', () => {
+            successModal.classList.add('hidden');
+            window.location.href = 'Attendity.html';
+        });
+
+        // Date of Birth Max Date
+        const dobInput = document.getElementById('dob');
+        const today = new Date();
+        const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+        dobInput.max = maxDate.toISOString().split('T')[0];
+    </script>
+</body>
+</html>

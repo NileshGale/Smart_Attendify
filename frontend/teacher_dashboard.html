@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - Attendify</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <style>
+        
+        :root {
+            --primary-cyan: #00BCD4;
+            --primary-dark: #0097A7;
+            --navy-dark: #1e3a5f;
+            --navy-light: #2c5282;
+            --purple-accent: #7c3aed;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --border: #e5e7eb;
+            --white: #ffffff;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+            --shadow-md: 0 4px 12px rgba(0,0,0,.1);
+            --shadow-lg: 0 8px 30px rgba(0,0,0,.12);
+            --radius: 12px;
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ─── NAVBAR ─── */
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-cyan) 0%, var(--navy-dark) 100%);
+            color: white;
+            padding: .75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 20px rgba(0, 188, 212,.3);
+            position: sticky; top:0; z-index:200;
+        }
+        .nav-brand { display:flex; align-items:center; gap:.75rem; }
+        .nav-brand .logo-icon {
+            width:36px; height:36px;
+            background: rgba(255,255,255,.2);
+            border-radius:8px;
+            display:flex; align-items:center; justify-content:center;
+            font-weight:800; font-size:16px;
+        }
+        .nav-brand h1 { font-size:1.1rem; font-weight:700; }
+        .teacher-chip {
+            background: rgba(255,255,255,.15);
+            border: 1px solid rgba(255,255,255,.3);
+            padding: .25rem .75rem;
+            border-radius:20px;
+            font-size:.75rem;
+            font-weight:600;
+        }
+        .nav-right { display:flex; align-items:center; gap:1rem; }
+
+        .profile-dropdown { position:relative; }
+        .profile-btn {
+            background: rgba(255,255,255,.2);
+            border: none; padding:.5rem;
+            border-radius:50%; cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+            transition: background .2s; color:white;
+        }
+        .profile-btn:hover { background: rgba(255,255,255,.3); }
+        .profile-menu {
+            display:none; position:absolute; right:0; top:calc(100% + .5rem);
+            background:white; border-radius:var(--radius);
+            box-shadow: var(--shadow-lg); min-width:200px; overflow:hidden;
+            border: 1px solid var(--border);
+        }
+        .profile-menu.show { display:block; }
+        .profile-menu a {
+            display:flex; align-items:center; gap:.75rem;
+            padding:.75rem 1rem; color:var(--text);
+            text-decoration:none; font-size:.875rem; transition: background .2s;
+        }
+        .profile-menu a:hover { background:var(--bg); }
+        .profile-menu .divider { height:1px; background:var(--border); }
+
+        /* ─── LAYOUT ─── */
+        .dashboard-container { display:flex; min-height:calc(100vh - 58px); }
+
+        .sidebar {
+            width:220px; background:var(--surface);
+            box-shadow: 2px 0 10px rgba(0,0,0,.05);
+            padding:1.25rem 0; flex-shrink:0;
+        }
+        .sidebar-menu { list-style:none; }
+        .sidebar-menu li {
+            padding:.75rem 1.25rem; cursor:pointer;
+            display:flex; align-items:center; gap:.625rem;
+            transition:all .2s; color:var(--text-muted);
+            font-weight:500; font-size:.875rem;
+            border-left:3px solid transparent;
+        }
+        .sidebar-menu li:hover { background:var(--bg); color:var(--primary-cyan); }
+        .sidebar-menu li.active {
+            background: linear-gradient(90deg,rgba(0, 188, 212,.08) 0%,transparent 100%);
+            color:var(--primary-cyan); border-left-color:var(--primary-cyan);
+        }
+
+        .main-content { flex:1; padding:1.5rem; overflow-y:auto; }
+        .content-section { display:none; }
+        .content-section.active { display:block; }
+        .section-title {
+            font-size:1.4rem; font-weight:700; color:var(--text);
+            margin-bottom:1.25rem; display:flex; align-items:center; gap:.625rem;
+        }
+
+        /* ─── CARDS ─── */
+        .card {
+            background:var(--surface); border-radius:var(--radius);
+            box-shadow:var(--shadow-sm); border:1px solid var(--border); padding:1.25rem;
+        }
+        .card + .card { margin-top:1rem; }
+
+        /* ─── SCHEDULE ─── */
+        .schedule-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            align-items: start;
+        }
+        
+        .day-schedule { 
+            margin-bottom: 0;
+            border: 3px solid var(--primary-cyan);
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 188, 212, 0.12);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .day-schedule:hover {
+            border-color: var(--navy-dark);
+            box-shadow: 0 12px 30px rgba(0, 188, 212, 0.25);
+            transform: translateY(-4px);
+        }
+        
+        .day-schedule h3 {
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 900;
+            padding: 1.25rem 1.5rem;
+            background: linear-gradient(135deg, var(--primary-cyan) 0%, var(--navy-dark) 100%);
+            margin-bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border-bottom: 4px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .day-schedule h3::before {
+            content: '📅';
+            font-size: 1.5rem;
+            margin-right: 0.5rem;
+        }
+        
+        .day-schedule h3::after {
+            content: attr(data-count);
+            background: rgba(255, 255, 255, 0.25);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+        
+        .schedule-slots {
+            padding: 1.25rem;
+            background: linear-gradient(to bottom, #f8fcff 0%, white 100%);
+        }
+        
+        .time-slot {
+            background: white;
+            border: 2px solid var(--border);
+            border-left: 5px solid var(--primary-cyan);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+        
+        .time-slot:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 16px rgba(0, 188, 212, 0.15);
+            border-color: var(--primary-cyan);
+            background: linear-gradient(90deg, rgba(0, 188, 212, 0.03) 0%, white 100%);
+        }
+        
+        .time-slot-info {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .time-slot.recess {
+            background: linear-gradient(90deg, rgba(245, 158, 11, 0.08), rgba(245, 158, 11, 0.02));
+            border-left-color: var(--warning);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+        
+        .time-slot.recess .time-slot-info {
+            margin-bottom: 0;
+        }
+        
+        .time-slot .time {
+            font-weight: 800;
+            color: var(--primary-cyan);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 0.75rem;
+            background: linear-gradient(135deg, rgba(0, 188, 212, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
+            border-radius: 8px;
+            letter-spacing: 0.03em;
+            white-space: nowrap;
+        }
+        
+        .time-slot .time::before {
+            content: '🕐';
+            font-size: 0.95rem;
+        }
+        
+        .time-slot .subject {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--navy-dark);
+            min-width: 0;
+        }
+        
+        .time-slot .class-name {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: var(--bg);
+            padding: 0.375rem 0.75rem;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        
+        .btn-mark {
+            padding: 0.75rem 1.25rem;
+            font-size: 0.875rem;
+            background: linear-gradient(135deg, var(--primary-cyan) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 3px 12px rgba(0, 188, 212, 0.35);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            width: 100%;
+        }
+        
+        .btn-mark::before {
+            content: '✓';
+            font-size: 1.1rem;
+            font-weight: 900;
+        }
+        
+        .btn-mark:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 188, 212, 0.5);
+            background: linear-gradient(135deg, var(--navy-dark) 0%, var(--primary-cyan) 100%);
+        }
+        
+        .btn-mark:active {
+            transform: translateY(0);
+        }
+
+        /* ─── ATTENDANCE METHOD MODAL ─── */
+        .method-modal-overlay {
+            display:none; position:fixed; inset:0;
+            background:rgba(0,0,0,.5); z-index:500;
+            align-items:center; justify-content:center;
+        }
+        .method-modal-overlay.show { display:flex; }
+        .method-modal {
+            background:white; border-radius:16px;
+            padding:2rem; max-width:460px; width:90%;
+            box-shadow: var(--shadow-lg); animation: slideUp .25s ease;
+        }
+        @keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+        @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        .method-modal h3 {
+            font-size:1.15rem; font-weight:700; margin-bottom:.5rem;
+        }
+        .method-modal .subject-badge {
+            display:inline-flex; align-items:center; gap:.375rem;
+            background: linear-gradient(135deg,var(--primary-cyan),#7c3aed);
+            color:white; padding:.375rem .875rem;
+            border-radius:20px; font-size:.8rem; font-weight:600; margin-bottom:1.25rem;
+        }
+        .method-cards { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+        .method-card {
+            border:2px solid var(--border); border-radius:12px;
+            padding:1.25rem; text-align:center; cursor:pointer;
+            transition:all .2s; background:var(--bg);
+        }
+        .method-card:hover { border-color:var(--primary-cyan); background:rgba(0, 188, 212,.04); transform:translateY(-2px); }
+        .method-card .method-icon {
+            width:52px; height:52px; border-radius:12px;
+            display:flex; align-items:center; justify-content:center;
+            margin:0 auto .75rem; font-size:1.5rem;
+        }
+        .method-card.qr .method-icon { background:linear-gradient(135deg,rgba(0, 188, 212,.15),rgba(124,58,237,.15)); }
+        .method-card.code .method-icon { background:linear-gradient(135deg,rgba(6,182,212,.15),rgba(16,185,129,.15)); }
+        .method-card h4 { font-size:.9rem; font-weight:700; margin-bottom:.375rem; }
+        .method-card p { font-size:.75rem; color:var(--text-muted); }
+        .method-modal-close {
+            position:absolute; top:1rem; right:1rem;
+            background:none; border:none; cursor:pointer;
+            color:var(--text-muted); font-size:1.5rem; line-height:1;
+        }
+
+        /* ─── QR SCANNER PANEL ─── */
+        .scanner-panel {
+            display:none; background:var(--surface);
+            border-radius:var(--radius); box-shadow:var(--shadow-md);
+            border:1px solid var(--border); overflow:hidden; margin-top:1rem;
+        }
+        .scanner-panel.show { display:block; }
+        .scanner-panel-header {
+            background: linear-gradient(135deg,var(--primary-cyan),#7c3aed);
+            color:white; padding:1rem 1.25rem;
+            display:flex; align-items:center; justify-content:space-between;
+        }
+        .scanner-panel-header h3 { font-size:1rem; font-weight:700; }
+        .current-subject-chip {
+            background:rgba(255,255,255,.2); padding:.25rem .75rem;
+            border-radius:20px; font-size:.8rem; font-weight:600;
+        }
+        .scanner-body { padding:1.25rem; }
+        .camera-wrap { position:relative; text-align:center; }
+        #qrVideo {
+            border-radius:10px; max-width:340px; width:100%;
+            box-shadow:var(--shadow-md);
+        }
+        #qrCanvas { display:none; }
+        .scanner-overlay {
+            position:absolute; top:50%; left:50%;
+            transform:translate(-50%,-50%);
+            width:160px; height:160px; pointer-events:none;
+        }
+        .scanner-overlay::before, .scanner-overlay::after {
+            content:''; position:absolute;
+            width:30px; height:30px;
+            border:3px solid var(--primary-cyan);
+        }
+        .scanner-overlay::before { top:0; left:0; border-right:none; border-bottom:none; border-radius:4px 0 0 0; }
+        .scanner-overlay::after { bottom:0; right:0; border-left:none; border-top:none; border-radius:0 0 4px 0; }
+        .scan-controls { display:flex; gap:.75rem; justify-content:center; margin-top:1rem; flex-wrap:wrap; }
+        .btn-start { background:linear-gradient(135deg,var(--success),#059669); color:white; border:none; padding:.625rem 1.5rem; border-radius:8px; cursor:pointer; font-weight:600; font-size:.875rem; transition:all .2s; }
+        .btn-stop { background:linear-gradient(135deg,var(--danger),#dc2626); color:white; border:none; padding:.625rem 1.5rem; border-radius:8px; cursor:pointer; font-weight:600; font-size:.875rem; transition:all .2s; display:none; }
+        .btn-start:hover, .btn-stop:hover { transform:translateY(-1px); box-shadow:var(--shadow-sm); }
+
+        /* Live scan counter */
+        .scan-counter {
+            display:flex; align-items:center; justify-content:center; gap:.75rem;
+            margin:.75rem 0; padding:.5rem; background:var(--bg); border-radius:8px;
+        }
+        .counter-badge {
+            background:linear-gradient(135deg,var(--primary-cyan),#7c3aed);
+            color:white; padding:.25rem .75rem; border-radius:20px;
+            font-size:.8rem; font-weight:700;
+        }
+
+        /* Scanned list */
+        .scanned-list-wrap { margin-top:.75rem; max-height:220px; overflow-y:auto; }
+        .scanned-item {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:.5rem .75rem; background:rgba(16,185,129,.06);
+            border:1px solid rgba(16,185,129,.2); border-radius:8px; margin-bottom:.375rem;
+            animation: fadeIn .3s ease;
+        }
+        @keyframes fadeIn { from{opacity:0;transform:translateX(-10px)} to{opacity:1;transform:none} }
+        .scanned-item .s-name { font-weight:600; font-size:.875rem; }
+        .scanned-item .s-id { font-size:.75rem; color:var(--text-muted); }
+        .scanned-item .s-check { color:var(--success); font-size:1.1rem; }
+
+        /* ─── UNIQUE CODE PANEL ─── */
+        .code-panel {
+            display:none; background:var(--surface);
+            border-radius:var(--radius); box-shadow:var(--shadow-md);
+            border:1px solid var(--border); overflow:hidden; margin-top:1rem;
+        }
+        .code-panel.show { display:block; }
+        .code-panel-header {
+            background: linear-gradient(135deg,var(--primary-cyan),#0891b2);
+            color:white; padding:1rem 1.25rem;
+            display:flex; align-items:center; justify-content:space-between;
+        }
+        .code-panel-body { padding:1.5rem; text-align:center; }
+        .generated-code {
+            font-size:2.5rem; font-weight:900; letter-spacing:.25em;
+            font-family:'Courier New', monospace;
+            background: linear-gradient(135deg,var(--primary-cyan),#7c3aed);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+            background-clip:text; margin:1rem 0;
+        }
+        .code-info {
+            display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; margin-bottom:1rem;
+        }
+        .code-info-chip {
+            background:var(--bg); border:1px solid var(--border);
+            padding:.375rem .875rem; border-radius:20px; font-size:.8rem;
+            display:flex; align-items:center; gap:.375rem;
+        }
+        .code-timer {
+            font-size:1.5rem; font-weight:800; color:var(--warning);
+            margin:.5rem 0; font-variant-numeric:tabular-nums;
+        }
+        .code-timer.expired { color:var(--danger); }
+        .btn-regenerate {
+            background:linear-gradient(135deg,var(--primary-cyan),#0891b2);
+            color:white; border:none; padding:.625rem 1.5rem;
+            border-radius:8px; cursor:pointer; font-weight:600;
+            font-size:.875rem; margin-top:.75rem; transition:all .2s;
+        }
+        .btn-regenerate:hover { transform:translateY(-1px); }
+
+        /* Code submission list */
+        .code-submissions { margin-top:1rem; }
+        .code-submission-item {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:.5rem .75rem; background:rgba(6,182,212,.06);
+            border:1px solid rgba(6,182,212,.2); border-radius:8px; margin-bottom:.375rem;
+            animation: fadeIn .3s ease;
+        }
+
+        /* ─── GRAPH SECTION ─── */
+        .graph-controls {
+            display:flex; gap:.75rem; align-items:center; flex-wrap:wrap; margin-bottom:1.25rem;
+        }
+        .graph-controls select {
+            padding:.5rem .875rem; border:1px solid var(--border);
+            border-radius:8px; font-size:.875rem; background:white; cursor:pointer;
+        }
+        .chart-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+        
+        /* ─── RESPONSIVE ─── */
+        @media(max-width:1200px) {
+            .schedule-container { grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); }
+        }
+        
+        @media(max-width:768px) {
+            .chart-grid { grid-template-columns:1fr; }
+            .schedule-container { grid-template-columns:1fr; }
+            .time-slot-info {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            .time-slot .time { 
+                justify-content: center;
+                width: 100%;
+            }
+            .time-slot .subject {
+                text-align: center;
+            }
+            .time-slot .class-name {
+                text-align: center;
+                margin: 0 auto;
+            }
+            .btn-mark {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        
+        @media(max-width:480px) {
+            .day-schedule h3 { 
+                font-size: 0.9rem; 
+                padding: 1rem;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .day-schedule h3::after {
+                margin-left: 0;
+            }
+            .time-slot { padding: 0.875rem; }
+            .time-slot .subject { font-size: 0.85rem; }
+            .btn-mark { font-size: 0.75rem; padding: 0.5rem 0.875rem; }
+        }
+        .chart-card {
+            background:var(--surface); border-radius:var(--radius);
+            box-shadow:var(--shadow-sm); border:1px solid var(--border);
+            padding:1.25rem;
+        }
+        .chart-card h4 { font-size:.9rem; font-weight:700; margin-bottom:1rem; color:var(--text-muted); }
+        .chart-wrap { position:relative; height:220px; }
+
+        /* ─── STATS ROW ─── */
+        .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:.875rem; margin-bottom:1.25rem; }
+        .stat-card {
+            background:var(--surface); border-radius:var(--radius);
+            padding:1rem; box-shadow:var(--shadow-sm); border:1px solid var(--border);
+            text-align:center;
+        }
+        .stat-value { font-size:1.75rem; font-weight:800; color:var(--primary-cyan); }
+        .stat-label { font-size:.75rem; color:var(--text-muted); margin-top:.25rem; }
+
+        /* ─── TABLE ─── */
+        .table-wrap { overflow-x:auto; }
+        table { width:100%; border-collapse:collapse; font-size:.875rem; }
+        thead { background:var(--bg); }
+        th, td { padding:.75rem 1rem; text-align:left; border-bottom:1px solid var(--border); }
+        th { font-weight:700; color:var(--text-muted); font-size:.8rem; text-transform:uppercase; letter-spacing:.05em; }
+        tbody tr:hover { background:var(--bg); }
+        .badge {
+            display:inline-block; padding:.2rem .6rem; border-radius:20px;
+            font-size:.75rem; font-weight:600;
+        }
+        .badge-present { background:rgba(16,185,129,.12); color:var(--success); }
+        .badge-absent { background:rgba(239,68,68,.12); color:var(--danger); }
+        .badge-warn { background:rgba(245,158,11,.12); color:var(--warning); }
+
+        /* ─── SEARCH BOX ─── */
+        .search-row { display:flex; gap:.75rem; flex-wrap:wrap; margin-bottom:1rem; }
+        .search-row input {
+            flex:1; min-width:220px; padding:.625rem .875rem;
+            border:1px solid var(--border); border-radius:8px; font-size:.875rem;
+        }
+        .search-row input:focus { outline:none; border-color:var(--primary-cyan); box-shadow:0 0 0 3px rgba(0, 188, 212,.1); }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-dark));
+            color:white; border:none; padding:.625rem 1.25rem;
+            border-radius:8px; cursor:pointer; font-weight:600; font-size:.875rem;
+            transition:all .2s;
+        }
+        .btn-primary:hover { transform:translateY(-1px); box-shadow:0 3px 8px rgba(0, 188, 212,.3); }
+
+        /* ─── MODALS ─── */
+        .modal {
+            display:none; position:fixed; inset:0;
+            background:rgba(0,0,0,.5); z-index:600;
+            align-items:center; justify-content:center;
+        }
+        .modal.show { display:flex; }
+        .modal-content {
+            background:white; border-radius:16px; padding:1.75rem;
+            max-width:480px; width:90%; box-shadow:var(--shadow-lg);
+            animation:slideUp .25s ease; position:relative; max-height:90vh; overflow-y:auto;
+        }
+        .modal-content h2 { font-size:1.1rem; font-weight:700; margin-bottom:1.25rem; }
+        .close { position:absolute; top:1rem; right:1rem; background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:1.5rem; line-height:1; }
+        .input-group { margin-bottom:1rem; }
+        .input-group label { display:block; font-size:.8rem; font-weight:700; margin-bottom:.375rem; color:var(--text-muted); }
+        .input-group input, .input-group select, .input-group textarea {
+            width:100%; padding:.625rem .875rem; border:1px solid var(--border);
+            border-radius:8px; font-size:.875rem;
+        }
+        .input-group input:focus, .input-group select:focus { outline:none; border-color:var(--primary-cyan); }
+
+        /* ─── NOTIFICATIONS ─── */
+        #toast {
+            position:fixed; bottom:1.5rem; right:1.5rem;
+            background:white; border-radius:10px; box-shadow:var(--shadow-lg);
+            padding:.875rem 1.25rem; min-width:280px; z-index:900;
+            display:none; align-items:center; gap:.875rem;
+            border-left:4px solid var(--success); animation:slideUp .3s ease;
+        }
+        #toast.show { display:flex; }
+        #toast.error { border-left-color:var(--danger); }
+        #toast .toast-icon { font-size:1.25rem; }
+        #toast .toast-text { font-size:.875rem; font-weight:600; }
+
+        /* Live scanning pulse */
+        .live-indicator {
+            display:inline-flex; align-items:center; gap:.375rem;
+            background:rgba(16,185,129,.1); color:var(--success);
+            padding:.25rem .75rem; border-radius:20px; font-size:.8rem; font-weight:700;
+        }
+        .live-dot {
+            width:8px; height:8px; background:var(--success); border-radius:50%;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%,100%{opacity:1;transform:scale(1)}
+            50%{opacity:.5;transform:scale(1.3)}
+        }
+
+        /* close button for panels */
+        .panel-close {
+            background:rgba(255,255,255,.2); border:none; color:white;
+            width:28px; height:28px; border-radius:50%; cursor:pointer;
+            display:flex; align-items:center; justify-content:center; font-size:1rem;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ─── NAVBAR ─── -->
+<nav class="navbar">
+    <div class="nav-brand">
+        <div class="logo-icon">A</div>
+        <h1>Attendify</h1>
+        <span class="teacher-chip">Teacher</span>
+    </div>
+    <div class="nav-right">
+        <button onclick="logout()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.35);color:white;padding:.4rem .9rem;border-radius:8px;cursor:pointer;font-size:.8rem;font-weight:600;display:flex;align-items:center;gap:.4rem;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.25)'" onmouseout="this.style.background='rgba(255,255,255,.15)'">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Logout
+        </button>
+        <div class="profile-dropdown">
+            <button class="profile-btn" onclick="toggleProfileMenu()">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+            </button>
+            <div class="profile-menu" id="profileMenu">
+                <a href="#" id="profileName" style="font-weight:700;pointer-events:none">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                    Loading…
+                </a>
+                <div class="divider"></div>
+                <a href="#" onclick="showChangePassword()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    Change Password
+                </a>
+                <a href="#" onclick="logout()" style="color:#ef4444">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    Logout
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ─── MAIN ─── -->
+<div class="dashboard-container">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <ul class="sidebar-menu">
+            <li class="active" onclick="showSection('schedule',this)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                My Schedule
+            </li>
+            <li onclick="showSection('markAttendance',this)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 5-5"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                Mark Attendance
+            </li>
+            <li onclick="showSection('eventAttendance',this)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Event Attendance
+            </li>
+            <li onclick="showSection('analytics',this)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Analytics
+            </li>
+            <li onclick="showSection('viewEdit',this)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>
+                View & Edit
+            </li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+
+        <!-- ════ SCHEDULE SECTION ════ -->
+        <div id="scheduleSection" class="content-section active">
+            <div class="section-title">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                My Weekly Schedule
+            </div>
+            <div class="schedule-container" id="scheduleContainer">
+                <!-- Days will be rendered by JS -->
+            </div>
+        </div>
+
+        <!-- ════ MARK ATTENDANCE SECTION ════ -->
+        <div id="markAttendanceSection" class="content-section">
+            <div class="section-title">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 5-5"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                Mark Attendance
+            </div>
+            <div class="card" style="text-align:center;padding:2rem" id="methodPickCard">
+                <p style="color:var(--text-muted);font-size:.9rem">Select a subject from <strong>My Schedule</strong> to start marking attendance, or choose here:</p>
+                <div style="margin-top:1rem">
+                    <select id="manualSubjectSelect" style="padding:.625rem 1rem;border:1px solid var(--border);border-radius:8px;font-size:.875rem;margin-right:.5rem">
+                        <option value="">-- Select Subject --</option>
+                        <option value="C Programming|CS101">C Programming (CS101)</option>
+                        <option value="Java Programming|CS201">Java Programming (CS201)</option>
+                        <option value="Python Programming|CS301">Python Programming (CS301)</option>
+                        <option value="Data Structures|CS102">Data Structures (CS102)</option>
+                        <option value="Web Development|CS303">Web Development (CS303)</option>
+                        <option value="SQL Database|CS202">SQL Database (CS202)</option>
+                        <option value="Operating Systems|CS203">Operating Systems (CS203)</option>
+                        <option value="Machine Learning|CS402">Machine Learning (CS402)</option>
+                    </select>
+                    <button class="btn-primary" onclick="(function(){const v=document.getElementById('manualSubjectSelect').value;if(!v){showToast('Please select a subject','error');return;}const[name,code]=v.split('|');launchMethodModal(name,code);})()">Continue →</button>
+                </div>
+            </div>
+
+            <!-- QR Scanner Panel -->
+            <div class="scanner-panel" id="qrScannerPanel">
+                <div class="scanner-panel-header">
+                    <div>
+                        <h3>📷 QR Code Scanner</h3>
+                        <div class="current-subject-chip" id="qrSubjectLabel">Subject</div>
+                    </div>
+                    <button class="panel-close" onclick="closeQRPanel()">✕</button>
+                </div>
+                <div class="scanner-body">
+                    <div class="camera-wrap">
+                        <video id="qrVideo" autoplay playsinline></video>
+                        <canvas id="qrCanvas"></canvas>
+                        <div class="scanner-overlay"></div>
+                    </div>
+                    <div class="scan-counter">
+                        <span id="liveIndicator" class="live-indicator" style="display:none">
+                            <span class="live-dot"></span> LIVE
+                        </span>
+                        <span class="counter-badge" id="scanCountBadge">0 Scanned</span>
+                        <span style="font-size:.8rem;color:var(--text-muted)" id="scanDate"></span>
+                    </div>
+                    <div class="scan-controls">
+                        <button class="btn-start" id="startScanBtn" onclick="startQRScanner()">▶ Start Camera</button>
+                        <button class="btn-stop" id="stopScanBtn" onclick="stopQRScanner()">⬛ Stop & Save</button>
+                    </div>
+                    <div class="scanned-list-wrap" id="scannedList"></div>
+                </div>
+            </div>
+
+            <!-- Unique Code Panel -->
+            <div class="code-panel" id="uniqueCodePanel">
+                <div class="code-panel-header">
+                    <div>
+                        <h3>🔑 Unique Code Attendance</h3>
+                        <div class="current-subject-chip" id="codeSubjectLabel">Subject</div>
+                    </div>
+                    <button class="panel-close" onclick="closeCodePanel()">✕</button>
+                </div>
+                <div class="code-panel-body">
+                    <p style="color:var(--text-muted);font-size:.875rem;margin-bottom:.5rem">Share this code with students. It expires in <strong>15 seconds</strong>.</p>
+                    <div class="generated-code" id="generatedCode">------</div>
+                    <div class="code-info">
+                        <div class="code-info-chip">📅 <span id="codeDate"></span></div>
+                        <div class="code-info-chip">⏰ <span id="codeTime"></span></div>
+                        <div class="code-info-chip">👤 Teacher: <span id="codeTeacher"></span></div>
+                    </div>
+                    <div class="code-timer" id="codeTimer">00:15</div>
+                    <button class="btn-regenerate" onclick="generateUniqueCode()">🔄 Regenerate Code</button>
+                    <div class="code-submissions" id="codeSubmissions">
+                        <h4 style="text-align:left;font-size:.875rem;margin-bottom:.5rem;color:var(--text-muted)">✅ Submitted Students</h4>
+                        <div id="submissionList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════ EVENT ATTENDANCE ════ -->
+        <div id="eventAttendanceSection" class="content-section">
+            <div class="section-title">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Event Attendance
+            </div>
+            <div class="card">
+                <div class="input-group">
+                    <label>Event Name</label>
+                    <input type="text" id="eventName" placeholder="e.g. Annual Tech Fest 2025">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+                    <div class="input-group">
+                        <label>Date</label>
+                        <input type="date" id="eventDate">
+                    </div>
+                    <div class="input-group">
+                        <label>Time</label>
+                        <input type="time" id="eventTime">
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="startEventScanning()">▶ Start QR Scanning</button>
+            </div>
+            <div class="scanner-panel" id="eventScannerPanel">
+                <div class="scanner-panel-header">
+                    <div>
+                        <h3>📷 Event QR Scanner</h3>
+                        <div class="current-subject-chip" id="eventNameLabel">Event</div>
+                    </div>
+                    <button class="panel-close" onclick="stopEventScanner()">✕ Stop</button>
+                </div>
+                <div class="scanner-body">
+                    <div class="camera-wrap">
+                        <video id="eventQrVideo" autoplay playsinline style="max-width:340px;width:100%;border-radius:10px"></video>
+                        <canvas id="eventQrCanvas" style="display:none"></canvas>
+                    </div>
+                    <div class="scan-counter">
+                        <span class="live-indicator"><span class="live-dot"></span> LIVE</span>
+                        <span class="counter-badge" id="eventScanCount">0 Scanned</span>
+                    </div>
+                    <div class="scanned-list-wrap" id="eventScannedList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════ ANALYTICS SECTION ════ -->
+        <div id="analyticsSection" class="content-section">
+            <div class="section-title">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Attendance Analytics
+            </div>
+            
+            <!-- Student Search Section -->
+            <div class="card" style="margin-bottom:1.5rem;background:linear-gradient(135deg, rgba(0, 188, 212, 0.05) 0%, rgba(124, 58, 237, 0.05) 100%)">
+                <h4 style="font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;color:var(--navy-dark)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    Search Student Attendance
+                </h4>
+                <div class="search-row" style="margin-bottom:0">
+                    <input type="text" id="studentSearchAnalytics" placeholder="Enter Student Name or Registration ID" style="flex:2">
+                    <button class="btn-primary" onclick="searchStudentAttendance()" style="display:flex;align-items:center;gap:.5rem">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                        Search
+                    </button>
+                </div>
+                <div id="studentAttendanceResult" style="margin-top:1rem;display:none">
+                    <!-- Results will be shown here -->
+                </div>
+            </div>
+            
+            <!-- Class Analytics Section -->
+            <div class="graph-controls">
+                <select id="graphSubjectFilter" onchange="refreshCharts()">
+                    <option value="all">All Subjects</option>
+                    <option>C Programming</option><option>Java</option><option>Python</option>
+                    <option>SQL</option><option>Cyber Security</option>
+                </select>
+                <select id="graphRange" onchange="refreshCharts()">
+                    <option value="week">This Week</option>
+                    <option value="2week">Last 2 Weeks</option>
+                    <option value="month">This Month</option>
+                </select>
+                <select id="graphClass" onchange="refreshCharts()">
+                    <option value="all">All Classes</option>
+                    <option>CSE-2A</option><option>CSE-2B</option><option>CSE-2C</option>
+                    <option>CSE-3A</option><option>CSE-3B</option>
+                </select>
+            </div>
+            <div class="stats-row" id="analyticsStats"></div>
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <h4>📈 Daily Attendance Trend (Line)</h4>
+                    <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h4>🔵 Present vs Absent (Scatter)</h4>
+                    <div class="chart-wrap"><canvas id="scatterChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h4>📊 Subject-wise Attendance</h4>
+                    <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h4>🍩 Attendance Distribution</h4>
+                    <div class="chart-wrap"><canvas id="doughnutChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════ VIEW & EDIT SECTION ════ -->
+        <div id="viewEditSection" class="content-section">
+            <div class="section-title">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>
+                View & Edit Attendance
+            </div>
+            <div class="card">
+                <div class="search-row">
+                    <input type="text" id="studentSearchEdit" placeholder="Enter Registration ID or Name">
+                    <button class="btn-primary" onclick="searchStudentForEdit()">🔍 Search</button>
+                </div>
+            </div>
+            <div id="studentEditResults" style="display:none;margin-top:1rem"></div>
+        </div>
+
+    </div><!-- /main-content -->
+</div><!-- /dashboard-container -->
+
+<!-- ════ ATTENDANCE METHOD MODAL ════ -->
+<div class="method-modal-overlay" id="methodModal">
+    <div class="method-modal" style="position:relative">
+        <button class="method-modal-close" onclick="closeMethodModal()">✕</button>
+        <h3>Mark Attendance</h3>
+        <div class="subject-badge" id="methodSubjectBadge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            Subject Name
+        </div>
+        <div class="method-cards">
+            <div class="method-card qr" onclick="selectMethod('qr')">
+                <div class="method-icon">📷</div>
+                <h4>QR Code Scan</h4>
+                <p>Scan student QR codes with camera. Auto-marks attendance instantly.</p>
+            </div>
+            <div class="method-card code" onclick="selectMethod('code')">
+                <div class="method-icon">🔑</div>
+                <h4>Unique Code</h4>
+                <p>Generate a random code. Students enter it to mark themselves present.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════ CHANGE PASSWORD MODAL ════ -->
+<div class="modal" id="changePasswordModal">
+    <div class="modal-content">
+        <button class="close" onclick="closeChangePassword()">✕</button>
+        <h2>🔒 Change Password</h2>
+        <form onsubmit="submitPasswordChange(event)">
+            <div class="input-group">
+                <label>New Password</label>
+                <input type="password" id="newPassword" required minlength="6" placeholder="Minimum 6 characters">
+            </div>
+            <div class="input-group">
+                <label>Confirm Password</label>
+                <input type="password" id="confirmPassword" required placeholder="Repeat new password">
+            </div>
+            <button type="submit" class="btn-primary" style="width:100%;margin-top:.5rem">Update Password</button>
+        </form>
+    </div>
+</div>
+
+<!-- ════ UPDATE ATTENDANCE MODAL ════ -->
+<div class="modal" id="updateAttendanceModal">
+    <div class="modal-content">
+        <button class="close" onclick="closeUpdateModal()">✕</button>
+        <h2>✏️ Update Attendance</h2>
+        <form onsubmit="submitAttendanceUpdate(event)">
+            <div class="input-group"><label>Date</label><input type="date" id="updateDate" required></div>
+            <div class="input-group">
+                <label>Status</label>
+                <select id="updateStatus" required>
+                    <option value="present">Present</option>
+                    <option value="absent">Absent</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Medical Certificate / Proof (optional)</label>
+                <input type="file" id="proofDocument" accept=".pdf,.jpg,.jpeg,.png">
+            </div>
+            <button type="submit" class="btn-primary" style="width:100%;margin-top:.5rem">Update Attendance</button>
+        </form>
+    </div>
+</div>
+
+<!-- ════ TOAST ════ -->
+<div id="toast">
+    <span class="toast-icon" id="toastIcon">✅</span>
+    <span class="toast-text" id="toastText">Success</span>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+// ══════════════════════════════════════════
+//  TEACHER DASHBOARD - FULL JAVASCRIPT
+// ══════════════════════════════════════════
+
+// Simulated teacher info (in production, from PHP session)
+const TEACHER = {
+    name: sessionStorage.getItem('teacherName') || 'John Doe',
+    id: sessionStorage.getItem('teacherId') || 'TCH001',
+    dept: sessionStorage.getItem('teacherDept') || 'CSE'
+};
+
+// ─── INIT ───
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('profileName').textContent = TEACHER.name;
+    renderSchedule();
+    document.getElementById('scanDate').textContent = new Date().toLocaleDateString('en-IN');
+    document.getElementById('codeDate').textContent = new Date().toLocaleDateString('en-IN');
+    document.getElementById('codeTeacher').textContent = TEACHER.name.split(' ')[0];
+});
+
+// ─── NAV ───
+function toggleProfileMenu() {
+    document.getElementById('profileMenu').classList.toggle('show');
+}
+document.addEventListener('click', e => {
+    const pd = document.querySelector('.profile-dropdown');
+    if (pd && !pd.contains(e.target)) document.getElementById('profileMenu').classList.remove('show');
+});
+
+function showSection(name, el) {
+    document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.sidebar-menu li').forEach(i => i.classList.remove('active'));
+    document.getElementById(name + 'Section').classList.add('active');
+    if (el) el.classList.add('active');
+    if (name === 'analytics') setTimeout(renderCharts, 100);
+}
+
+// ─── SUBJECT MASTER (name → code mapping) ───
+const SUBJECT_MAP = {
+    'C Programming':           {code:'CS101', dept:'CSE'},
+    'Java Programming':        {code:'CS201', dept:'CSE'},
+    'Python Programming':      {code:'CS301', dept:'CSE'},
+    'SQL Database':            {code:'CS202', dept:'CSE'},
+    'Cyber Security':          {code:'CS401', dept:'CSE'},
+    'Internet and Computing (ICI)': {code:'CS302', dept:'CSE'},
+    'Data Structures':         {code:'CS102', dept:'CSE'},
+    'Web Development':         {code:'CS303', dept:'CSE'},
+    'Machine Learning':        {code:'CS402', dept:'CSE'},
+    'Operating Systems':       {code:'CS203', dept:'CSE'},
+    'Account and Accountancy': {code:'ACC101', dept:'COMMERCE'},
+    'Sales Management':        {code:'SMG201', dept:'COMMERCE'},
+    'Finance':                 {code:'FIN301', dept:'COMMERCE'},
+    'Marketing':               {code:'MKT201', dept:'COMMERCE'},
+    'Engineering Mathematics': {code:'ME101',  dept:'ME'},
+    'Thermodynamics':          {code:'ME201',  dept:'ME'},
+    'Digital Electronics':     {code:'ECE101', dept:'ECE'},
+    'Signal Processing':       {code:'ECE201', dept:'ECE'},
+    'Communication Systems':   {code:'ECE202', dept:'ECE'},
+};
+function subjectLabel(name) {
+    const info = SUBJECT_MAP[name];
+    return info ? `${name} <span style="font-size:.72rem;font-weight:700;color:var(--primary-cyan);background:rgba(0, 188, 212,.1);padding:.1rem .45rem;border-radius:6px;margin-left:.35rem">${info.code}</span>` : name;
+}
+
+// ─── SCHEDULE DATA ───
+const SCHEDULE_DATA = {
+    Monday: [
+        {time:'10:00 - 11:00', subject:'C Programming',           code:'CS101',  cls:'CSE-2A'},
+        {time:'11:00 - 12:00', subject:'Account and Accountancy', code:'ACC101', cls:'MGMT-1A'},
+        {time:'12:00 - 12:30', subject:'RECESS', cls:'', recess:true},
+        {time:'12:30 - 01:30', subject:'Java Programming',        code:'CS201',  cls:'CSE-2B'},
+        {time:'01:30 - 02:30', subject:'Sales Management',        code:'SMG201', cls:'MGMT-2A'},
+    ],
+    Tuesday: [
+        {time:'10:00 - 11:00', subject:'Python Programming',      code:'CS301',  cls:'CSE-3A'},
+        {time:'11:00 - 12:00', subject:'Finance',                 code:'FIN301', cls:'MGMT-2B'},
+        {time:'12:00 - 12:30', subject:'RECESS', cls:'', recess:true},
+        {time:'12:30 - 01:30', subject:'SQL Database',            code:'CS202',  cls:'CSE-2C'},
+        {time:'01:30 - 02:30', subject:'Marketing',               code:'MKT201', cls:'MGMT-1B'},
+    ],
+    Wednesday: [
+        {time:'10:00 - 11:00', subject:'Cyber Security',          code:'CS401',  cls:'CSE-4A'},
+        {time:'11:00 - 12:00', subject:'C Programming',           code:'CS101',  cls:'CSE-2A'},
+        {time:'12:00 - 12:30', subject:'RECESS', cls:'', recess:true},
+        {time:'12:30 - 01:30', subject:'Internet and Computing (ICI)', code:'CS302', cls:'CSE-3B'},
+        {time:'01:30 - 02:30', subject:'Finance',                 code:'FIN301', cls:'MGMT-2B'},
+    ],
+    Thursday: [
+        {time:'10:00 - 11:00', subject:'Java Programming',        code:'CS201',  cls:'CSE-2B'},
+        {time:'11:00 - 12:00', subject:'SQL Database',            code:'CS202',  cls:'CSE-2C'},
+        {time:'12:00 - 12:30', subject:'RECESS', cls:'', recess:true},
+        {time:'12:30 - 01:30', subject:'Account and Accountancy', code:'ACC101', cls:'MGMT-1A'},
+        {time:'01:30 - 02:30', subject:'Cyber Security',          code:'CS401',  cls:'CSE-4A'},
+    ],
+    Friday: [
+        {time:'10:00 - 11:00', subject:'Python Programming',      code:'CS301',  cls:'CSE-3A'},
+        {time:'11:00 - 12:00', subject:'Sales Management',        code:'SMG201', cls:'MGMT-2A'},
+        {time:'12:00 - 12:30', subject:'RECESS', cls:'', recess:true},
+        {time:'12:30 - 01:30', subject:'Marketing',               code:'MKT201', cls:'MGMT-1B'},
+        {time:'01:30 - 02:30', subject:'Internet and Computing (ICI)', code:'CS302', cls:'CSE-3B'},
+    ]
+};
+
+function renderSchedule() {
+    const container = document.getElementById('scheduleContainer');
+    container.innerHTML = '';
+    Object.entries(SCHEDULE_DATA).forEach(([day, slots]) => {
+        const classCount = slots.filter(s => !s.recess).length;
+        const div = document.createElement('div');
+        div.className = 'day-schedule card';
+        div.innerHTML = `<h3 data-count="${classCount} Classes">${day}</h3><div class="schedule-slots">` +
+            slots.map(s => s.recess
+                ? `<div class="time-slot recess">
+                    <div class="time-slot-info">
+                        <span class="time" style="background:rgba(245,158,11,0.15);color:var(--warning)">${s.time}</span>
+                        <span class="subject" style="color:var(--warning);font-weight:700">🍽️ RECESS BREAK</span>
+                    </div>
+                   </div>`
+                : `<div class="time-slot">
+                    <div class="time-slot-info">
+                        <span class="time">${s.time}</span>
+                        <span class="subject">${subjectLabel(s.subject)}</span>
+                        <span class="class-name">${s.cls}</span>
+                    </div>
+                    <button class="btn-mark" onclick="markAttendanceForClass('${s.subject}','${s.code}','${day}','${s.time}')">Mark Attendance</button>
+                   </div>`
+            ).join('') + '</div>';
+        container.appendChild(div);
+    });
+}
+
+// ─── MARK ATTENDANCE FLOW ───
+let currentSubject = '';
+let currentSubjectCode = '';
+
+function markAttendanceForClass(subject, code, day, time) {
+    currentSubject = subject;
+    currentSubjectCode = code;
+    document.querySelectorAll('.sidebar-menu li').forEach(i => i.classList.remove('active'));
+    document.querySelector('.sidebar-menu li:nth-child(2)').classList.add('active');
+    showSection('markAttendance', null);
+    launchMethodModal(subject, code);
+}
+
+function launchMethodModal(subject, code) {
+    if (!subject) { showToast('Please select a subject first', true); return; }
+    currentSubject = subject;
+    currentSubjectCode = code || (SUBJECT_MAP[subject]?.code || '');
+    document.getElementById('methodSubjectBadge').innerHTML =
+        `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> ${subject} <span style="font-size:.7rem;opacity:.85;letter-spacing:.04em">[${currentSubjectCode}]</span>`;
+    document.getElementById('methodModal').classList.add('show');
+}
+
+function closeMethodModal() {
+    document.getElementById('methodModal').classList.remove('show');
+}
+
+function selectMethod(method) {
+    closeMethodModal();
+    const label = `${currentSubject} [${currentSubjectCode}]`;
+    if (method === 'qr') {
+        document.getElementById('uniqueCodePanel').classList.remove('show');
+        document.getElementById('qrSubjectLabel').textContent = label;
+        document.getElementById('qrScannerPanel').classList.add('show');
+    } else {
+        document.getElementById('qrScannerPanel').classList.remove('show');
+        document.getElementById('codeSubjectLabel').textContent = label;
+        document.getElementById('codeTime').textContent = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+        document.getElementById('uniqueCodePanel').classList.add('show');
+        generateUniqueCode();
+    }
+}
+
+function closeQRPanel() {
+    stopQRScanner();
+    document.getElementById('qrScannerPanel').classList.remove('show');
+}
+function closeCodePanel() {
+    clearInterval(codeTimerInterval);
+    document.getElementById('uniqueCodePanel').classList.remove('show');
+}
+
+// ─── QR SCANNER ───
+let scannerStream = null, scanInterval = null;
+let scannedStudents = []; // {id, name}
+
+function startQRScanner() {
+    const video = document.getElementById('qrVideo');
+    scannedStudents = [];
+    document.getElementById('scannedList').innerHTML = '';
+    document.getElementById('scanCountBadge').textContent = '0 Scanned';
+
+    navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:640},height:{ideal:480}}})
+    .then(stream => {
+        scannerStream = stream;
+        video.srcObject = stream;
+        video.play();
+        document.getElementById('startScanBtn').style.display = 'none';
+        document.getElementById('stopScanBtn').style.display = 'inline-flex';
+        document.getElementById('liveIndicator').style.display = 'inline-flex';
+
+        const canvas = document.getElementById('qrCanvas');
+        const ctx = canvas.getContext('2d');
+        scanInterval = setInterval(() => {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0);
+                if (typeof jsQR !== 'undefined') {
+                    const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(img.data, img.width, img.height);
+                    if (code) processQRCode(code.data);
+                }
+            }
+        }, 200);
+    })
+    .catch(err => {
+        console.error(err);
+        // Demo mode: simulate scans every 2s
+        document.getElementById('startScanBtn').style.display = 'none';
+        document.getElementById('stopScanBtn').style.display = 'inline-flex';
+        document.getElementById('liveIndicator').style.display = 'inline-flex';
+        showToast('Camera unavailable – demo simulation active');
+        simulateDemoScans();
+    });
+}
+
+function simulateDemoScans() {
+    const demoStudents = [
+        {id:'25CSECSE1001', name:'Alice Johnson'},
+        {id:'25CSECSE1002', name:'Bob Smith'},
+        {id:'25CSECSE1003', name:'Charlie Brown'},
+        {id:'25CSECSE1004', name:'Diana Prince'},
+    ];
+    let i = 0;
+    scanInterval = setInterval(() => {
+        if (i < demoStudents.length) {
+            processQRCodeWithInfo(demoStudents[i].id, demoStudents[i].name);
+            i++;
+        } else clearInterval(scanInterval);
+    }, 1500);
+}
+
+function processQRCode(qrData) {
+    if (scannedStudents.find(s => s.id === qrData)) return;
+    // In production: fetch student name from server
+    processQRCodeWithInfo(qrData, 'Student ' + qrData.slice(-4));
+}
+
+function processQRCodeWithInfo(id, name) {
+    if (scannedStudents.find(s => s.id === id)) return;
+    scannedStudents.push({id, name});
+    playBeep();
+
+    const el = document.createElement('div');
+    el.className = 'scanned-item';
+    el.innerHTML = `
+        <div>
+            <div class="s-name">${name}</div>
+            <div class="s-id">${id}</div>
+        </div>
+        <span class="s-check">✅</span>
+    `;
+    document.getElementById('scannedList').prepend(el);
+    document.getElementById('scanCountBadge').textContent = scannedStudents.length + ' Scanned';
+}
+
+function stopQRScanner() {
+    if (scannerStream) { scannerStream.getTracks().forEach(t => t.stop()); scannerStream = null; }
+    if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
+    document.getElementById('qrVideo').srcObject = null;
+    document.getElementById('startScanBtn').style.display = 'inline-flex';
+    document.getElementById('stopScanBtn').style.display = 'none';
+    document.getElementById('liveIndicator').style.display = 'none';
+    if (scannedStudents.length > 0) saveAttendance();
+}
+
+function saveAttendance() {
+    fetch('save_attendance.php', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+            subject: currentSubject,
+            students: scannedStudents.map(s => s.id),
+            date: new Date().toISOString().split('T')[0]
+        })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) showToast(`✅ Attendance saved for ${scannedStudents.length} students`);
+        else showToast('Failed to save attendance', true);
+    })
+    .catch(() => showToast(`✅ Demo: Saved ${scannedStudents.length} students for ${currentSubject}`));
+}
+
+// ─── UNIQUE CODE ───
+let activeCode = '', codeTimerInterval = null, codeExpiry = null;
+const codeSubmissions = [];
+
+function generateUniqueCode() {
+    clearInterval(codeTimerInterval);
+    // Generate truly random alphanumeric code (7 chars)
+    // Seeded with subject+time+teacherId for uniqueness
+    const seed = currentSubject + Date.now() + TEACHER.id + Math.random().toString(36);
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I,O,0,1 to avoid confusion
+    let code = '';
+    for (let i = 0; i < 7; i++) {
+        code += chars[Math.floor(Math.random() * chars.length)];
+    }
+    activeCode = code;
+    document.getElementById('generatedCode').textContent = code;
+    document.getElementById('codeTime').textContent = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+
+    // Start 15-second countdown
+    let seconds = 15;
+    codeExpiry = Date.now() + seconds * 1000;
+    updateCodeTimer(seconds);
+    codeTimerInterval = setInterval(() => {
+        seconds--;
+        if (seconds <= 0) {
+            clearInterval(codeTimerInterval);
+            document.getElementById('codeTimer').textContent = 'EXPIRED';
+            document.getElementById('codeTimer').classList.add('expired');
+            activeCode = '';
+        } else {
+            updateCodeTimer(seconds);
+        }
+    }, 1000);
+
+    document.getElementById('codeTimer').classList.remove('expired');
+    showToast('🔑 New code generated: ' + code);
+}
+
+function updateCodeTimer(s) {
+    const m = Math.floor(s / 60), sec = s % 60;
+    document.getElementById('codeTimer').textContent =
+        String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+}
+
+// Called by student dashboard when they submit a code
+function handleCodeSubmission(studentId, studentName, submittedCode) {
+    if (!activeCode || submittedCode.toUpperCase() !== activeCode) return false;
+    if (codeSubmissions.find(s => s.id === studentId)) return false;
+    codeSubmissions.push({id:studentId, name:studentName});
+
+    const el = document.createElement('div');
+    el.className = 'code-submission-item';
+    el.innerHTML = `
+        <div><div class="s-name">${studentName}</div><div class="s-id">${studentId}</div></div>
+        <span class="s-check">✅</span>
+    `;
+    document.getElementById('submissionList').prepend(el);
+    playBeep();
+    return true;
+}
+
+// ─── EVENT ATTENDANCE ───
+let eventStream = null, eventScanInterval = null, eventStudents = [];
+
+function startEventScanning() {
+    const eName = document.getElementById('eventName').value.trim();
+    const eDate = document.getElementById('eventDate').value;
+    const eTime = document.getElementById('eventTime').value;
+    if (!eName || !eDate || !eTime) { showToast('Please fill all event details', true); return; }
+    document.getElementById('eventNameLabel').textContent = eName;
+    eventStudents = [];
+    document.getElementById('eventScannedList').innerHTML = '';
+    document.getElementById('eventScanCount').textContent = '0 Scanned';
+    document.getElementById('eventScannerPanel').classList.add('show');
+
+    const video = document.getElementById('eventQrVideo');
+    navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
+    .then(stream => {
+        eventStream = stream;
+        video.srcObject = stream; video.play();
+        const canvas = document.getElementById('eventQrCanvas');
+        const ctx = canvas.getContext('2d');
+        eventScanInterval = setInterval(() => {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0);
+                if (typeof jsQR !== 'undefined') {
+                    const img = ctx.getImageData(0,0,canvas.width,canvas.height);
+                    const code = jsQR(img.data, img.width, img.height);
+                    if (code) processEventQR(code.data);
+                }
+            }
+        }, 200);
+    })
+    .catch(() => {
+        showToast('Camera unavailable – demo mode');
+        setTimeout(() => processEventQR('25CSECSE1001'), 1000);
+        setTimeout(() => processEventQR('25CSECSE1002'), 2500);
+    });
+}
+
+function processEventQR(id) {
+    if (eventStudents.includes(id)) return;
+    eventStudents.push(id);
+    const el = document.createElement('div');
+    el.className = 'scanned-item';
+    el.innerHTML = `<div><div class="s-name">Student</div><div class="s-id">${id}</div></div><span class="s-check">✅</span>`;
+    document.getElementById('eventScannedList').prepend(el);
+    document.getElementById('eventScanCount').textContent = eventStudents.length + ' Scanned';
+    playBeep();
+}
+
+function stopEventScanner() {
+    if (eventStream) { eventStream.getTracks().forEach(t => t.stop()); eventStream = null; }
+    if (eventScanInterval) { clearInterval(eventScanInterval); eventScanInterval = null; }
+    document.getElementById('eventQrVideo').srcObject = null;
+    document.getElementById('eventScannerPanel').classList.remove('show');
+    if (eventStudents.length > 0) {
+        fetch('save_event_attendance.php', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({
+                eventName: document.getElementById('eventName').value,
+                eventDate: document.getElementById('eventDate').value,
+                eventTime: document.getElementById('eventTime').value,
+                students: eventStudents
+            })
+        })
+        .then(r => r.json())
+        .then(d => showToast(d.success ? `✅ Event attendance saved for ${eventStudents.length}` : 'Failed'))
+        .catch(() => showToast(`✅ Demo: Event saved for ${eventStudents.length} students`));
+    }
+}
+
+// ─── ANALYTICS / CHARTS ───
+let chartInstances = {};
+
+function generateMockData(range) {
+    const today = new Date();
+    const days = range === 'week' ? 7 : range === '2week' ? 14 : 30;
+    const labels = [], present = [], absent = [];
+    for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(today); d.setDate(d.getDate() - i);
+        labels.push(d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'}));
+        const p = Math.floor(Math.random() * 15) + 20;
+        const a = Math.floor(Math.random() * 8);
+        present.push(p); absent.push(a);
+    }
+    return {labels, present, absent};
+}
+
+function renderCharts() {
+    const range = document.getElementById('graphRange').value;
+    const {labels, present, absent} = generateMockData(range);
+    const total = present.reduce((a,b) => a+b, 0);
+    const totalAbsent = absent.reduce((a,b) => a+b, 0);
+    const avgPct = Math.round(total / (total + totalAbsent) * 100);
+
+    // Stats
+    document.getElementById('analyticsStats').innerHTML = `
+        <div class="stat-card"><div class="stat-value">${avgPct}%</div><div class="stat-label">Avg Attendance</div></div>
+        <div class="stat-card"><div class="stat-value">${total}</div><div class="stat-label">Total Present</div></div>
+        <div class="stat-card"><div class="stat-value">${totalAbsent}</div><div class="stat-label">Total Absent</div></div>
+        <div class="stat-card"><div class="stat-value">${labels.length}</div><div class="stat-label">Days Tracked</div></div>
+    `;
+
+    const destroyChart = id => { if (chartInstances[id]) { chartInstances[id].destroy(); } };
+
+    // Line Chart
+    destroyChart('line');
+    chartInstances['line'] = new Chart(document.getElementById('lineChart'), {
+        type:'line',
+        data:{
+            labels,
+            datasets:[
+                {label:'Present', data:present, borderColor:'var(--primary-cyan)', backgroundColor:'rgba(0, 188, 212,.1)', fill:true, tension:.4, pointRadius:3},
+                {label:'Absent', data:absent, borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,.08)', fill:true, tension:.4, pointRadius:3}
+            ]
+        },
+        options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top',labels:{font:{size:11}}}}, scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.05)'}}}}
+    });
+
+    // Scatter Chart
+    destroyChart('scatter');
+    const scatterPresent = present.map((y,x) => ({x,y}));
+    const scatterAbsent = absent.map((y,x) => ({x,y}));
+    chartInstances['scatter'] = new Chart(document.getElementById('scatterChart'), {
+        type:'scatter',
+        data:{
+            datasets:[
+                {label:'Present', data:scatterPresent, backgroundColor:'rgba(16,185,129,.6)', pointRadius:5},
+                {label:'Absent', data:scatterAbsent, backgroundColor:'rgba(239,68,68,.6)', pointRadius:5}
+            ]
+        },
+        options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top',labels:{font:{size:11}}}}}
+    });
+
+    // Bar Chart by subject
+    const subjects = ['C Prog', 'Java', 'Python', 'SQL', 'Cyber Sec'];
+    const subPct = subjects.map(() => Math.floor(Math.random()*25)+68);
+    destroyChart('bar');
+    chartInstances['bar'] = new Chart(document.getElementById('barChart'), {
+        type:'bar',
+        data:{
+            labels:subjects,
+            datasets:[{label:'Attendance %', data:subPct,
+                backgroundColor:subjects.map((_,i) => `hsla(${220+i*25},70%,60%,.75)`),
+                borderRadius:6}]
+        },
+        options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{min:50,max:100,grid:{color:'rgba(0,0,0,.05)'}}}}
+    });
+
+    // Doughnut
+    destroyChart('doughnut');
+    chartInstances['doughnut'] = new Chart(document.getElementById('doughnutChart'), {
+        type:'doughnut',
+        data:{
+            labels:['Present','Absent'],
+            datasets:[{data:[total,totalAbsent], backgroundColor:['var(--primary-cyan)','#ef4444'], hoverOffset:4, borderWidth:0}]
+        },
+        options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{font:{size:11}}}}, cutout:'65%'}
+    });
+}
+
+function refreshCharts() { renderCharts(); }
+
+// ─── VIEW & EDIT ───
+function searchStudentForEdit() {
+    const regId = document.getElementById('studentSearchEdit').value.trim();
+    if (!regId) { showToast('Please enter a Registration ID', true); return; }
+
+    fetch('get_student_attendance.php', {
+        method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:'regId=' + encodeURIComponent(regId)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) displayStudentEditResults(data.student, data.attendance);
+        else showToast('Student not found', true);
+    })
+    .catch(() => {
+        // Demo fallback
+        displayStudentEditResults(
+            {name:'Alice Johnson', reg_id:regId, branch:'CSE'},
+            [
+                {subject_name:'C Programming', total:30, present:26, absent:4},
+                {subject_name:'Java', total:28, present:24, absent:4},
+                {subject_name:'Python', total:25, present:22, absent:3},
+            ]
+        );
+    });
+}
+
+function displayStudentEditResults(student, attendance) {
+    const container = document.getElementById('studentEditResults');
+    container.style.display = 'block';
+    container.innerHTML = `
+        <div class="card" style="margin-bottom:1rem">
+            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+                <div style="width:48px;height:48px;background:linear-gradient(135deg,var(--primary-cyan),#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:1.1rem">${student.name[0]}</div>
+                <div>
+                    <div style="font-weight:700;font-size:1rem">${student.name}</div>
+                    <div style="font-size:.8rem;color:var(--text-muted)">${student.reg_id} • ${student.branch}</div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Subject</th><th>Total</th><th>Present</th><th>Absent</th><th>%</th><th>Status</th><th>Action</th></tr></thead>
+                    <tbody>
+                        ${attendance.map(s => {
+                            const pct = ((s.present/s.total)*100).toFixed(1);
+                            const cls = pct >= 75 ? 'badge-present' : pct >= 60 ? 'badge-warn' : 'badge-absent';
+                            return `<tr>
+                                <td>${s.subject_name}</td>
+                                <td>${s.total}</td>
+                                <td>${s.present}</td>
+                                <td>${s.absent}</td>
+                                <td>${pct}%</td>
+                                <td><span class="badge ${cls}">${pct >= 75 ? '✓ Good' : pct >= 60 ? '! Warning' : '✗ Low'}</span></td>
+                                <td><button class="btn-primary" style="padding:.35rem .75rem;font-size:.78rem" onclick="showUpdateModal('${student.reg_id}','${s.subject_name}')">Update</button></td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+let currentUpdateRegId = '', currentUpdateSubject = '';
+function showUpdateModal(regId, subject) {
+    currentUpdateRegId = regId; currentUpdateSubject = subject;
+    document.getElementById('updateAttendanceModal').classList.add('show');
+}
+function closeUpdateModal() { document.getElementById('updateAttendanceModal').classList.remove('show'); }
+function submitAttendanceUpdate(e) {
+    e.preventDefault();
+    const date = document.getElementById('updateDate').value;
+    const status = document.getElementById('updateStatus').value;
+    const proof = document.getElementById('proofDocument').files[0];
+    const fd = new FormData();
+    fd.append('regId', currentUpdateRegId); fd.append('subject', currentUpdateSubject);
+    fd.append('date', date); fd.append('status', status);
+    if (proof) fd.append('proof', proof);
+    fetch('update_student_attendance.php', {method:'POST', body:fd})
+    .then(r => r.json())
+    .then(d => { if (d.success) { showToast('Attendance updated'); closeUpdateModal(); searchStudentForEdit(); } else showToast('Failed to update', true); })
+    .catch(() => { showToast('✅ Demo: Attendance updated'); closeUpdateModal(); });
+}
+
+// ─── CHANGE PASSWORD ───
+function showChangePassword() { document.getElementById('changePasswordModal').classList.add('show'); }
+function closeChangePassword() { document.getElementById('changePasswordModal').classList.remove('show'); }
+function submitPasswordChange(e) {
+    e.preventDefault();
+    const np = document.getElementById('newPassword').value;
+    const cp = document.getElementById('confirmPassword').value;
+    if (np !== cp) { showToast('Passwords do not match', true); return; }
+    fetch('change_password.php', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:`newPassword=${encodeURIComponent(np)}`})
+    .then(r => r.json())
+    .then(d => { if (d.success) { showToast('Password changed'); closeChangePassword(); } else showToast('Failed', true); })
+    .catch(() => { showToast('✅ Demo: Password changed'); closeChangePassword(); });
+}
+
+// ─── SEARCH STUDENT ATTENDANCE IN ANALYTICS ───
+function searchStudentAttendance() {
+    const query = document.getElementById('studentSearchAnalytics').value.trim();
+    const resultDiv = document.getElementById('studentAttendanceResult');
+    
+    if (!query) {
+        showToast('Please enter a student name or registration ID', true);
+        return;
+    }
+    
+    // Show loading state
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = `
+        <div style="text-align:center;padding:2rem;color:var(--text-muted)">
+            <div style="display:inline-block;width:40px;height:40px;border:4px solid var(--border);border-top-color:var(--primary-cyan);border-radius:50%;animation:spin 1s linear infinite"></div>
+            <p style="margin-top:1rem">Searching...</p>
+        </div>
+    `;
+    
+    // Simulate API call - replace with actual backend call
+    setTimeout(() => {
+        // Demo data - replace with actual fetch call
+        const demoData = {
+            success: true,
+            student: {
+                name: 'John Doe',
+                regId: '22CSEA001',
+                class: 'CSE-2A',
+                photo: 'assets/default-avatar.png'
+            },
+            attendance: [
+                { subject: 'C Programming', total: 45, present: 42, absent: 3, percentage: 93.3 },
+                { subject: 'Java Programming', total: 40, present: 38, absent: 2, percentage: 95.0 },
+                { subject: 'Data Structures', total: 48, present: 40, absent: 8, percentage: 83.3 },
+                { subject: 'Web Development', total: 35, present: 32, absent: 3, percentage: 91.4 },
+                { subject: 'Python Programming', total: 42, present: 39, absent: 3, percentage: 92.9 }
+            ]
+        };
+        
+        if (demoData.success) {
+            const student = demoData.student;
+            const attendance = demoData.attendance;
+            const totalPresent = attendance.reduce((sum, a) => sum + a.present, 0);
+            const totalClasses = attendance.reduce((sum, a) => sum + a.total, 0);
+            const overallPercentage = ((totalPresent / totalClasses) * 100).toFixed(1);
+            
+            resultDiv.innerHTML = `
+                <div style="border:2px solid var(--border);border-radius:12px;padding:1.5rem;background:white">
+                    <div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:1.5rem;flex-wrap:wrap">
+                        <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg, var(--primary-cyan), var(--purple-accent));display:flex;align-items:center;justify-content:center;color:white;font-size:2rem;font-weight:800;box-shadow:0 4px 12px rgba(0,188,212,0.3)">
+                            ${student.name.charAt(0)}
+                        </div>
+                        <div style="flex:1">
+                            <h3 style="font-size:1.25rem;font-weight:800;color:var(--navy-dark);margin-bottom:.25rem">${student.name}</h3>
+                            <p style="color:var(--text-muted);font-size:.875rem;margin-bottom:.25rem">📋 ${student.regId}</p>
+                            <p style="color:var(--text-muted);font-size:.875rem">🎓 ${student.class}</p>
+                        </div>
+                        <div style="text-align:center;padding:1rem;background:linear-gradient(135deg, rgba(0, 188, 212, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);border-radius:12px">
+                            <div style="font-size:2rem;font-weight:900;color:${overallPercentage >= 75 ? 'var(--success)' : overallPercentage >= 65 ? 'var(--warning)' : 'var(--error)'}">${overallPercentage}%</div>
+                            <div style="font-size:.75rem;color:var(--text-muted);margin-top:.25rem">Overall Attendance</div>
+                        </div>
+                    </div>
+                    
+                    <h4 style="font-weight:700;margin-bottom:1rem;color:var(--navy-dark)">Subject-wise Attendance</h4>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Subject</th>
+                                    <th style="text-align:center">Total Classes</th>
+                                    <th style="text-align:center">Present</th>
+                                    <th style="text-align:center">Absent</th>
+                                    <th style="text-align:center">Percentage</th>
+                                    <th style="text-align:center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${attendance.map(a => `
+                                    <tr>
+                                        <td style="font-weight:600">${a.subject}</td>
+                                        <td style="text-align:center">${a.total}</td>
+                                        <td style="text-align:center;color:var(--success);font-weight:600">${a.present}</td>
+                                        <td style="text-align:center;color:var(--error);font-weight:600">${a.absent}</td>
+                                        <td style="text-align:center;font-weight:700;color:${a.percentage >= 75 ? 'var(--success)' : a.percentage >= 65 ? 'var(--warning)' : 'var(--error)'}">${a.percentage.toFixed(1)}%</td>
+                                        <td style="text-align:center">
+                                            <span class="badge ${a.percentage >= 75 ? 'badge-present' : 'badge-warn'}" style="${a.percentage < 75 ? 'background:rgba(239,68,68,.12);color:var(--error)' : ''}">
+                                                ${a.percentage >= 75 ? '✓ Good' : a.percentage >= 65 ? '⚠ Low' : '✗ Critical'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `
+                <div style="text-align:center;padding:2rem;color:var(--text-muted)">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.3;margin-bottom:1rem">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <p style="font-weight:600;margin-bottom:.5rem">No student found</p>
+                    <p style="font-size:.875rem">Please check the name or registration ID and try again</p>
+                </div>
+            `;
+        }
+    }, 800);
+    
+    // Uncomment and use this for real backend integration:
+    /*
+    fetch('search_student_attendance.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `query=${encodeURIComponent(query)}`
+    })
+    .then(r => r.json())
+    .then(data => {
+        // Handle response similar to demo above
+    })
+    .catch(err => {
+        showToast('Error fetching student data', true);
+        resultDiv.style.display = 'none';
+    });
+    */
+}
+
+function logout() {
+    if (confirm('Are you sure you want to logout?')) window.location.href = 'logout.php';
+}
+
+// ─── UTILS ───
+function playBeep() {
+    try {
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = 880; osc.type = 'sine';
+        gain.gain.setValueAtTime(.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(.01, ctx.currentTime + .08);
+        osc.start(ctx.currentTime); osc.stop(ctx.currentTime + .08);
+    } catch(e) {}
+}
+
+let toastTimeout;
+function showToast(msg, isError = false) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toastText').textContent = msg;
+    document.getElementById('toastIcon').textContent = isError ? '❌' : '✅';
+    toast.className = 'show' + (isError ? ' error' : '');
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => toast.className = '', 3500);
+}
+</script>
+</body>
+</html>

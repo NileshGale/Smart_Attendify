@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendify - Login</title>
+    <style>
+                /* ============================================
+        ATTENDIFY LOGIN & RESET PASSWORD STYLES
+        ============================================ */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        
+        :root {
+            --primary-cyan: #00BCD4;
+            --primary-dark: #0097A7;
+            --navy-dark: #1e3a5f;
+            --navy-light: #2c5282;
+            --purple-accent: #7c3aed;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --border: #e5e7eb;
+            --border-color: #d1d5db;
+            --white: #ffffff;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--primary-cyan) 0%, var(--navy-dark) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* Logo */
+        .logo-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+        }
+
+        .logo {
+            height: 50px;
+            width: auto;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        /* Container */
+        .container {
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 450px;
+            padding: 40px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .container.hidden {
+            display: none;
+        }
+
+        /* Form Wrapper */
+        .form-wrapper {
+            position: relative;
+            padding-top: 20px; /* Added padding to prevent overlap */
+        }
+
+        .back-button {
+            position: absolute;
+            top: 0px; /* Changed from -10px to 0px */
+            left: 0px; /* Changed from -10px to 0px */
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 10; /* Added z-index to ensure button stays on top */
+        }
+
+        .back-button:hover {
+            background: var(--border-color);
+            transform: translateX(-3px);
+        }
+
+        h1 {
+            color: var(--text-primary);
+            font-size: 28px;
+            margin-bottom: 8px;
+            font-weight: 700;
+            padding-top: 10px; /* Added padding to prevent overlap with back button */
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        /* Form Groups */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="tel"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            background: var(--white);
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary-cyan);
+            box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1);
+        }
+
+        /* Buttons */
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary-cyan);
+            color: var(--white);
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        /* Form Footer */
+        .form-footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .link {
+            color: var(--primary-cyan);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .link:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+        /* OTP Input */
+        .otp-input-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .otp-input {
+            width: 50px !important;
+            height: 55px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 700;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+        }
+
+        .otp-input:focus {
+            border-color: var(--primary-cyan);
+        }
+
+        /* Info Text */
+        .info-text {
+            color: var(--text-secondary);
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .resend-text {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* Reset Steps */
+        .reset-step.hidden {
+            display: none;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top-color: var(--white);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--white);
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            max-width: 300px;
+            z-index: 1001;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.hidden {
+            display: none;
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success-color);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--error-color);
+        }
+
+        .toast.warning {
+            border-left: 4px solid var(--warning-color);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .otp-input {
+                width: 45px !important;
+                height: 50px;
+                font-size: 20px;
+            }
+
+            .logo {
+                height: 40px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Logo -->
+    <div class="logo-container">
+        <img src="assets/logo.png" alt="Attendify Logo" class="logo" onerror="this.style.display='none'">
+    </div>
+
+    <!-- Login Form -->
+    <div class="container" id="loginContainer">
+        <div class="form-wrapper">
+            <h1>Welcome to Attendify</h1>
+            <p class="subtitle">Sign in to continue</p>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="login_identifier">Registration ID</label>
+                    <input type="text" id="login_identifier" name="login_identifier" 
+                           placeholder="Enter username or email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" 
+                           placeholder="Enter password" required>
+                </div>
+
+                <button type="submit" class="btn-primary">Login</button>
+                
+                <div class="form-footer">
+                    <a href="#" id="forgotPasswordLink" class="link">Forgot Password?</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reset Password Form -->
+    <div class="container hidden" id="resetContainer">
+        <div class="form-wrapper">
+            <div class="back-button" id="backToLogin">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+            </div>
+            
+            <h1>Reset Password</h1>
+            <p class="subtitle">Enter your email to receive OTP</p>
+            
+            <!-- Step 1: Email Input -->
+            <form id="emailForm" class="reset-step">
+                <div class="form-group">
+                    <label for="reset_email">Email Address</label>
+                    <input type="email" id="reset_email" name="reset_email" 
+                           placeholder="Enter your registered email" required>
+                </div>
+                <button type="submit" class="btn-primary">Send OTP</button>
+            </form>
+
+            <!-- Step 2: OTP Verification -->
+            <form id="otpForm" class="reset-step hidden">
+                <p class="info-text">Enter the 6-digit OTP sent to your email</p>
+                <div class="otp-input-group">
+                    <input type="text" class="otp-input" maxlength="1" data-index="0">
+                    <input type="text" class="otp-input" maxlength="1" data-index="1">
+                    <input type="text" class="otp-input" maxlength="1" data-index="2">
+                    <input type="text" class="otp-input" maxlength="1" data-index="3">
+                    <input type="text" class="otp-input" maxlength="1" data-index="4">
+                    <input type="text" class="otp-input" maxlength="1" data-index="5">
+                </div>
+                <button type="submit" class="btn-primary">Verify OTP</button>
+                <p class="resend-text">Didn't receive? <a href="#" id="resendOTP" class="link">Resend OTP</a></p>
+            </form>
+
+            <!-- Step 3: New Password -->
+            <form id="newPasswordForm" class="reset-step hidden">
+                <div class="form-group">
+                    <label for="new_password">New Password</label>
+                    <input type="password" id="new_password" name="new_password" 
+                           placeholder="Enter new password" required minlength="6">
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" 
+                           placeholder="Confirm new password" required minlength="6">
+                </div>
+                
+                <button type="submit" class="btn-primary">Reset Password</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast hidden" id="toast"></div>
+
+    <script>
+                // ============================================
+        // ATTENDIFY LOGIN & RESET PASSWORD SCRIPT
+        // ============================================
+
+        let resetEmail = '';
+        let resetOtp = '';
+
+        // DOM Elements
+        const loginContainer = document.getElementById('loginContainer');
+        const resetContainer = document.getElementById('resetContainer');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const toast = document.getElementById('toast');
+
+        // Forms
+        const loginForm = document.getElementById('loginForm');
+        const emailForm = document.getElementById('emailForm');
+        const otpForm = document.getElementById('otpForm');
+        const newPasswordForm = document.getElementById('newPasswordForm');
+
+        // Links and Buttons
+        const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+        const backToLogin = document.getElementById('backToLogin');
+        const resendOTP = document.getElementById('resendOTP');
+
+        // OTP Inputs
+        const otpInputs = document.querySelectorAll('.otp-input');
+
+        // ============================================
+        // UTILITY FUNCTIONS
+        // ============================================
+
+        function showLoading() {
+            loadingOverlay.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            loadingOverlay.classList.add('hidden');
+        }
+
+        function showToast(message, type = 'success') {
+            toast.textContent = message;
+            toast.className = `toast ${type}`;
+            toast.classList.remove('hidden');
+            
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 4000);
+        }
+
+        function switchToReset() {
+            loginContainer.classList.add('hidden');
+            resetContainer.classList.remove('hidden');
+            resetResetForm();
+        }
+
+        function switchToLogin() {
+            resetContainer.classList.add('hidden');
+            loginContainer.classList.remove('hidden');
+            loginForm.reset();
+        }
+
+        function resetResetForm() {
+            emailForm.classList.remove('hidden');
+            otpForm.classList.add('hidden');
+            newPasswordForm.classList.add('hidden');
+            emailForm.reset();
+            otpForm.reset();
+            newPasswordForm.reset();
+            otpInputs.forEach(input => input.value = '');
+        }
+
+        // ============================================
+        // OTP INPUT HANDLING
+        // ============================================
+
+        otpInputs.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                const value = e.target.value;
+                
+                if (value.length === 1 && index < otpInputs.length - 1) {
+                    otpInputs[index + 1].focus();
+                }
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                    otpInputs[index - 1].focus();
+                }
+            });
+
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const pastedData = e.clipboardData.getData('text').slice(0, 6);
+                
+                pastedData.split('').forEach((char, i) => {
+                    if (otpInputs[i]) {
+                        otpInputs[i].value = char;
+                    }
+                });
+                
+                if (pastedData.length === 6) {
+                    otpInputs[5].focus();
+                }
+            });
+        });
+
+        // ============================================
+        // LOGIN FORM SUBMISSION
+        // ============================================
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const identifier = document.getElementById('login_identifier').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!identifier || !password) {
+                showToast('Please fill in all fields', 'error');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const formData = new FormData();
+                formData.append('action', 'login');
+                formData.append('reg_id', identifier);
+                formData.append('password', password);
+                
+                const response = await fetch('../backend/auth_api.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('Login successful! Redirecting...', 'success');
+                    
+                    setTimeout(() => {
+                        // Redirect based on role
+                        if (data.role === 'admin') {
+                            window.location.href = 'admin_dashboard.html';
+                        } else if (data.role === 'teacher') {
+                            window.location.href = 'teacher_dashboard.html';
+                        } else if (data.role === 'student') {
+                            window.location.href = 'student_dashboard.html';
+                        }
+                    }, 1500);
+                } else {
+                    showToast(data.message || 'Login failed', 'error');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showToast('An error occurred. Please try again.', 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // ============================================
+        // FORGOT PASSWORD - EMAIL SUBMISSION
+        // ============================================
+
+        emailForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('reset_email').value.trim();
+            
+            if (!email) {
+                showToast('Please enter your email', 'error');
+                return;
+            }
+            
+            showLoading();
+            resetEmail = email;
+            
+            try {
+                const formData = new FormData();
+                formData.append('action', 'requestOtp');
+                formData.append('email', email);
+                
+                const response = await fetch('../backend/send_otp.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('OTP sent to your email', 'success');
+                    emailForm.classList.add('hidden');
+                    otpForm.classList.remove('hidden');
+                } else {
+                    showToast(data.message || 'Email not found', 'error');
+                }
+            } catch (error) {
+                console.error('Send OTP error:', error);
+                showToast('An error occurred. Please try again.', 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // ============================================
+        // OTP VERIFICATION
+        // ============================================
+
+        otpForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const otp = Array.from(otpInputs).map(input => input.value).join('');
+            
+            if (otp.length !== 6) {
+                showToast('Please enter complete OTP', 'error');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const formData = new FormData();
+                formData.append('action', 'verifyOtp');
+                formData.append('email', resetEmail);
+                formData.append('otp', otp);
+                
+                const response = await fetch('../backend/send_otp.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resetOtp = otp;
+                    showToast('OTP verified successfully', 'success');
+                    otpForm.classList.add('hidden');
+                    newPasswordForm.classList.remove('hidden');
+                } else {
+                    showToast(data.message || 'Invalid OTP', 'error');
+                }
+            } catch (error) {
+                console.error('Verify OTP error:', error);
+                showToast('An error occurred. Please try again.', 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // ============================================
+        // NEW PASSWORD SUBMISSION
+        // ============================================
+
+        newPasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            
+            if (newPassword.length < 6) {
+                showToast('Password must be at least 6 characters', 'error');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showToast('Passwords do not match', 'error');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const formData = new FormData();
+                formData.append('action', 'resetPassword');
+                formData.append('email', resetEmail);
+                formData.append('otp', resetOtp);
+                formData.append('new_password', newPassword);
+                
+                const response = await fetch('../backend/auth_api.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('Password reset successful! Redirecting to login...', 'success');
+                    
+                    setTimeout(() => {
+                        switchToLogin();
+                    }, 2000);
+                } else {
+                    showToast(data.message || 'Password reset failed', 'error');
+                }
+            } catch (error) {
+                console.error('Reset password error:', error);
+                showToast('An error occurred. Please try again.', 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
+
+        forgotPasswordLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchToReset();
+        });
+
+        backToLogin.addEventListener('click', () => {
+            switchToLogin();
+        });
+
+        resendOTP.addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            showLoading();
+            
+            try {
+                const formData = new FormData();
+                formData.append('action', 'requestOtp');
+                formData.append('email', resetEmail);
+                
+                const response = await fetch('../backend/send_otp.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('OTP resent successfully', 'success');
+                    otpInputs.forEach(input => input.value = '');
+                    otpInputs[0].focus();
+                } else {
+                    showToast(data.message || 'Failed to resend OTP', 'error');
+                }
+            } catch (error) {
+                console.error('Resend OTP error:', error);
+                showToast('An error occurred. Please try again.', 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<?php
+/**
+ * Database Configuration for Attendify
+ * Update credentials based on your environment
+ */
+
+// Database credentials
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'attendify_db');
+define('DB_USER', 'root');  // Change in production
+define('DB_PASS', '');      // Change in production
+
+// Create PDO connection
+try {
+    $pdo = new PDO(
+        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
+        DB_USER,
+        DB_PASS,
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false
+        ]
+    );
+} catch (PDOException $e) {
+    die(json_encode([
+        'success' => false,
+        'message' => 'Database connection failed: ' . $e->getMessage()
+    ]));
+}
+
+// Set timezone
+date_default_timezone_set('Asia/Kolkata');
+
+// Session configuration
+if (session_status() === PHP_SESSION_NONE) {
+    session_start([
+        'cookie_lifetime' => 86400,  // 24 hours
+        'cookie_httponly' => true,
+        'cookie_secure' => isset($_SERVER['HTTPS']),
+        'use_strict_mode' => true
+    ]);
+}
+
+/**
+ * Check if user is logged in
+ */
+function isLoggedIn() {
+    return isset($_SESSION['user_id']) && isset($_SESSION['role']);
+}
+
+/**
+ * Check if user has specific role
+ */
+function hasRole($role) {
+    return isLoggedIn() && $_SESSION['role'] === $role;
+}
+
+/**
+ * Require login for protected pages
+ */
+function requireLogin() {
+    if (!isLoggedIn()) {
+        header('Location: index.html');
+        exit();
+    }
+}
+
+/**
+ * Require specific role
+ */
+function requireRole($role) {
+    requireLogin();
+    if (!hasRole($role)) {
+        die(json_encode([
+            'success' => false,
+            'message' => 'Unauthorized access'
+        ]));
+    }
+}
+
+/**
+ * Get current user data
+ */
+function getCurrentUser($pdo) {
+    if (!isLoggedIn()) {
+        return null;
+    }
+    
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    return $stmt->fetch();
+}
+
+/**
+ * Sanitize input
+ */
+function sanitize($input) {
+    return htmlspecialchars(strip_tags(trim($input)), ENT_QUOTES, 'UTF-8');
+}
+
+/**
+ * Generate unique registration ID
+ */
+function generateRegId($role, $pdo) {
+    $prefix = '';
+    switch ($role) {
+        case 'student':
+            $prefix = 'SEE';
+            break;
+        case 'teacher':
+            $prefix = 'TEA';
+            break;
+        case 'admin':
+            $prefix = 'ADMIN';
+            break;
+    }
+    
+    // Get last ID
+    $stmt = $pdo->prepare("SELECT reg_id FROM users WHERE reg_id LIKE ? ORDER BY id DESC LIMIT 1");
+    $stmt->execute([$prefix . '%']);
+    $last = $stmt->fetch();
+    
+    if ($last) {
+        $num = intval(substr($last['reg_id'], strlen($prefix))) + 1;
+    } else {
+        $num = $role === 'student' ? 2004001 : 2024001;
+    }
+    
+    return $prefix . $num;
+}
+
+/**
+ * Generate QR code data
+ */
+function generateQRData($regId) {
+    return 'QR' . substr($regId, -7);
+}
+?>
