@@ -1703,7 +1703,7 @@
         }
         function showStatus(msg, ok) {
             const el = document.getElementById('codeStatus');
-            el.textContent = msg; el.className = 'code-status ' + (ok ? 'success' : 'error'); el.style.display = 'block';
+            el.innerHTML = msg; el.className = 'code-status ' + (ok ? 'success' : 'error'); el.style.display = 'block';
             setTimeout(() => el.style.display = 'none', 4000);
         }
 

@@ -79,6 +79,15 @@ if ($action === 'generateUniqueCode') {
 if ($action === 'markByUniqueCode') {
     requireLogin();
     
+    // Only students can mark attendance via unique code
+    if (($_SESSION['role'] ?? '') !== 'student') {
+        echo json_encode([
+            'success' => false, 
+            'message' => 'Only students can mark attendance via unique code. You are logged in as ' . ($_SESSION['role'] ?? 'unknown') . ' (' . ($_SESSION['full_name'] ?? '') . '). Please login as a student in a different browser.'
+        ]);
+        exit;
+    }
+    
     $studentId = $_SESSION['user_id'];
     $uniqueCode = strtoupper(trim($_POST['unique_code'] ?? ''));
     
@@ -104,18 +113,21 @@ if ($action === 'markByUniqueCode') {
             exit;
         }
         
-        // Check if student already marked attendance for this code
+        // Check if student already marked attendance for this subject today (any method)
         $stmt = $pdo->prepare("
             SELECT id FROM attendance
             WHERE student_id = ? AND attendance_date = CURDATE()
-              AND marking_method = 'unique_code'
-              AND teacher_id = ?
               AND subject_id = (SELECT id FROM subjects WHERE subject_name = ? LIMIT 1)
         ");
-        $stmt->execute([$studentId, $codeRecord['teacher_id'], $codeRecord['subject_name']]);
+        $stmt->execute([$studentId, $codeRecord['subject_name']]);
         
         if ($stmt->fetch()) {
-            echo json_encode(['success' => false, 'message' => 'Attendance already marked for this subject today']);
+            // Get student name for informative message
+            $nameStmt = $pdo->prepare("SELECT full_name FROM users WHERE id = ?");
+            $nameStmt->execute([$studentId]);
+            $nameRow = $nameStmt->fetch();
+            $sName = $nameRow['full_name'] ?? 'Unknown';
+            echo json_encode(['success' => false, 'message' => "Attendance already marked for {$sName} in {$codeRecord['subject_name']} today"]);
             exit;
         }
         
@@ -133,10 +145,15 @@ if ($action === 'markByUniqueCode') {
             $subjectId = $pdo->lastInsertId();
         }
         
-        // Mark attendance
+        // Mark attendance (ON DUPLICATE KEY UPDATE as safety net for unique constraint)
         $stmt = $pdo->prepare("
             INSERT INTO attendance (student_id, subject_id, teacher_id, attendance_date, marking_method, status, marked_at)
             VALUES (?, ?, ?, CURDATE(), 'unique_code', 'present', NOW())
+            ON DUPLICATE KEY UPDATE
+                status = 'present',
+                marking_method = 'unique_code',
+                teacher_id = VALUES(teacher_id),
+                marked_at = NOW()
         ");
         $stmt->execute([$studentId, $subjectId, $codeRecord['teacher_id']]);
         
