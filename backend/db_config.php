@@ -53,7 +53,7 @@ function isLoggedIn() {
  * Check if user has specific role
  */
 function hasRole($role) {
-    return isLoggedIn() && $_SESSION['role'] === $role;
+    return isLoggedIn() && strtolower($_SESSION['role'] ?? '') === strtolower($role);
 }
 
 /**
@@ -61,6 +61,13 @@ function hasRole($role) {
  */
 function requireLogin() {
     if (!isLoggedIn()) {
+        // Return JSON for API/AJAX calls, redirect for page loads
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) || 
+            strpos($_SERVER['CONTENT_TYPE'] ?? '', 'application/') !== false ||
+            strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false ||
+            $_SERVER['REQUEST_METHOD'] === 'POST') {
+            die(json_encode(['success' => false, 'message' => 'Session expired. Please login again.']));
+        }
         header('Location: index.html');
         exit();
     }

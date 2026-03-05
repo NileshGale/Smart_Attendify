@@ -77,7 +77,7 @@ function sendOTPEmail(string $toEmail, string $toName, string $otp): array {
         $mail->isHTML(true);
         $mail->Subject = 'Password Reset OTP - Attendify';
         $mail->Body    = generateOTPEmailHTML($toName, $otp);
-        $mail->AltBody = "Hello $toName,\n\nYour OTP is: $otp\n\nExpires in 10 minutes.\n\nAttendify Team";
+        $mail->AltBody = "Hello $toName,\n\nYour OTP is: $otp\n\nExpires in 2 minutes.\n\nAttendify Team";
         $mail->send();
         return ['sent' => true];
     } catch (Exception $e) {
@@ -87,14 +87,14 @@ function sendOTPEmail(string $toEmail, string $toName, string $otp): array {
 }
 
 // ── SEND REGISTRATION EMAIL ──────────────────────────────────────────────────
-function sendRegistrationEmail(string $toEmail, string $toName, string $regId, string $role): bool {
+function sendRegistrationEmail(string $toEmail, string $toName, string $regId, string $role, string $password = ''): bool {
     try {
         $mail = buildMailer();
         $mail->addAddress($toEmail, $toName);
         $mail->isHTML(true);
         $mail->Subject = 'Welcome to Attendify - Registration Successful';
-        $mail->Body    = generateRegistrationEmailHTML($toName, $regId, $role, $toEmail);
-        $mail->AltBody = "Welcome $toName!\n\nYour Registration ID: $regId\nRole: $role\n\nLogin at your Attendify portal.";
+        $mail->Body    = generateRegistrationEmailHTML($toName, $regId, $role, $toEmail, $password);
+        $mail->AltBody = "Welcome $toName!\n\nYour Registration ID: $regId\nRole: $role\nEmail: $toEmail\nPassword: $password\n\nPlease keep these credentials safe.\nLogin at your Attendify portal.";
         $mail->send();
         return true;
     } catch (Exception $e) {
@@ -136,10 +136,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare("DELETE FROM password_reset_tokens WHERE email = ?");
             $stmt->execute([$email]);
 
-            // Store hashed OTP with 10-minute expiry
+            // Store hashed OTP with 2-minute expiry
             $stmt = $pdo->prepare("
                 INSERT INTO password_reset_tokens (email, token, expires_at)
-                VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 10 MINUTE))
+                VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 2 MINUTE))
             ");
             $stmt->execute([$email, password_hash($otp, PASSWORD_DEFAULT)]);
 
@@ -152,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'message' => 'OTP sent to your email address'
                 ]);
             } else {
-                // ⚠️  DEV FALLBACK: returns OTP in response when email fails
+                // <i class="fa-solid fa-triangle-exclamation"></i>  DEV FALLBACK: returns OTP in response when email fails
                 // REMOVE the 'otp' key before going to production!
                 echo json_encode([
                     'success'       => true,
@@ -225,7 +225,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $stmt = $pdo->prepare("
                 INSERT INTO password_reset_tokens (email, token, expires_at)
-                VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 10 MINUTE))
+                VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 2 MINUTE))
             ");
             $stmt->execute([$email, password_hash($otp, PASSWORD_DEFAULT)]);
 
@@ -269,13 +269,13 @@ function generateOTPEmailHTML(string $name, string $otp): string {
 </style></head>
 <body>
 <div class="wrap">
-    <div class="header"><h1>Password Reset</h1><p style="opacity:.85;margin:8px 0 0">Attendify Security</p></div>
+    <div class="header"><h1>Password Security</h1><p style="opacity:.85;margin:8px 0 0">Attendify Security</p></div>
     <div class="body">
         <p>Hello <strong>{$name}</strong>,</p>
-        <p>We received a request to reset your password. Use the OTP below:</p>
+        <p>We received a request to OTP to your email. Use the OTP below:</p>
         <div class="otp-box">
             <div class="otp">{$otp}</div>
-            <div class="note">Expires in 10 minutes</div>
+            <div class="note">Expires in 2 minutes</div>
         </div>
         <p>If you did not request this, please ignore this email.</p>
     </div>
@@ -285,8 +285,9 @@ function generateOTPEmailHTML(string $name, string $otp): string {
 HTML;
 }
 
-function generateRegistrationEmailHTML(string $name, string $regId, string $role, string $email): string {
+function generateRegistrationEmailHTML(string $name, string $regId, string $role, string $email, string $password = ''): string {
     $roleLabel = ucfirst($role);
+    $passwordRow = $password ? "<p>Password: <strong style=\"font-family:'Courier New',monospace;font-size:15px;color:#4f46e5\">{$password}</strong></p>" : '';
     return <<<HTML
 <!DOCTYPE html>
 <html>
@@ -312,11 +313,13 @@ function generateRegistrationEmailHTML(string $name, string $regId, string $role
             <div class="reg-id">{$regId}</div>
         </div>
         <div class="details">
-            <p>Email: <strong>{$email}</strong></p>
             <p>Role: <strong>{$roleLabel}</strong></p>
-            <p>Login with: <strong>{$regId}</strong></p>
+            <p>Email: <strong>{$email}</strong></p>
+            <p>Registration ID: <strong>{$regId}</strong></p>
+            {$passwordRow}
         </div>
-        <p><strong style="color:#ef4444">Important:</strong> Keep your Registration ID safe &mdash; you'll need it to log in.</p>
+        <p><strong style="color:#ef4444">Important:</strong> Keep your credentials safe &mdash; you'll need your Registration ID and password to log in.</p>
+        <p style="font-size:13px;color:#64748b">For security, we recommend changing your password after your first login.</p>
     </div>
     <div class="footer"><p>&copy; Attendify &mdash; Attendance Management System</p></div>
 </div>

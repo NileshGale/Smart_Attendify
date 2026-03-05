@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Attendify</title>
-    <link rel="stylesheet" href="dashboard.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        
         :root {
             --primary-cyan: #00BCD4;
             --primary-dark: #0097A7;
@@ -21,447 +21,1607 @@
             --text-light: #6b7280;
             --border: #e5e7eb;
             --white: #ffffff;
-            --shadow-sm:0 1px 3px rgba(0,0,0,.08);
-            --shadow-md:0 4px 12px rgba(0,0,0,.1);
-            --shadow-lg:0 8px 30px rgba(0,0,0,.12);
-            --radius:12px;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, .08);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, .1);
+            --shadow-lg: 0 8px 30px rgba(0, 0, 0, .12);
+            --radius: 12px;
         }
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
 
         .navbar {
-            background:linear-gradient(135deg, var(--primary-cyan) 0%, var(--navy-dark) 100%);
-            color:white; padding:.75rem 1.5rem;
-            display:flex; justify-content:space-between; align-items:center;
-            box-shadow:0 2px 20px rgba(0, 188, 212,.3); position:sticky; top:0; z-index:200;
+            background: linear-gradient(135deg, var(--primary-cyan) 0%, var(--navy-dark) 100%);
+            color: white;
+            padding: .75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 20px rgba(0, 188, 212, .3);
+            position: sticky;
+            top: 0;
+            z-index: 200;
         }
-        .nav-brand { display:flex; align-items:center; gap:.75rem; }
-        .nav-brand .logo-icon { width:36px; height:36px; background:rgba(255,255,255,.2); border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px; }
-        .nav-brand h1 { font-size:1.1rem; font-weight:700; }
-        .admin-chip { background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); padding:.25rem .75rem; border-radius:20px; font-size:.75rem; font-weight:600; }
-        .profile-dropdown { position:relative; }
-        .profile-btn { background:rgba(255,255,255,.2); border:none; padding:.5rem; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; color:white; }
-        .profile-btn:hover { background:rgba(255,255,255,.3); }
-        .profile-menu { display:none; position:absolute; right:0; top:calc(100% + .5rem); background:white; border-radius:var(--radius); box-shadow:var(--shadow-lg); min-width:190px; overflow:hidden; border:1px solid var(--border); }
-        .profile-menu.show { display:block; }
-        .profile-menu a { display:flex; align-items:center; gap:.75rem; padding:.75rem 1rem; color:var(--text); text-decoration:none; font-size:.875rem; transition:background .2s; }
-        .profile-menu a:hover { background:var(--bg); }
-        .profile-menu .divider { height:1px; background:var(--border); }
 
-        .dashboard-container { display:flex; min-height:calc(100vh - 58px); }
-        .sidebar { width:220px; background:var(--surface); box-shadow:2px 0 10px rgba(0,0,0,.05); padding:1.25rem 0; flex-shrink:0; }
-        .sidebar-menu { list-style:none; }
-        .sidebar-menu li { padding:.75rem 1.25rem; cursor:pointer; display:flex; align-items:center; gap:.625rem; transition:all .2s; color:var(--text-muted); font-weight:500; font-size:.875rem; border-left:3px solid transparent; }
-        .sidebar-menu li:hover { background:var(--bg); color:var(--primary-cyan); }
-        .sidebar-menu li.active { background:linear-gradient(90deg,rgba(0, 188, 212,.08) 0%,transparent 100%); color:var(--primary-cyan); border-left-color:var(--primary-cyan); }
-        .main-content { flex:1; padding:1.5rem; overflow-y:auto; }
-        .content-section { display:none; }
-        .content-section.active { display:block; }
-        .section-title { font-size:1.4rem; font-weight:700; margin-bottom:1.25rem; display:flex; align-items:center; gap:.625rem; }
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+        }
 
-        .card { background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow-sm); border:1px solid var(--border); padding:1.25rem; }
-        .card + .card { margin-top:1rem; }
+        .nav-brand .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, .2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 16px;
+        }
 
-        .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:.875rem; margin-bottom:1.25rem; }
-        .stat-card { background:var(--surface); border-radius:var(--radius); padding:1.25rem; box-shadow:var(--shadow-sm); border:1px solid var(--border); text-align:center; }
-        .stat-value { font-size:2rem; font-weight:800; color:var(--primary-cyan); }
-        .stat-label { font-size:.8rem; color:var(--text-muted); margin-top:.25rem; }
+        .nav-brand h1 {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
 
-        .search-row { display:flex; gap:.75rem; flex-wrap:wrap; margin-bottom:1rem; }
-        .search-row input, .search-row select { padding:.625rem .875rem; border:1px solid var(--border); border-radius:8px; font-size:.875rem; flex:1; min-width:180px; }
-        .search-row input:focus { outline:none; border-color:var(--primary-cyan); }
+        .admin-chip {
+            background: rgba(255, 255, 255, .15);
+            border: 1px solid rgba(255, 255, 255, .3);
+            padding: .25rem .75rem;
+            border-radius: 20px;
+            font-size: .75rem;
+            font-weight: 600;
+        }
 
-        .btn-primary { background:linear-gradient(135deg, var(--primary-cyan), var(--primary-dark)); color:white; border:none; padding:.625rem 1.25rem; border-radius:8px; cursor:pointer; font-weight:600; font-size:.875rem; transition:all .2s; }
-        .btn-primary:hover { transform:translateY(-1px); box-shadow:0 3px 8px rgba(0, 188, 212,.3); }
-        .btn-success { background:linear-gradient(135deg,var(--success),#059669); color:white; border:none; padding:.625rem 1.25rem; border-radius:8px; cursor:pointer; font-weight:600; font-size:.875rem; transition:all .2s; }
-        .btn-success:hover { transform:translateY(-1px); }
-        .btn-sm { padding:.375rem .875rem; font-size:.8rem; }
+        .profile-dropdown {
+            position: relative;
+        }
 
-        .table-wrap { overflow-x:auto; }
-        table { width:100%; border-collapse:collapse; font-size:.875rem; }
-        thead { background:var(--bg); }
-        th,td { padding:.75rem 1rem; text-align:left; border-bottom:1px solid var(--border); }
-        th { font-weight:700; color:var(--text-muted); font-size:.8rem; text-transform:uppercase; letter-spacing:.05em; }
-        tbody tr:hover { background:var(--bg); }
-        .badge { display:inline-block; padding:.2rem .6rem; border-radius:20px; font-size:.75rem; font-weight:600; }
-        .badge-present { background:rgba(16,185,129,.12); color:var(--success); }
-        .badge-absent { background:rgba(239,68,68,.12); color:var(--danger); }
-        .badge-warn { background:rgba(245,158,11,.12); color:var(--warning); }
+        .profile-btn {
+            background: rgba(255, 255, 255, .2);
+            border: none;
+            padding: .5rem;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .profile-btn:hover {
+            background: rgba(255, 255, 255, .3);
+        }
+
+        .profile-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: calc(100% + .5rem);
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            min-width: 190px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .profile-menu.show {
+            display: block;
+        }
+
+        .profile-menu a {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            padding: .75rem 1rem;
+            color: var(--text);
+            text-decoration: none;
+            font-size: .875rem;
+            transition: background .2s;
+        }
+
+        .profile-menu a:hover {
+            background: var(--bg);
+        }
+
+        .profile-menu .divider {
+            height: 1px;
+            background: var(--border);
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: calc(100vh - 58px);
+        }
+
+        .sidebar {
+            width: 220px;
+            background: var(--surface);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, .05);
+            padding: 1.25rem 0;
+            flex-shrink: 0;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+        }
+
+        .sidebar-menu li {
+            padding: .75rem 1.25rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: .625rem;
+            transition: all .2s;
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: .875rem;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-menu li:hover {
+            background: var(--bg);
+            color: var(--primary-cyan);
+        }
+
+        .sidebar-menu li.active {
+            background: linear-gradient(90deg, rgba(0, 188, 212, .08) 0%, transparent 100%);
+            color: var(--primary-cyan);
+            border-left-color: var(--primary-cyan);
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: .625rem;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            padding: 1.25rem;
+        }
+
+        .card+.card {
+            margin-top: 1rem;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: .875rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary-cyan);
+        }
+
+        .stat-label {
+            font-size: .8rem;
+            color: var(--text-muted);
+            margin-top: .25rem;
+        }
+
+        /* ── PROFILE CARD IN OVERVIEW ── */
+        .profile-overview-card {
+            background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy-light) 100%);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .profile-overview-photo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid rgba(255, 255, 255, .4);
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, .2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 800;
+        }
+
+        .profile-overview-info {
+            flex: 1;
+        }
+
+        .profile-overview-name {
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin-bottom: .25rem;
+        }
+
+        .profile-overview-reg {
+            font-family: monospace;
+            font-size: .875rem;
+            color: rgba(255, 255, 255, .75);
+            margin-bottom: .75rem;
+            letter-spacing: .05em;
+        }
+
+        .profile-overview-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .5rem 1.5rem;
+        }
+
+        .profile-detail-item {
+            font-size: .8rem;
+            color: rgba(255, 255, 255, .85);
+            display: flex;
+            align-items: center;
+            gap: .35rem;
+        }
+
+        .profile-detail-label {
+            color: rgba(255, 255, 255, .55);
+        }
+
+        .search-row {
+            display: flex;
+            gap: .75rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .search-row input,
+        .search-row select {
+            padding: .625rem .875rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: .875rem;
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .search-row input:focus {
+            outline: none;
+            border-color: var(--primary-cyan);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: .625rem 1.25rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: .875rem;
+            transition: all .2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(0, 188, 212, .3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+            border: none;
+            padding: .625rem 1.25rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: .875rem;
+            transition: all .2s;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-sm {
+            padding: .375rem .875rem;
+            font-size: .8rem;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .875rem;
+        }
+
+        thead {
+            background: var(--bg);
+        }
+
+        th,
+        td {
+            padding: .75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            font-weight: 700;
+            color: var(--text-muted);
+            font-size: .8rem;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        tbody tr:hover {
+            background: var(--bg);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: .2rem .6rem;
+            border-radius: 20px;
+            font-size: .75rem;
+            font-weight: 600;
+        }
+
+        .badge-present {
+            background: rgba(16, 185, 129, .12);
+            color: var(--success);
+        }
+
+        .badge-absent {
+            background: rgba(239, 68, 68, .12);
+            color: var(--danger);
+        }
+
+        .badge-warn {
+            background: rgba(245, 158, 11, .12);
+            color: var(--warning);
+        }
 
         /* ADD USER SECTION */
-        .add-user-cards { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; }
-        @media(max-width:640px) { .add-user-cards { grid-template-columns:1fr; } }
-        .add-user-card {
-            border:2px solid var(--border); border-radius:16px;
-            padding:2rem; text-align:center; cursor:pointer;
-            transition:all .25s; background:var(--bg);
+        .add-user-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
         }
-        .add-user-card:hover { border-color:var(--primary-cyan); transform:translateY(-3px); box-shadow:var(--shadow-md); }
-        .add-user-card .card-icon { font-size:3rem; margin-bottom:.875rem; }
-        .add-user-card h3 { font-size:1.1rem; font-weight:800; margin-bottom:.5rem; }
-        .add-user-card p { font-size:.875rem; color:var(--text-muted); }
+
+        @media(max-width:640px) {
+            .add-user-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .add-user-card {
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all .25s;
+            background: var(--bg);
+        }
+
+        .add-user-card:hover {
+            border-color: var(--primary-cyan);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .add-user-card .card-icon {
+            font-size: 3rem;
+            margin-bottom: .875rem;
+        }
+
+        .add-user-card h3 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: .5rem;
+        }
+
+        .add-user-card p {
+            font-size: .875rem;
+            color: var(--text-muted);
+        }
+
         .add-user-card .btn-add {
-            margin-top:1.25rem;
-            display:inline-flex; align-items:center; gap:.5rem;
-            background:linear-gradient(135deg, var(--primary-cyan), var(--primary-dark));
-            color:white; padding:.625rem 1.5rem; border-radius:8px;
-            font-weight:700; font-size:.875rem; text-decoration:none; border:none; cursor:pointer;
+            margin-top: 1.25rem;
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+            background: linear-gradient(135deg, var(--primary-cyan), var(--primary-dark));
+            color: white;
+            padding: .625rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: .875rem;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
         }
 
         /* CHART */
-        .chart-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1rem; }
-        @media(max-width:768px) { .chart-grid { grid-template-columns:1fr; } }
-        .chart-card { background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow-sm); border:1px solid var(--border); padding:1.25rem; }
-        .chart-card h4 { font-size:.875rem; font-weight:700; margin-bottom:1rem; color:var(--text-muted); }
-        .chart-wrap { position:relative; height:220px; }
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        @media(max-width:768px) {
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            padding: 1.25rem;
+        }
+
+        .chart-card h4 {
+            font-size: .875rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-muted);
+        }
+
+        .chart-wrap {
+            position: relative;
+            height: 220px;
+        }
 
         /* MODAL */
-        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:600; align-items:center; justify-content:center; }
-        .modal.show { display:flex; }
-        .modal-content { background:white; border-radius:16px; padding:1.75rem; max-width:560px; width:90%; box-shadow:var(--shadow-lg); animation:slideUp .25s ease; position:relative; max-height:90vh; overflow-y:auto; }
-        @keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
-        .modal-content h2 { font-size:1.1rem; font-weight:700; margin-bottom:1.25rem; }
-        .close { position:absolute; top:1rem; right:1rem; background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:1.5rem; line-height:1; }
-        .input-group { margin-bottom:1rem; }
-        .input-group label { display:block; font-size:.8rem; font-weight:700; margin-bottom:.375rem; color:var(--text-muted); }
-        .input-group input, .input-group select { width:100%; padding:.625rem .875rem; border:1px solid var(--border); border-radius:8px; font-size:.875rem; }
-        .input-group input:focus, .input-group select:focus { outline:none; border-color:var(--primary-cyan); box-shadow:0 0 0 3px rgba(0, 188, 212,.1); }
-        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .5);
+            z-index: 600;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 1.75rem;
+            max-width: 560px;
+            width: 90%;
+            box-shadow: var(--shadow-lg);
+            animation: slideUp .25s ease;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px)
+            }
+
+            to {
+                opacity: 1;
+                transform: none
+            }
+        }
+
+        .modal-content h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+        }
+
+        .close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            line-height: 1;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: .8rem;
+            font-weight: 700;
+            margin-bottom: .375rem;
+            color: var(--text-muted);
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: .625rem .875rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: .875rem;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: var(--primary-cyan);
+            box-shadow: 0 0 0 3px rgba(0, 188, 212, .1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: .75rem;
+        }
 
         /* TOAST */
-        #toast { position:fixed; bottom:1.5rem; right:1.5rem; background:white; border-radius:10px; box-shadow:var(--shadow-lg); padding:.875rem 1.25rem; min-width:280px; z-index:900; display:none; align-items:center; gap:.875rem; border-left:4px solid var(--success); animation:slideUp .3s ease; }
-        #toast.show { display:flex; }
-        #toast.error { border-left-color:var(--danger); }
+        #toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: var(--shadow-lg);
+            padding: .875rem 1.25rem;
+            min-width: 280px;
+            z-index: 900;
+            display: none;
+            align-items: center;
+            gap: .875rem;
+            border-left: 4px solid var(--success);
+            animation: slideUp .3s ease;
+        }
+
+        #toast.show {
+            display: flex;
+        }
+
+        #toast.error {
+            border-left-color: var(--danger);
+        }
 
         .student-info-box {
-            background:linear-gradient(135deg,rgba(0, 188, 212,.06) 0%,rgba(124,58,237,.06) 100%);
-            border:1px solid rgba(0, 188, 212,.2); border-radius:10px; padding:1.25rem; margin-bottom:1rem;
+            background: linear-gradient(135deg, rgba(0, 188, 212, .06) 0%, rgba(124, 58, 237, .06) 100%);
+            border: 1px solid rgba(0, 188, 212, .2);
+            border-radius: 10px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
         }
-        .student-info-box h4 { color:var(--primary-cyan); margin-bottom:.5rem; font-size:1rem; }
-        .student-info-box p { color:var(--text-muted); font-size:.875rem; margin:.25rem 0; }
+
+        .student-info-box h4 {
+            color: var(--primary-cyan);
+            margin-bottom: .5rem;
+            font-size: 1rem;
+        }
+
+        .student-info-box p {
+            color: var(--text-muted);
+            font-size: .875rem;
+            margin: .25rem 0;
+        }
+
+        /* ── Navbar user info ── */
+        .nav-user-info {
+            display: flex;
+            align-items: center;
+            gap: .625rem;
+            background: rgba(255, 255, 255, .12);
+            border: 1px solid rgba(255, 255, 255, .25);
+            padding: .375rem .875rem .375rem .5rem;
+            border-radius: 24px;
+        }
+
+        .nav-user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: .8rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .nav-user-name {
+            font-weight: 700;
+            font-size: .825rem;
+            color: white;
+        }
+
+        .nav-user-id {
+            font-size: .72rem;
+            color: rgba(255, 255, 255, .75);
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+
+        /* ── HAMBURGER BUTTON ── */
+        .hamburger-btn {
+            display: none;
+            background: rgba(255, 255, 255, .2);
+            border: none;
+            padding: .5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            color: white;
+            font-size: 1.25rem;
+            line-height: 1;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ── SIDEBAR BACKDROP ── */
+        .sidebar-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .5);
+            z-index: 299;
+        }
+
+        .sidebar-backdrop.show {
+            display: block;
+        }
+
+        /* ── RESPONSIVE: TABLET (≤ 768px) ── */
+        @media (max-width: 768px) {
+            .hamburger-btn {
+                display: flex;
+            }
+
+            .nav-center {
+                display: none !important;
+            }
+
+            .navbar {
+                padding: .5rem 1rem;
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                z-index: 300;
+                transform: translateX(-100%);
+                transition: transform .3s ease;
+                width: 240px;
+                padding-top: 1rem;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .dashboard-container {
+                flex-direction: column;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .profile-overview-card {
+                flex-direction: column;
+                text-align: center;
+                padding: 1.25rem;
+                gap: 1rem;
+            }
+
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search-row {
+                flex-direction: column;
+            }
+
+            .search-row input,
+            .search-row button {
+                width: 100%;
+            }
+
+            .add-user-cards {
+                grid-template-columns: 1fr;
+            }
+
+            #toast {
+                left: 1rem;
+                right: 1rem;
+                bottom: 1rem;
+                min-width: auto;
+            }
+
+            .nav-brand h1 {
+                font-size: .95rem;
+            }
+
+            .admin-chip {
+                display: none;
+            }
+
+            .section-title {
+                font-size: 1.15rem;
+            }
+        }
+
+        /* ── RESPONSIVE: SMALL MOBILE (≤ 480px) ── */
+        @media (max-width: 480px) {
+            .navbar {
+                padding: .4rem .75rem;
+            }
+
+            .main-content {
+                padding: .75rem;
+            }
+
+            .stats-row {
+                grid-template-columns: 1fr 1fr;
+                gap: .5rem;
+            }
+
+            .stat-card {
+                padding: .75rem .5rem;
+            }
+
+            .stat-value {
+                font-size: 1.4rem;
+            }
+
+            .chart-wrap {
+                height: 180px;
+            }
+
+            .section-title {
+                font-size: 1rem;
+            }
+
+            .student-info-box {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 1rem;
+            }
+        }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
 
-<nav class="navbar">
-    <div class="nav-brand">
-        <div class="logo-icon">A</div>
-        <h1>Attendify</h1>
-        <span class="admin-chip">Admin</span>
-    </div>
-    <div style="display:flex;align-items:center;gap:.75rem">
-        <button onclick="logout()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.35);color:white;padding:.4rem .9rem;border-radius:8px;cursor:pointer;font-size:.8rem;font-weight:600;display:flex;align-items:center;gap:.4rem;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.25)'" onmouseout="this.style.background='rgba(255,255,255,.15)'">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            Logout
-        </button>
-        <div class="profile-dropdown">
-        <button class="profile-btn" onclick="toggleProfileMenu()">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        </button>
-        <div class="profile-menu" id="profileMenu">
-            <a href="#" style="font-weight:700;pointer-events:none">⚙️ Admin</a>
-            <div class="divider"></div>
-            <a href="#" onclick="showChangePassword()">🔒 Change Password</a>
-            <a href="#" onclick="logout()" style="color:#ef4444">🚪 Logout</a>
+    <nav class="navbar" style="position:relative">
+        <div class="nav-brand">
+            <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleSidebar()">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="logo-icon">A</div>
+            <h1>Attendify</h1>
+            <span class="admin-chip">Admin</span>
         </div>
-        </div>
-    </div>
-</nav>
-
-<div class="dashboard-container">
-    <div class="sidebar">
-        <ul class="sidebar-menu">
-            <li class="active" onclick="showSection('overview',this)">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-                Overview
-            </li>
-            <li onclick="showSection('studentAttendance',this)">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                Student Attendance
-            </li>
-            <li onclick="showSection('schedules',this)">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                Schedules
-            </li>
-            <li onclick="showSection('addUser',this)">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-                Add User
-            </li>
-        </ul>
-    </div>
-
-    <div class="main-content">
-
-        <!-- OVERVIEW SECTION -->
-        <div id="overviewSection" class="content-section active">
-            <div class="section-title">📊 System Overview</div>
-            <div class="stats-row">
-                <div class="stat-card"><div class="stat-value">142</div><div class="stat-label">Total Students</div></div>
-                <div class="stat-card"><div class="stat-value">12</div><div class="stat-label">Teachers</div></div>
-                <div class="stat-card"><div class="stat-value" style="color:var(--success)">78%</div><div class="stat-label">Avg Attendance</div></div>
-                <div class="stat-card"><div class="stat-value" style="color:var(--warning)">23</div><div class="stat-label">Below 75%</div></div>
-            </div>
-            <div class="card">
-                <h4 style="font-weight:700;margin-bottom:1rem">📋 Quick Actions</h4>
-                <div style="display:flex;gap:.75rem;flex-wrap:wrap">
-                    <button class="btn-primary" onclick="showSection('addUser',document.querySelector('.sidebar-menu li:nth-child(4)'))">➕ Add Student</button>
-                    <button class="btn-primary" onclick="showSection('addUser',document.querySelector('.sidebar-menu li:nth-child(4)'))">➕ Add Teacher</button>
-                    <button class="btn-success" onclick="showSection('schedules',document.querySelector('.sidebar-menu li:nth-child(3)'))">📅 Manage Schedules</button>
+        <!-- Centered user info -->
+        <div class="nav-center"
+            style="position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:.75rem">
+            <div class="nav-user-info">
+                <div class="nav-user-avatar" id="navUserAvatar">A</div>
+                <div>
+                    <div class="nav-user-name" id="navUserName">Loading…</div>
+                    <div class="nav-user-id" id="navUserId">---</div>
                 </div>
             </div>
         </div>
+        <div style="display:flex;align-items:center;gap:.75rem">
 
-        <!-- STUDENT ATTENDANCE SECTION -->
-        <div id="studentAttendanceSection" class="content-section">
-            <div class="section-title">👥 Student Attendance</div>
-            <div class="card">
-                <div class="search-row">
-                    <input type="text" id="studentSearch" placeholder="Enter Registration ID or Roll Number">
-                    <button class="btn-primary" onclick="searchStudent()">🔍 Search</button>
+            <div class="profile-dropdown">
+                <button class="profile-btn" onclick="toggleProfileMenu()">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                </button>
+                <div class="profile-menu" id="profileMenu">
+                    <a href="#" id="profileName" style="font-weight:700;pointer-events:none"><i
+                            class="fa-solid fa-gear"></i> Admin</a>
+                    <div class="divider"></div>
+                    <a href="#" onclick="showChangePassword()"><i class="fa-solid fa-lock"></i> Change Password</a>
+                    <a href="#" onclick="logout()" style="color:#ef4444"><i class="fa-solid fa-right-from-bracket"></i>
+                        Logout</a>
                 </div>
             </div>
-            <div id="studentResults" style="display:none;margin-top:1rem">
-                <div class="student-info-box">
-                    <h4 id="studentName"></h4>
-                    <p>Reg ID: <strong id="studentRegId"></strong> &nbsp;|&nbsp; Branch: <strong id="studentBranch"></strong> &nbsp;|&nbsp; Dept: <strong id="studentDept"></strong></p>
+        </div>
+    </nav>
+
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+    <div class="dashboard-container">
+        <div class="sidebar" id="sidebar">
+            <ul class="sidebar-menu">
+                <li class="active" onclick="showSection('overview',this)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" />
+                        <rect x="14" y="3" width="7" height="7" />
+                        <rect x="3" y="14" width="7" height="7" />
+                        <rect x="14" y="14" width="7" height="7" />
+                    </svg>
+                    Overview
+                </li>
+                <li onclick="showSection('studentAttendance',this)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                    Student Attendance
+                </li>
+                <li onclick="showSection('schedules',this)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                    Schedules
+                </li>
+                <li onclick="showSection('addUser',this)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <line x1="19" y1="8" x2="19" y2="14" />
+                        <line x1="22" y1="11" x2="16" y2="11" />
+                    </svg>
+                    Add User
+                </li>
+            </ul>
+        </div>
+
+        <div class="main-content">
+
+            <!-- OVERVIEW SECTION -->
+            <div id="overviewSection" class="content-section active">
+                <div class="section-title"><i class="fa-solid fa-chart-column"></i> System Overview</div>
+
+                <!-- Profile Card -->
+                <div class="profile-overview-card" id="profileOverviewCard">
+                    <div class="profile-overview-photo" id="profilePhoto">A</div>
+                    <div class="profile-overview-info">
+                        <div class="profile-overview-name" id="overviewFullName">Loading…</div>
+                        <div class="profile-overview-reg" id="overviewRegId">-</div>
+                        <div class="profile-overview-details">
+                            <div class="profile-detail-item"><span class="profile-detail-label">Username:</span> <span
+                                    id="overviewUsername">-</span></div>
+                            <div class="profile-detail-item"><span class="profile-detail-label">Email:</span> <span
+                                    id="overviewEmail">-</span></div>
+                            <div class="profile-detail-item"><span class="profile-detail-label">Mobile:</span> <span
+                                    id="overviewMobile">-</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-value" id="statTotalStudents">...</div>
+                        <div class="stat-label">Total Students</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statTotalTeachers">...</div>
+                        <div class="stat-label">Teachers</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statAvgAttendance" style="color:var(--success)">...</div>
+                        <div class="stat-label">Avg Attendance</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statBelow75" style="color:var(--warning)">...</div>
+                        <div class="stat-label">Below 75%</div>
+                    </div>
                 </div>
                 <div class="card">
+                    <h4 style="font-weight:700;margin-bottom:1rem"><i class="fa-solid fa-clipboard"></i> Quick Actions
+                    </h4>
+                    <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+                        <button class="btn-primary"
+                            onclick="showSection('addUser',document.querySelector('.sidebar-menu li:nth-child(4)'))"><i
+                                class="fa-solid fa-plus"></i>
+                            Add Student</button>
+                        <button class="btn-primary"
+                            onclick="showSection('addUser',document.querySelector('.sidebar-menu li:nth-child(4)'))"><i
+                                class="fa-solid fa-plus"></i>
+                            Add Teacher</button>
+                        <button class="btn-success"
+                            onclick="showSection('schedules',document.querySelector('.sidebar-menu li:nth-child(3)'))"><i
+                                class="fa-regular fa-calendar-days"></i>
+                            Manage Schedules</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STUDENT ATTENDANCE SECTION -->
+            <div id="studentAttendanceSection" class="content-section">
+                <div class="section-title">👥 Student Attendance</div>
+                <div class="card">
+                    <div class="search-row">
+                        <input type="text" id="studentSearch" placeholder="Enter Registration ID or Roll Number">
+                        <button class="btn-primary" onclick="searchStudent()"><i
+                                class="fa-solid fa-magnifying-glass"></i> Search</button>
+                    </div>
+                </div>
+                <div id="studentResults" style="display:none;margin-top:1rem">
+                    <div class="student-info-box"
+                        style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <h4 id="studentName"></h4>
+                            <p style="margin-top: 0.25rem;">Email: <strong id="studentEmail"></strong></p>
+                            <p>Reg ID: <strong id="studentRegId"></strong> &nbsp;|&nbsp; Branch: <strong
+                                    id="studentBranch"></strong> &nbsp;|&nbsp; Dept: <strong id="studentDept"></strong>
+                            </p>
+                        </div>
+                        <button class="btn-primary" onclick="downloadPDF()" id="pdfDownloadBtn"
+                            style="display:flex; align-items:center; gap:0.5rem;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Download PDF
+                        </button>
+                    </div>
+                    <div class="card">
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Subject</th>
+                                        <th>Code</th>
+                                        <th>Total</th>
+                                        <th>Present</th>
+                                        <th>Absent</th>
+                                        <th>%</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attendanceTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SCHEDULES SECTION -->
+            <div id="schedulesSection" class="content-section">
+                <div class="section-title"><i class="fa-regular fa-calendar-days"></i> Teacher Schedules</div>
+                <div class="card">
+                    <div class="search-row">
+                        <input type="text" id="teacherSearch" placeholder="Search teacher by name or ID">
+                        <button class="btn-primary" onclick="searchTeacher()"><i
+                                class="fa-solid fa-magnifying-glass"></i>
+                            Search</button>
+                        <button class="btn-success" onclick="showAddScheduleForm()"><i class="fa-solid fa-plus"></i> Add
+                            Schedule</button>
+                    </div>
+                </div>
+                <div id="scheduleGrid" class="card" style="margin-top:1rem">
+                    <p style="color:var(--text-muted);text-align:center;padding:2rem">Search for a teacher to view their
+                        schedule</p>
+                </div>
+            </div>
+
+            <!-- ADD USER SECTION -->
+            <div id="addUserSection" class="content-section">
+                <div class="section-title"><i class="fa-solid fa-plus"></i> Add New User</div>
+                <p style="color:var(--text-muted);margin-bottom:1.5rem">Select the type of user you want to add. You
+                    will be redirected to the registration page with the appropriate role pre-selected.</p>
+                <div class="add-user-cards">
+                    <div class="add-user-card" onclick="goToRegister('student')">
+                        <div class="card-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+                        <h3>Add Student</h3>
+                        <p>Register a new student with their branch, department, and generate a QR code for attendance
+                            tracking.</p>
+                        <button class="btn-add"><i class="fa-solid fa-plus"></i> Add Student</button>
+                    </div>
+                    <div class="add-user-card" onclick="goToRegister('teacher')">
+                        <div class="card-icon"><i class="fa-solid fa-chalkboard-user"></i></div>
+                        <h3>Add Teacher</h3>
+                        <p>Register a new teacher with their department, assign subjects, and set up their schedule.</p>
+                        <button class="btn-add"><i class="fa-solid fa-plus"></i> Add Teacher</button>
+                    </div>
+                </div>
+
+                <!-- Recent registrations -->
+                <div class="card" style="margin-top:1.5rem">
+                    <h4 style="font-weight:700;margin-bottom:1rem"><i class="fa-regular fa-clock"></i> Recent
+                        Registrations
+                    </h4>
                     <div class="table-wrap">
                         <table>
-                            <thead><tr><th>Subject</th><th>Total</th><th>Present</th><th>Absent</th><th>%</th><th>Status</th><th>Actions</th></tr></thead>
-                            <tbody id="attendanceTableBody"></tbody>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Reg ID</th>
+                                    <th>Role</th>
+                                    <th>Department</th>
+                                    <th>Registered</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentRegistrations">
+                                <tr>
+                                    <td>Nilesh Gale</td>
+                                    <td>25CSECSE1001</td>
+                                    <td><span class="badge badge-present">Student</span></td>
+                                    <td>CSE</td>
+                                    <td>2 days ago</td>
+                                </tr>
+                                <tr>
+                                    <td>Bhagyashree Ambulkar</td>
+                                    <td>25TCSE0001</td>
+                                    <td><span class="badge badge-warn">Teacher</span></td>
+                                    <td>CSE</td>
+                                    <td>1 week ago</td>
+                                </tr>
+                                <tr>
+                                    <td>Mohit Kawre</td>
+                                    <td>25CSECSE1002</td>
+                                    <td><span class="badge badge-present">Student</span></td>
+                                    <td>CSE</td>
+                                    <td>1 week ago</td>
+                                </tr>
+                            </tbody>
                         </table>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- SCHEDULES SECTION -->
-        <div id="schedulesSection" class="content-section">
-            <div class="section-title">📅 Teacher Schedules</div>
-            <div class="card">
-                <div class="search-row">
-                    <input type="text" id="teacherSearch" placeholder="Search teacher by name or ID">
-                    <button class="btn-primary" onclick="searchTeacher()">🔍 Search</button>
-                    <button class="btn-success" onclick="showAddScheduleForm()">➕ Add Schedule</button>
-                </div>
-            </div>
-            <div id="scheduleGrid" class="card" style="margin-top:1rem">
-                <p style="color:var(--text-muted);text-align:center;padding:2rem">Search for a teacher to view their schedule</p>
-            </div>
-        </div>
-
-        <!-- ADD USER SECTION -->
-        <div id="addUserSection" class="content-section">
-            <div class="section-title">➕ Add New User</div>
-            <p style="color:var(--text-muted);margin-bottom:1.5rem">Select the type of user you want to add. You will be redirected to the registration page with the appropriate role pre-selected.</p>
-            <div class="add-user-cards">
-                <div class="add-user-card" onclick="goToRegister('student')">
-                    <div class="card-icon">🎓</div>
-                    <h3>Add Student</h3>
-                    <p>Register a new student with their branch, department, and generate a QR code for attendance tracking.</p>
-                    <button class="btn-add">➕ Add Student</button>
-                </div>
-                <div class="add-user-card" onclick="goToRegister('teacher')">
-                    <div class="card-icon">👨‍🏫</div>
-                    <h3>Add Teacher</h3>
-                    <p>Register a new teacher with their department, assign subjects, and set up their schedule.</p>
-                    <button class="btn-add">➕ Add Teacher</button>
-                </div>
-            </div>
-
-            <!-- Recent registrations -->
-            <div class="card" style="margin-top:1.5rem">
-                <h4 style="font-weight:700;margin-bottom:1rem">🕐 Recent Registrations</h4>
-                <div class="table-wrap">
-                    <table>
-                        <thead><tr><th>Name</th><th>Reg ID</th><th>Role</th><th>Department</th><th>Registered</th></tr></thead>
-                        <tbody id="recentRegistrations">
-                            <tr><td>Mohit Kawre</td><td>25CSECSE1001</td><td><span class="badge badge-present">Student</span></td><td>CSE</td><td>2 days ago</td></tr>
-                            <tr><td>Bhagyashree Ambulkar</td><td>25TCSE0001</td><td><span class="badge badge-warn">Teacher</span></td><td>CSE</td><td>1 week ago</td></tr>
-                            <tr><td>Nilesh Gale</td><td>25CSECSE1002</td><td><span class="badge badge-present">Student</span></td><td>CSE</td><td>1 week ago</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- ANALYTICS SECTION -->
+            <!-- ANALYTICS SECTION -->
         </div>
     </div>
-</div>
 
-<!-- EDIT ATTENDANCE MODAL -->
-<div class="modal" id="editAttendanceModal">
-    <div class="modal-content" style="max-width:640px">
-        <button class="close" onclick="closeEditAttendance()">✕</button>
-        <h2>✏️ Edit Attendance Records</h2>
-        <div id="editAttendanceContent"></div>
+    <!-- EDIT ATTENDANCE MODAL -->
+    <div class="modal" id="editAttendanceModal">
+        <div class="modal-content" style="max-width:640px">
+            <button class="close" onclick="closeEditAttendance()">✕</button>
+            <h2><i class="fa-solid fa-pen"></i> Edit Attendance Records</h2>
+            <div id="editAttendanceContent"></div>
+        </div>
     </div>
-</div>
 
-<!-- SCHEDULE MODAL -->
-<div class="modal" id="scheduleModal">
-    <div class="modal-content">
-        <button class="close" onclick="closeScheduleModal()">✕</button>
-        <h2 id="scheduleModalTitle">📅 Add Schedule</h2>
-        <form onsubmit="submitSchedule(event)">
-            <div class="input-group">
-                <label>Teacher</label>
-                <select id="scheduleTeacher" name="scheduleTeacher" required>
-                    <option value="">Select Teacher</option>
-                    <option value="1">Bhagyashree Ambulkar (25TCSE0001)</option>
-                    <option value="2">Rekha Israni (25TECE0001)</option>
-                </select>
-            </div>
-            <div class="form-row">
+    <!-- SCHEDULE MODAL -->
+    <div class="modal" id="scheduleModal">
+        <div class="modal-content">
+            <button class="close" onclick="closeScheduleModal()">✕</button>
+            <h2 id="scheduleModalTitle"><i class="fa-regular fa-calendar-days"></i> Add Schedule</h2>
+            <form onsubmit="submitSchedule(event)">
                 <div class="input-group">
-                    <label>Day</label>
-                    <select id="scheduleDay" name="scheduleDay" required>
-                        <option value="">Select Day</option>
-                        <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
-                        <option>Thursday</option><option>Friday</option><option>Saturday</option>
+                    <label>Teacher</label>
+                    <select id="scheduleTeacher" name="scheduleTeacher" required>
+                        <option value="">Select Teacher</option>
+                        <option value="1">Bhagyashree Ambulkar (25TCSE0001)</option>
+                        <option value="2">Rekha Israni (25TECE0001)</option>
                     </select>
                 </div>
-                <div class="input-group">
-                    <label>Class</label>
-                    <input type="text" id="scheduleClass" name="scheduleClass" placeholder="e.g. CSE-2A" required>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>Day</label>
+                        <select id="scheduleDay" name="scheduleDay" required>
+                            <option value="">Select Day</option>
+                            <option>Monday</option>
+                            <option>Tuesday</option>
+                            <option>Wednesday</option>
+                            <option>Thursday</option>
+                            <option>Friday</option>
+                            <option>Saturday</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Class</label>
+                        <input type="text" id="scheduleClass" name="scheduleClass" placeholder="e.g. CSE-2A" required>
+                    </div>
                 </div>
-            </div>
-            <div class="input-group">
-                <label>Subject</label>
-                <input type="text" id="scheduleSubject" name="scheduleSubject" placeholder="e.g. C Programming" required>
-            </div>
-            <div class="form-row">
                 <div class="input-group">
-                    <label>Start Time</label>
-                    <input type="time" id="scheduleStartTime" name="scheduleStartTime" required>
+                    <label>Subject</label>
+                    <input type="text" id="scheduleSubject" name="scheduleSubject" placeholder="e.g. C Programming"
+                        required>
                 </div>
-                <div class="input-group">
-                    <label>End Time</label>
-                    <input type="time" id="scheduleEndTime" name="scheduleEndTime" required>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>Start Time</label>
+                        <input type="time" id="scheduleStartTime" name="scheduleStartTime" required>
+                    </div>
+                    <div class="input-group">
+                        <label>End Time</label>
+                        <input type="time" id="scheduleEndTime" name="scheduleEndTime" required>
+                    </div>
                 </div>
-            </div>
-            <button type="submit" class="btn-primary" style="width:100%">💾 Save Schedule</button>
-        </form>
+                <button type="submit" class="btn-primary" style="width:100%"><i class="fa-solid fa-floppy-disk"></i>
+                    Save Schedule</button>
+            </form>
+        </div>
     </div>
-</div>
 
-<!-- CHANGE PASSWORD MODAL -->
-<div class="modal" id="changePasswordModal">
-    <div class="modal-content">
-        <button class="close" onclick="closeChangePassword()">✕</button>
-        <h2>🔒 Change Password</h2>
-        <form onsubmit="submitPasswordChange(event)">
-            <div class="input-group"><label>New Password</label><input type="password" id="newPassword" required minlength="6"></div>
-            <div class="input-group"><label>Confirm Password</label><input type="password" id="confirmPassword" required></div>
-            <button type="submit" class="btn-primary" style="width:100%;margin-top:.5rem">Update Password</button>
-        </form>
+    <!-- CHANGE PASSWORD MODAL -->
+    <div class="modal" id="changePasswordModal">
+        <div class="modal-content">
+            <button class="close" onclick="closeChangePassword()">✕</button>
+            <h2><i class="fa-solid fa-lock"></i> Change Password</h2>
+            <form onsubmit="submitPasswordChange(event)">
+                <div class="input-group" style="margin-bottom:1rem"><label>Current Password</label><input
+                        type="password" id="currentPassword" required></div>
+                <div class="input-group" style="margin-bottom:1rem"><label>New Password</label><input type="password"
+                        id="newPassword" required minlength="6"></div>
+                <div class="input-group" style="margin-bottom:1rem"><label>Confirm Password</label><input
+                        type="password" id="confirmPassword" required></div>
+                <button type="submit" class="btn-primary" style="width:100%;margin-top:.5rem">Update Password</button>
+            </form>
+        </div>
     </div>
-</div>
 
-<div id="toast"><span id="toastIcon">✅</span><span id="toastText">Success</span></div>
+    <div id="toast"><span id="toastIcon"><i class="fa-solid fa-check-circle"></i></span><span
+            id="toastText">Success</span></div>
 
-<script src="admin_dashboard.js"></script>
-<script>
-// ── ADMIN DASHBOARD EXTRA ──
+    <script>
+        // ── ADMIN DASHBOARD ──
 
-function toggleProfileMenu() {
-    document.getElementById('profileMenu').classList.toggle('show');
-}
-document.addEventListener('click', e => {
-    const pd = document.querySelector('.profile-dropdown');
-    if (pd && !pd.contains(e.target)) document.getElementById('profileMenu').classList.remove('show');
-});
+        // ─── Fetch and display logged-in admin info ───
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('../backend/user_api.php?action=getMyProfile')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success && data.user) {
+                        const fullName = data.user.full_name || 'Admin';
+                        const regId = data.user.reg_id || '';
+                        const photo = data.user.photo_path || '';
+                        const initials = fullName.charAt(0).toUpperCase();
+                        document.getElementById('navUserName').textContent = fullName;
+                        document.getElementById('navUserId').textContent = regId;
+                        document.getElementById('profileName').innerHTML = '<i class="fa-solid fa-gear"></i> ' + fullName;
 
-function showSection(name, el) {
-    document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.sidebar-menu li').forEach(i => i.classList.remove('active'));
-    document.getElementById(name + 'Section').classList.add('active');
-    if (el) el.classList.add('active');
-    if (name === 'analytics') setTimeout(renderAdminCharts, 100);
-}
+                        // Avatar: show photo or fallback to initials
+                        const avatarEl = document.getElementById('navUserAvatar');
+                        if (photo) {
+                            avatarEl.innerHTML = `<img src="../${photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.parentElement.textContent='${initials}'">`;
+                        } else {
+                            avatarEl.textContent = initials;
+                        }
 
-// ADD USER - redirect to register page with role preset
-function goToRegister(role) {
-    window.location.href = 'register.html?role=' + role + '&from=admin';
-}
+                        // Profile Overview Card
+                        document.getElementById('overviewFullName').textContent = fullName;
+                        document.getElementById('overviewRegId').textContent = regId;
+                        document.getElementById('overviewUsername').textContent = data.user.username || '-';
+                        document.getElementById('overviewEmail').textContent = data.user.email || '-';
+                        document.getElementById('overviewMobile').textContent = data.user.phone || '-';
 
-// ANALYTICS
-let adminCharts = {};
+                        const photoOverview = document.getElementById('profilePhoto');
+                        if (photo) {
+                            photoOverview.innerHTML = `<img src="../${photo}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.4)" onerror="this.outerHTML='${initials}'">`;
+                        } else {
+                            photoOverview.textContent = initials;
+                        }
+                    }
+                })
+                .catch(() => { }); // Keep defaults on error
 
-function renderAdminCharts() {
-    const labels = [], present = [], absent = [];
-    const today = new Date();
-    for (let i = 29; i >= 0; i--) {
-        const d = new Date(today); d.setDate(d.getDate() - i);
-        labels.push(d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'}));
-        const p = Math.floor(Math.random()*30)+80;
-        const a = Math.floor(Math.random()*15)+10;
-        present.push(p); absent.push(a);
-    }
+            // Fetch Dashboard Stats
+            loadDashboardStats();
+        });
 
-    const totalP = present.reduce((s,v)=>s+v,0);
-    const totalA = absent.reduce((s,v)=>s+v,0);
-    const avg = Math.round(totalP/(totalP+totalA)*100);
+        async function loadDashboardStats() {
+            try {
+                const res = await fetch('../backend/user_api.php?action=getDashboardStats');
+                const data = await res.json();
+                if (data.success && data.stats) {
+                    const stats = data.stats;
 
-    document.getElementById('analyticsStats').innerHTML = `
+                    // Update Overview Stats
+                    document.getElementById('statTotalStudents').textContent = stats.total_students;
+                    document.getElementById('statTotalTeachers').textContent = stats.total_teachers;
+                    document.getElementById('statAvgAttendance').textContent = stats.overall_percentage + '%';
+                    document.getElementById('statBelow75').textContent = stats.below_75_count;
+
+                    // Update Recent Registrations
+                    const tbody = document.getElementById('recentRegistrations');
+                    if (tbody) {
+                        tbody.innerHTML = '';
+                        if (stats.recent_registrations && stats.recent_registrations.length > 0) {
+                            stats.recent_registrations.forEach(r => {
+                                const badgeClass = r.role === 'teacher' ? 'badge-warn' : 'badge-present';
+                                const roleText = r.role.charAt(0).toUpperCase() + r.role.slice(1);
+                                const date = new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                                tbody.innerHTML += `
+                                    <tr>
+                                        <td>${r.full_name}</td>
+                                        <td>${r.reg_id || '-'}</td>
+                                        <td><span class="badge ${badgeClass}">${roleText}</span></td>
+                                        <td>${r.department || '-'}</td>
+                                        <td>${date}</td>
+                                    </tr>
+                                `;
+                            });
+                        } else {
+                            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">No recent registrations</td></tr>';
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load admin stats", err);
+            }
+        }
+
+        function toggleProfileMenu() {
+            document.getElementById('profileMenu').classList.toggle('show');
+        }
+        document.addEventListener('click', e => {
+            const pd = document.querySelector('.profile-dropdown');
+            if (pd && !pd.contains(e.target)) document.getElementById('profileMenu').classList.remove('show');
+        });
+
+        // ── SIDEBAR TOGGLE (MOBILE) ──
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            if (sidebar) sidebar.classList.toggle('open');
+            if (backdrop) backdrop.classList.toggle('show');
+        }
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            if (sidebar) sidebar.classList.remove('open');
+            if (backdrop) backdrop.classList.remove('show');
+        }
+
+        function showSection(name, el) {
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.sidebar-menu li').forEach(i => i.classList.remove('active'));
+            document.getElementById(name + 'Section').classList.add('active');
+            if (el) el.classList.add('active');
+            if (name === 'analytics') setTimeout(renderAdminCharts, 100);
+            closeSidebar();
+        }
+
+        // Search Student Logic
+        async function searchStudent() {
+            const query = document.getElementById('studentSearch').value.trim();
+            if (!query) {
+                showToast('Please enter Registration ID or Name', true);
+                return;
+            }
+
+            const resultsDiv = document.getElementById('studentResults');
+            const tbody = document.getElementById('attendanceTableBody');
+
+            // Show loading
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Searching...</td></tr>';
+            resultsDiv.style.display = 'block';
+
+            try {
+                const res = await fetch(`../backend/attendance_api.php?action=getStudentReport&query=${encodeURIComponent(query)}`);
+                const data = await res.json();
+
+                if (data.success && data.report) {
+                    const student = data.student;
+                    document.getElementById('studentName').textContent = student.full_name;
+                    document.getElementById('studentEmail').textContent = student.email || 'N/A';
+                    document.getElementById('studentRegId').textContent = student.reg_id;
+                    document.getElementById('studentBranch').textContent = student.branch || 'N/A';
+                    document.getElementById('studentDept').textContent = student.department || 'N/A';
+
+                    tbody.innerHTML = '';
+                    if (data.report.length > 0) {
+                        data.report.forEach(item => {
+                            const pct = parseFloat(item.percentage);
+                            let statusClass = pct >= 75 ? 'badge-present' : (pct >= 65 ? 'badge-warn' : 'badge-absent');
+                            let statusText = pct >= 75 ? 'Good' : (pct >= 65 ? 'Low' : 'Critical');
+
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td><strong>${item.subject_name}</strong></td>
+                                    <td>${item.subject_code}</td>
+                                    <td>${item.total_classes}</td>
+                                    <td style="color:var(--success)">${item.present_count}</td>
+                                    <td style="color:var(--danger)">${item.absent_count}</td>
+                                    <td><strong>${pct.toFixed(2)}%</strong></td>
+                                    <td><span class="badge ${statusClass}">${statusText}</span></td>
+                                    <td>-</td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No attendance records found.</td></tr>';
+                    }
+                } else {
+                    document.getElementById('studentName').textContent = 'Student Not Found';
+                    document.getElementById('studentEmail').textContent = '';
+                    document.getElementById('studentRegId').textContent = '';
+                    document.getElementById('studentBranch').textContent = '';
+                    document.getElementById('studentDept').textContent = '';
+                    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--danger);">${data.message || 'Error occurred.'}</td></tr>`;
+                }
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--danger);">Network Error. Please try again.</td></tr>';
+            }
+        }
+
+        // PDF Generation
+        function downloadPDF() {
+            const studentName = document.getElementById('studentName').textContent || 'Student';
+            const regId = document.getElementById('studentRegId').textContent || '';
+            const email = document.getElementById('studentEmail').textContent || '';
+
+            if (studentName === 'Student Not Found' || studentName === 'Student') {
+                showToast('No valid report to download', true);
+                return;
+            }
+
+            // Hide actions column for PDF print
+            const tableWrap = document.querySelector('#studentResults .table-wrap').cloneNode(true);
+            const thead = tableWrap.querySelector('thead tr');
+            if (thead.children.length >= 8) thead.removeChild(thead.children[7]); // Remove Actions hdr
+
+            const rows = tableWrap.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                if (row.children.length >= 8) row.removeChild(row.children[7]); // Remove Actions td
+            });
+
+            // Make a temporary container for rendering PDF
+            const pdfContainer = document.createElement('div');
+            pdfContainer.innerHTML = `
+                <div style="font-family: Arial, sans-serif; padding: 20px;">
+                    <h2 style="text-align:center; color:#00BCD4; margin-bottom: 20px;">Attendify - Student Attendance Report</h2>
+                    <div style="margin-bottom: 20px; border: 1px solid #ccc; padding: 15px; border-radius: 8px;">
+                        <h3 style="margin: 0 0 10px 0;">Student Name: ${studentName}</h3>
+                        <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
+                        <p style="margin: 5px 0;"><strong>Reg ID:</strong> ${regId}</p>
+                        <p style="margin: 5px 0;"><strong>Branch:</strong> ${document.getElementById('studentBranch').textContent}</p>
+                        <p style="margin: 5px 0;"><strong>Department:</strong> ${document.getElementById('studentDept').textContent}</p>
+                    </div>
+                    <div style="width: 100%;">
+                        ${tableWrap.outerHTML}
+                    </div>
+                    <p style="margin-top:20px; font-size:12px; text-align:right; color:#666;">Generated on: ${new Date().toLocaleString()}</p>
+                </div>
+            `;
+
+            // Adding inline styles to the table for correct PDF rendering
+            const tables = pdfContainer.querySelectorAll('table');
+            tables.forEach(t => {
+                t.style.width = '100%';
+                t.style.borderCollapse = 'collapse';
+                const tds = t.querySelectorAll('td, th');
+                tds.forEach(td => {
+                    td.style.border = '1px solid #ddd';
+                    td.style.padding = '8px';
+                    td.style.textAlign = 'left';
+                });
+                const ths = t.querySelectorAll('th');
+                ths.forEach(th => {
+                    th.style.backgroundColor = '#f2f2f2';
+                });
+            });
+
+            showToast('Generating PDF...');
+
+            var opt = {
+                margin: 0.5,
+                filename: `Attendance_Report_${regId || studentName}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(pdfContainer).save().then(() => {
+                showToast('PDF downloaded successfully');
+            });
+        }
+
+        // ADD USER - redirect to register page with role preset
+        function goToRegister(role) {
+            window.location.href = 'register.html?role=' + role + '&from=admin';
+        }
+
+        // ANALYTICS
+        let adminCharts = {};
+
+        function renderAdminCharts() {
+            const labels = [], present = [], absent = [];
+            const today = new Date();
+            for (let i = 29; i >= 0; i--) {
+                const d = new Date(today); d.setDate(d.getDate() - i);
+                labels.push(d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }));
+                const p = Math.floor(Math.random() * 30) + 80;
+                const a = Math.floor(Math.random() * 15) + 10;
+                present.push(p); absent.push(a);
+            }
+
+            const totalP = present.reduce((s, v) => s + v, 0);
+            const totalA = absent.reduce((s, v) => s + v, 0);
+            const avg = Math.round(totalP / (totalP + totalA) * 100);
+
+            document.getElementById('analyticsStats').innerHTML = `
         <div class="stat-card"><div class="stat-value">${avg}%</div><div class="stat-label">Avg Attendance</div></div>
         <div class="stat-card"><div class="stat-value">${totalP}</div><div class="stat-label">Total Present</div></div>
         <div class="stat-card"><div class="stat-value" style="color:var(--danger)">${totalA}</div><div class="stat-label">Total Absent</div></div>
         <div class="stat-card"><div class="stat-value">142</div><div class="stat-label">Students</div></div>
     `;
 
-    const d = id => { if(adminCharts[id]) adminCharts[id].destroy(); };
+            const d = id => { if (adminCharts[id]) adminCharts[id].destroy(); };
 
-    d('line');
-    adminCharts['line'] = new Chart(document.getElementById('adminLineChart'),{
-        type:'line',
-        data:{labels,datasets:[
-            {label:'Present',data:present,borderColor:'var(--primary-cyan)',backgroundColor:'rgba(0, 188, 212,.08)',fill:true,tension:.4,pointRadius:2},
-            {label:'Absent',data:absent,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.06)',fill:true,tension:.4,pointRadius:2}
-        ]},
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:11}}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.05)'}}}}
-    });
+            d('line');
+            adminCharts['line'] = new Chart(document.getElementById('adminLineChart'), {
+                type: 'line',
+                data: {
+                    labels, datasets: [
+                        { label: 'Present', data: present, borderColor: 'var(--primary-cyan)', backgroundColor: 'rgba(0, 188, 212,.08)', fill: true, tension: .4, pointRadius: 2 },
+                        { label: 'Absent', data: absent, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,.06)', fill: true, tension: .4, pointRadius: 2 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,.05)' } } } }
+            });
 
-    d('scatter');
-    adminCharts['scatter'] = new Chart(document.getElementById('adminScatterChart'),{
-        type:'scatter',
-        data:{datasets:[
-            {label:'Present',data:present.map((y,x)=>({x,y})),backgroundColor:'rgba(16,185,129,.6)',pointRadius:4},
-            {label:'Absent',data:absent.map((y,x)=>({x,y})),backgroundColor:'rgba(239,68,68,.6)',pointRadius:4}
-        ]},
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:11}}}}}
-    });
+            d('scatter');
+            adminCharts['scatter'] = new Chart(document.getElementById('adminScatterChart'), {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        { label: 'Present', data: present.map((y, x) => ({ x, y })), backgroundColor: 'rgba(16,185,129,.6)', pointRadius: 4 },
+                        { label: 'Absent', data: absent.map((y, x) => ({ x, y })), backgroundColor: 'rgba(239,68,68,.6)', pointRadius: 4 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } } }
+            });
 
-    d('bar');
-    adminCharts['bar'] = new Chart(document.getElementById('adminBarChart'),{
-        type:'bar',
-        data:{labels:['CSE','ECE','ME','COMMERCE','EE'],
-            datasets:[{label:'Avg %',data:[82,78,75,88,71],
-                backgroundColor:['rgba(0, 188, 212,.75)','rgba(6,182,212,.75)','rgba(16,185,129,.75)','rgba(245,158,11,.75)','rgba(239,68,68,.75)'],
-                borderRadius:6}]
-        },
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:60,max:100,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,.05)'}}}}
-    });
+            d('bar');
+            adminCharts['bar'] = new Chart(document.getElementById('adminBarChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['CSE', 'ECE', 'ME', 'COMMERCE', 'EE'],
+                    datasets: [{
+                        label: 'Avg %', data: [82, 78, 75, 88, 71],
+                        backgroundColor: ['rgba(0, 188, 212,.75)', 'rgba(6,182,212,.75)', 'rgba(16,185,129,.75)', 'rgba(245,158,11,.75)', 'rgba(239,68,68,.75)'],
+                        borderRadius: 6
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 60, max: 100, ticks: { callback: v => v + '%' }, grid: { color: 'rgba(0,0,0,.05)' } } } }
+            });
 
-    d('doughnut');
-    adminCharts['doughnut'] = new Chart(document.getElementById('adminDoughnutChart'),{
-        type:'doughnut',
-        data:{labels:['Present','Absent'],datasets:[{data:[totalP,totalA],backgroundColor:['var(--primary-cyan)','#ef4444'],borderWidth:0,hoverOffset:4}]},
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},cutout:'65%'}
-    });
-}
+            d('doughnut');
+            adminCharts['doughnut'] = new Chart(document.getElementById('adminDoughnutChart'), {
+                type: 'doughnut',
+                data: { labels: ['Present', 'Absent'], datasets: [{ data: [totalP, totalA], backgroundColor: ['var(--primary-cyan)', '#ef4444'], borderWidth: 0, hoverOffset: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }, cutout: '65%' }
+            });
+        }
 
-let toastTimeout;
-function showToast(msg, isError=false) {
-    const t = document.getElementById('toast');
-    document.getElementById('toastText').textContent = msg;
-    document.getElementById('toastIcon').textContent = isError ? '❌' : '✅';
-    t.className = 'show' + (isError?' error':'');
-    clearTimeout(toastTimeout);
-    toastTimeout = setTimeout(()=>t.className='',3500);
-}
-</script>
+        // ── TOAST MESSAGES ─────
+        let toastTimeout;
+        function showToast(msg, isError = false) {
+            const t = document.getElementById('toast');
+            document.getElementById('toastText').innerHTML = msg;
+            document.getElementById('toastIcon').innerHTML = isError ? '<i class="fa-solid fa-circle-exclamation"></i>' : '<i class="fa-solid fa-check-circle"></i>';
+            t.className = 'show' + (isError ? ' error' : '');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => t.className = t.className.replace('show', ''), 3000);
+        }
+
+        function showChangePassword() {
+            document.getElementById('changePasswordModal').classList.add('show');
+        }
+
+        function closeChangePassword() {
+            document.getElementById('changePasswordModal').classList.remove('show');
+        }
+
+        function submitPasswordChange(e) {
+            e.preventDefault();
+            const cp = document.getElementById('currentPassword').value;
+            const np = document.getElementById('newPassword').value;
+            const cop = document.getElementById('confirmPassword').value;
+
+            if (np !== cop) {
+                showToast('Passwords do not match', true);
+                return;
+            }
+
+            fetch('../backend/auth_api.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=changePassword&current_password=${encodeURIComponent(cp)}&new_password=${encodeURIComponent(np)}&confirm_password=${encodeURIComponent(cop)}`
+            })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) {
+                        showToast('Password changed successfully');
+                        closeChangePassword();
+                    } else {
+                        showToast(d.message || 'Failed to change password', true);
+                    }
+                })
+                .catch(() => {
+                    showToast('Network error please try again', true);
+                });
+        }
+
+        function logout() {
+            fetch('../backend/auth_api.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'action=logout'
+            })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) {
+                        window.location.href = 'attendify.html';
+                    } else {
+                        showToast(d.message || 'Logout failed', true);
+                    }
+                })
+                .catch(() => {
+                    showToast('Network error', true);
+                });
+        }
+    </script>
 </body>
+
 </html>

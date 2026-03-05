@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -43,8 +44,15 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .header {
@@ -127,8 +135,15 @@
         }
 
         @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* Form Horizontal Layout */
@@ -335,8 +350,15 @@
         }
 
         @keyframes slideInRight {
-            from { transform: translateX(400px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
         .toast.error {
@@ -372,10 +394,13 @@
             border-top-color: var(--primary-cyan);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
+            margin: 0 auto;
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         /* Success Modal */
@@ -408,8 +433,15 @@
         }
 
         @keyframes scaleIn {
-            from { transform: scale(0.9); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
 
         .modal-icon {
@@ -513,9 +545,23 @@
             .modal-content {
                 padding: 30px 20px;
             }
+
+            #toast {
+                left: 1rem;
+                right: 1rem;
+                bottom: 1rem;
+                min-width: auto;
+            }
+
+            .credential-value {
+                font-size: 14px;
+                word-break: break-all;
+            }
         }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -528,7 +574,7 @@
             <!-- Email Verification Section -->
             <div class="email-section">
                 <h3>Step 1: Verify Your Email</h3>
-                
+
                 <div class="email-row">
                     <input type="email" id="email" name="email" required placeholder="Enter your email address">
                     <button type="button" class="btn btn-primary" id="sendOtpBtn">Send OTP</button>
@@ -558,7 +604,8 @@
 
                 <div class="form-group">
                     <label for="mobile">Mobile Number <span class="required">*</span></label>
-                    <input type="tel" id="mobile" name="mobile" required placeholder="10-digit mobile" pattern="[0-9]{10}" maxlength="10" disabled>
+                    <input type="tel" id="mobile" name="mobile" required placeholder="10-digit mobile"
+                        pattern="[0-9]{10}" maxlength="10" disabled>
                 </div>
 
                 <div class="form-group">
@@ -590,10 +637,6 @@
                     <select id="branch" name="branch" disabled>
                         <option value="">-- Select Branch --</option>
                         <option value="B.Tech">B.Tech</option>
-                        <option value="M.Tech">M.Tech</option>
-                        <option value="B.Sc">B.Sc</option>
-                        <option value="M.Sc">M.Sc</option>
-                        <option value="BCA">BCA</option>
                         <option value="MCA">MCA</option>
                     </select>
                 </div>
@@ -607,12 +650,14 @@
                 <!-- Row 3 - Password -->
                 <div class="form-group">
                     <label for="password">Password <span class="required">*</span></label>
-                    <input type="password" id="password" name="password" required placeholder="Min 6 characters" minlength="6" disabled>
+                    <input type="password" id="password" name="password" required placeholder="Min 6 characters"
+                        minlength="6" disabled>
                 </div>
 
                 <div class="form-group">
                     <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
-                    <input type="password" id="confirmPassword" name="confirm_password" required placeholder="Re-enter password" disabled>
+                    <input type="password" id="confirmPassword" name="confirm_password" required
+                        placeholder="Re-enter password" disabled>
                 </div>
             </div>
 
@@ -621,14 +666,17 @@
                 <label>Upload Your Photo <span class="required">*</span></label>
                 <div class="photo-section">
                     <div class="photo-preview" id="photoPreview">
-                        <span class="photo-placeholder" id="photoPlaceholder">📷</span>
+                        <span class="photo-placeholder" id="photoPlaceholder"><i class="fa-solid fa-camera"></i></span>
                         <img id="previewImage" src="" alt="Preview" style="display: none;">
                     </div>
                     <div style="flex: 1;">
-                        <input type="file" id="userPhoto" name="user_photo" accept="image/*" style="display: none;" disabled>
-                        <button type="button" class="photo-upload-btn" id="uploadPhotoBtn" disabled>Choose Photo</button>
+                        <input type="file" id="userPhoto" name="user_photo" accept="image/*" style="display: none;"
+                            disabled>
+                        <button type="button" class="photo-upload-btn" id="uploadPhotoBtn" disabled>Choose
+                            Photo</button>
                         <p class="help-text" style="margin-top: 10px;">JPG, JPEG or PNG (Max 2MB)</p>
-                        <button type="button" class="btn-link" id="removePhoto" style="display: none; margin-top: 10px;">Remove Photo</button>
+                        <button type="button" class="btn-link" id="removePhoto"
+                            style="display: none; margin-top: 10px;">Remove Photo</button>
                     </div>
                 </div>
             </div>
@@ -640,7 +688,7 @@
                 </button>
             </div>
 
-            
+
         </form>
     </div>
 
@@ -759,7 +807,7 @@
         // Send OTP
         sendOtpBtn.addEventListener('click', async () => {
             const email = emailInput.value.trim();
-            
+
             if (!email) {
                 showToast('Please enter your email address', 'error');
                 return;
@@ -845,7 +893,7 @@
                     verifyOtpBtn.textContent = '✓ Verified';
                     verifyOtpBtn.style.background = 'var(--success)';
                     otpInput.disabled = true;
-                    
+
                     // Enable all form fields
                     formFields.forEach(field => field.disabled = false);
                     registerBtn.disabled = false;
@@ -869,6 +917,9 @@
 
         // OTP Timer
         function startOtpTimer() {
+            if (otpTimerInterval) {
+                clearInterval(otpTimerInterval);
+            }
             let timeLeft = 60;
             resendOtp.disabled = true;
 
@@ -887,6 +938,7 @@
         // Resend OTP
         resendOtp.addEventListener('click', () => {
             otpInput.value = '';
+            sendOtpBtn.disabled = false;
             sendOtpBtn.click();
         });
 
@@ -930,7 +982,7 @@
 
         userPhotoInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
-            
+
             if (!file) return;
 
             if (file.size > 2 * 1024 * 1024) {
@@ -1074,7 +1126,7 @@
         // Modal Close
         closeModal.addEventListener('click', () => {
             successModal.classList.add('hidden');
-            window.location.href = 'Attendity.html';
+            window.location.href = 'Attendify.html';
         });
 
         // Date of Birth Max Date
@@ -1084,4 +1136,5 @@
         dobInput.max = maxDate.toISOString().split('T')[0];
     </script>
 </body>
+
 </html>

@@ -10,31 +10,61 @@ header('Content-Type: application/json');
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 // ============================================================================
+// AUTO-CREATE attendance_codes TABLE IF NOT EXISTS
+// ============================================================================
+try {
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS attendance_codes (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            code VARCHAR(10) NOT NULL,
+            teacher_id INT NOT NULL,
+            subject_name VARCHAR(255) NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            expires_at DATETIME NOT NULL,
+            INDEX idx_code (code),
+            INDEX idx_teacher (teacher_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ");
+} catch (PDOException $e) {
+    // Table likely already exists, continue
+}
+
+// ============================================================================
 // GENERATE UNIQUE CODE FOR ATTENDANCE
 // ============================================================================
 if ($action === 'generateUniqueCode') {
     requireRole('teacher');
     
     $teacherId = $_SESSION['user_id'];
-    $subjectId = intval($_POST['subject_id'] ?? 0);
-    $validityMinutes = intval($_POST['validity_minutes'] ?? 15);
-    $sessionDate = $_POST['session_date'] ?? date('Y-m-d');
+    $subjectName = sanitize($_POST['subject_name'] ?? '');
+    $validitySeconds = intval($_POST['validity_seconds'] ?? 15);
     
-    if (!$subjectId) {
-        echo json_encode(['success' => false, 'message' => 'Subject ID required']);
+    if (!$subjectName) {
+        echo json_encode(['success' => false, 'message' => 'Subject name required']);
         exit;
     }
     
     try {
-        $stmt = $pdo->prepare("CALL sp_generate_attendance_code(?, ?, ?, ?)");
-        $stmt->execute([$teacherId, $subjectId, $sessionDate, $validityMinutes]);
-        $result = $stmt->fetch();
+        // Generate random 7-char alphanumeric code (no I,O,0,1 to avoid confusion)
+        $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $code = '';
+        for ($i = 0; $i < 7; $i++) {
+            $code .= $chars[random_int(0, strlen($chars) - 1)];
+        }
+        
+        $expiresAt = date('Y-m-d H:i:s', time() + $validitySeconds);
+        
+        $stmt = $pdo->prepare("
+            INSERT INTO attendance_codes (code, teacher_id, subject_name, expires_at)
+            VALUES (?, ?, ?, ?)
+        ");
+        $stmt->execute([$code, $teacherId, $subjectName, $expiresAt]);
         
         echo json_encode([
             'success' => true,
-            'unique_code' => $result['unique_code'],
-            'expires_at' => $result['expires_at'],
-            'validity_minutes' => $validityMinutes
+            'unique_code' => $code,
+            'expires_at' => $expiresAt,
+            'validity_seconds' => $validitySeconds
         ]);
         
     } catch (PDOException $e) {
@@ -47,7 +77,7 @@ if ($action === 'generateUniqueCode') {
 // MARK ATTENDANCE VIA UNIQUE CODE (Student side)
 // ============================================================================
 if ($action === 'markByUniqueCode') {
-    requireRole('student');
+    requireLogin();
     
     $studentId = $_SESSION['user_id'];
     $uniqueCode = strtoupper(trim($_POST['unique_code'] ?? ''));
@@ -58,13 +88,69 @@ if ($action === 'markByUniqueCode') {
     }
     
     try {
-        $stmt = $pdo->prepare("CALL sp_mark_attendance_by_code(?, ?)");
-        $stmt->execute([$studentId, $uniqueCode]);
-        $result = $stmt->fetch();
+        // Find the code and check if it's still valid
+        $stmt = $pdo->prepare("
+            SELECT id, code, teacher_id, subject_name, expires_at
+            FROM attendance_codes
+            WHERE code = ? AND expires_at > NOW()
+            ORDER BY created_at DESC
+            LIMIT 1
+        ");
+        $stmt->execute([$uniqueCode]);
+        $codeRecord = $stmt->fetch();
+        
+        if (!$codeRecord) {
+            echo json_encode(['success' => false, 'message' => 'Invalid or expired code']);
+            exit;
+        }
+        
+        // Check if student already marked attendance for this code
+        $stmt = $pdo->prepare("
+            SELECT id FROM attendance
+            WHERE student_id = ? AND attendance_date = CURDATE()
+              AND marking_method = 'unique_code'
+              AND teacher_id = ?
+              AND subject_id = (SELECT id FROM subjects WHERE subject_name = ? LIMIT 1)
+        ");
+        $stmt->execute([$studentId, $codeRecord['teacher_id'], $codeRecord['subject_name']]);
+        
+        if ($stmt->fetch()) {
+            echo json_encode(['success' => false, 'message' => 'Attendance already marked for this subject today']);
+            exit;
+        }
+        
+        // Try to find subject_id from subjects table, or auto-create it
+        $stmt = $pdo->prepare("SELECT id FROM subjects WHERE subject_name = ? LIMIT 1");
+        $stmt->execute([$codeRecord['subject_name']]);
+        $subjectRow = $stmt->fetch();
+        if ($subjectRow) {
+            $subjectId = $subjectRow['id'];
+        } else {
+            // Auto-create the subject so FK constraint is satisfied
+            $subjectCode = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $codeRecord['subject_name']), 0, 4)) . rand(100, 999);
+            $stmt = $pdo->prepare("INSERT INTO subjects (subject_name, subject_code, department) VALUES (?, ?, 'General')");
+            $stmt->execute([$codeRecord['subject_name'], $subjectCode]);
+            $subjectId = $pdo->lastInsertId();
+        }
+        
+        // Mark attendance
+        $stmt = $pdo->prepare("
+            INSERT INTO attendance (student_id, subject_id, teacher_id, attendance_date, marking_method, status, marked_at)
+            VALUES (?, ?, ?, CURDATE(), 'unique_code', 'present', NOW())
+        ");
+        $stmt->execute([$studentId, $subjectId, $codeRecord['teacher_id']]);
+        
+        // Get student name for response
+        $stmt = $pdo->prepare("SELECT full_name, reg_id FROM users WHERE id = ?");
+        $stmt->execute([$studentId]);
+        $student = $stmt->fetch();
         
         echo json_encode([
-            'success' => $result['status'] === 'success',
-            'message' => $result['message']
+            'success' => true,
+            'message' => 'Attendance marked successfully for ' . $codeRecord['subject_name'],
+            'student_name' => $student['full_name'] ?? '',
+            'reg_id' => $student['reg_id'] ?? '',
+            'subject' => $codeRecord['subject_name']
         ]);
         
     } catch (PDOException $e) {
@@ -77,55 +163,83 @@ if ($action === 'markByUniqueCode') {
 // MARK ATTENDANCE VIA QR CODE (Teacher scans student QR)
 // ============================================================================
 if ($action === 'markByQR') {
-    requireRole('teacher');
+    requireLogin();
     
     $teacherId = $_SESSION['user_id'];
     $qrData = trim($_POST['qr_data'] ?? '');
+    $subjectName = sanitize($_POST['subject_name'] ?? '');
     $subjectId = intval($_POST['subject_id'] ?? 0);
     $attendanceDate = $_POST['attendance_date'] ?? date('Y-m-d');
     
-    if (!$qrData || !$subjectId) {
-        echo json_encode(['success' => false, 'message' => 'QR data and subject required']);
+    if (!$qrData) {
+        echo json_encode(['success' => false, 'message' => 'QR data required']);
         exit;
     }
     
+    // Clean invisible characters and whitespace from scanned QR data
+    $qrData = preg_replace('/[\x00-\x1F\x7F]/', '', trim($qrData));
+    
     try {
-        // Find student by QR data
-        $stmt = $pdo->prepare("SELECT id, full_name, reg_id FROM users WHERE qr_code_data = ? AND role = 'student'");
-        $stmt->execute([$qrData]);
+        // Find student by reg_id first (student QR encodes reg_id), then by qr_code_data
+        $stmt = $pdo->prepare("
+            SELECT id, full_name, reg_id FROM users 
+            WHERE (reg_id = ? OR qr_code_data = ?) AND role = 'student'
+            LIMIT 1
+        ");
+        $stmt->execute([$qrData, $qrData]);
         $student = $stmt->fetch();
         
         if (!$student) {
-            echo json_encode(['success' => false, 'message' => 'Invalid QR code']);
+            echo json_encode(['success' => false, 'message' => 'Student not found for this QR code: ' . $qrData]);
             exit;
         }
         
-        // Check if student is enrolled in this subject
-        $stmt = $pdo->prepare("SELECT 1 FROM student_subjects WHERE student_id = ? AND subject_id = ?");
-        $stmt->execute([$student['id'], $subjectId]);
+        // Resolve subject_id from subject_name if not provided
+        if (!$subjectId && $subjectName) {
+            $stmt = $pdo->prepare("SELECT id FROM subjects WHERE subject_name = ? LIMIT 1");
+            $stmt->execute([$subjectName]);
+            $subjectRow = $stmt->fetch();
+            if ($subjectRow) {
+                $subjectId = $subjectRow['id'];
+            } else {
+                // Auto-create the subject so FK constraint is satisfied
+                $subjectCode = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $subjectName), 0, 4)) . rand(100, 999);
+                $stmt = $pdo->prepare("INSERT INTO subjects (subject_name, subject_code, department) VALUES (?, ?, 'General')");
+                $stmt->execute([$subjectName, $subjectCode]);
+                $subjectId = $pdo->lastInsertId();
+            }
+        }
         
-        if (!$stmt->fetch()) {
-            echo json_encode(['success' => false, 'message' => $student['full_name'] . ' is not enrolled in this subject']);
+        // Check if already marked today for this subject
+        $stmt = $pdo->prepare("
+            SELECT id FROM attendance
+            WHERE student_id = ? AND subject_id = ? AND attendance_date = ? AND marking_method = 'qr'
+        ");
+        $stmt->execute([$student['id'], $subjectId, $attendanceDate]);
+        if ($stmt->fetch()) {
+            echo json_encode([
+                'success' => false,
+                'message' => $student['full_name'] . ' already marked present today',
+                'student_name' => $student['full_name'],
+                'reg_id' => $student['reg_id'],
+                'already_marked' => true
+            ]);
             exit;
         }
         
         // Mark attendance
         $stmt = $pdo->prepare("
-            INSERT INTO attendance (student_id, subject_id, teacher_id, attendance_date, marking_method, status)
-            VALUES (?, ?, ?, ?, 'qr', 'present')
-            ON DUPLICATE KEY UPDATE 
-                status = 'present',
-                marking_method = 'qr',
-                teacher_id = ?,
-                marked_at = NOW()
+            INSERT INTO attendance (student_id, subject_id, teacher_id, attendance_date, marking_method, status, marked_at)
+            VALUES (?, ?, ?, ?, 'qr', 'present', NOW())
         ");
-        $stmt->execute([$student['id'], $subjectId, $teacherId, $attendanceDate, $teacherId]);
+        $stmt->execute([$student['id'], $subjectId, $teacherId, $attendanceDate]);
         
         echo json_encode([
             'success' => true,
             'message' => 'Attendance marked for ' . $student['full_name'],
             'student_name' => $student['full_name'],
-            'reg_id' => $student['reg_id']
+            'reg_id' => $student['reg_id'],
+            'marked_at' => date('Y-m-d H:i:s')
         ]);
         
     } catch (PDOException $e) {
@@ -194,13 +308,33 @@ if ($action === 'markManual') {
 // GET STUDENTS WHO MARKED ATTENDANCE VIA UNIQUE CODE
 // ============================================================================
 if ($action === 'getCodeAttendance') {
-    requireRole('teacher');
+    requireLogin();
     
-    $teacherId = $_SESSION['user_id'];
-    $subjectId = intval($_GET['subject_id'] ?? 0);
-    $sessionDate = $_GET['session_date'] ?? date('Y-m-d');
+    $code = strtoupper(trim($_GET['code'] ?? ''));
+    
+    if (!$code) {
+        echo json_encode(['success' => false, 'message' => 'Code required']);
+        exit;
+    }
     
     try {
+        // Find the code record (lookup by code only, not session user_id, due to shared sessions)
+        $stmt = $pdo->prepare("
+            SELECT id, teacher_id, subject_name, created_at, expires_at
+            FROM attendance_codes
+            WHERE code = ?
+            ORDER BY created_at DESC
+            LIMIT 1
+        ");
+        $stmt->execute([$code]);
+        $codeRecord = $stmt->fetch();
+        
+        if (!$codeRecord) {
+            echo json_encode(['success' => true, 'students' => [], 'count' => 0]);
+            exit;
+        }
+        
+        // Get students who submitted this code (use teacher_id from code record, not session)
         $stmt = $pdo->prepare("
             SELECT 
                 u.id,
@@ -210,20 +344,415 @@ if ($action === 'getCodeAttendance') {
                 a.status
             FROM attendance a
             JOIN users u ON a.student_id = u.id
-            JOIN attendance_sessions s ON a.attendance_session_id = s.id
             WHERE a.teacher_id = ?
-              AND a.subject_id = ?
-              AND a.attendance_date = ?
+              AND a.attendance_date = CURDATE()
               AND a.marking_method = 'unique_code'
+              AND a.marked_at >= ?
+              AND u.role = 'student'
             ORDER BY a.marked_at DESC
         ");
-        $stmt->execute([$teacherId, $subjectId, $sessionDate]);
+        $stmt->execute([$codeRecord['teacher_id'], $codeRecord['created_at']]);
         $students = $stmt->fetchAll();
         
         echo json_encode([
             'success' => true,
             'students' => $students,
             'count' => count($students)
+        ]);
+        
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
+// ============================================================================
+// GET STUDENT'S OWN ATTENDANCE HISTORY
+// ============================================================================
+if ($action === 'getMyAttendanceHistory') {
+    requireLogin();
+    
+    $studentId = $_SESSION['user_id'];
+    $subjectFilter = sanitize($_GET['subject'] ?? 'all');
+    
+    try {
+        $sql = "
+            SELECT 
+                a.attendance_date,
+                COALESCE(s.subject_name, 'Unknown') AS subject_name,
+                a.status,
+                a.marking_method,
+                a.marked_at
+            FROM attendance a
+            LEFT JOIN subjects s ON a.subject_id = s.id
+            WHERE a.student_id = ?
+        ";
+        $params = [$studentId];
+        
+        if ($subjectFilter !== 'all') {
+            $sql .= " AND s.subject_name = ?";
+            $params[] = $subjectFilter;
+        }
+        
+        $sql .= " ORDER BY a.attendance_date DESC, a.marked_at DESC LIMIT 100";
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $records = $stmt->fetchAll();
+        
+        echo json_encode([
+            'success' => true,
+            'records' => $records,
+            'count' => count($records)
+        ]);
+        
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
+// ============================================================================
+// STUDENT ANALYTICS — daily attendance + subject-wise stats from DB
+// ============================================================================
+if ($action === 'getStudentAnalytics') {
+    requireLogin();
+    
+    $studentId = $_SESSION['user_id'];
+    $range = sanitize($_GET['range'] ?? 'week');      // week, 2week, month
+    $subject = sanitize($_GET['subject'] ?? 'all');
+    
+    // Compute date range
+    if ($range === 'all') {
+        $startDate = '2000-01-01'; // Fetch all records
+    } else {
+        $days = $range === 'month' ? 30 : ($range === '2week' ? 14 : 7);
+        $startDate = date('Y-m-d', strtotime("-{$days} days"));
+    }
+    
+    try {
+        // 1. Daily attendance records in the date range
+        $sql = "
+            SELECT 
+                a.attendance_date,
+                a.status,
+                COALESCE(s.subject_name, 'Unknown') AS subject_name
+            FROM attendance a
+            LEFT JOIN subjects s ON a.subject_id = s.id
+            WHERE a.student_id = ? AND a.attendance_date >= ?
+        ";
+        $params = [$studentId, $startDate];
+        
+        if ($subject !== 'all') {
+            $sql .= " AND s.subject_name = ?";
+            $params[] = $subject;
+        }
+        $sql .= " ORDER BY a.attendance_date ASC";
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $dailyRecords = $stmt->fetchAll();
+        
+        // 2. Subject-wise aggregation (total classes, present, absent)
+        $sql2 = "
+            SELECT 
+                COALESCE(s.subject_name, 'Unknown') AS subject_name,
+                COUNT(*) AS total_classes,
+                SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
+                SUM(CASE WHEN a.status != 'present' THEN 1 ELSE 0 END) AS absent_count
+            FROM attendance a
+            LEFT JOIN subjects s ON a.subject_id = s.id
+            WHERE a.student_id = ? AND a.attendance_date >= ?
+        ";
+        $params2 = [$studentId, $startDate];
+        
+        if ($subject !== 'all') {
+            $sql2 .= " AND s.subject_name = ?";
+            $params2[] = $subject;
+        }
+        $sql2 .= " GROUP BY s.subject_name ORDER BY s.subject_name";
+        
+        $stmt = $pdo->prepare($sql2);
+        $stmt->execute($params2);
+        $subjectStats = $stmt->fetchAll();
+        
+        // Compute totals
+        $totalPresent = array_sum(array_column($subjectStats, 'present_count'));
+        $totalAbsent = array_sum(array_column($subjectStats, 'absent_count'));
+        $totalClasses = $totalPresent + $totalAbsent;
+        
+        echo json_encode([
+            'success' => true,
+            'daily' => $dailyRecords,
+            'subjects' => $subjectStats,
+            'totals' => [
+                'present' => (int)$totalPresent,
+                'absent' => (int)$totalAbsent,
+                'total' => (int)$totalClasses,
+                'percentage' => $totalClasses > 0 ? round($totalPresent / $totalClasses * 100, 1) : 0
+            ]
+        ]);
+        
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
+// ============================================================================
+// TEACHER ANALYTICS — attendance stats for teacher's classes
+// ============================================================================
+if ($action === 'getTeacherAnalytics') {
+    requireLogin();
+    
+    $teacherId = $_SESSION['user_id'];
+    $range = sanitize($_GET['range'] ?? 'week');
+    $subject = sanitize($_GET['subject'] ?? 'all');
+    
+    if ($range === 'all') {
+        $startDate = '2000-01-01'; // Fetch all records
+    } else {
+        $days = $range === 'month' ? 30 : ($range === '2week' ? 14 : 7);
+        $startDate = date('Y-m-d', strtotime("-{$days} days"));
+    }
+    
+    try {
+        // 1. Daily attendance counts (present vs absent per day)
+        $sql = "
+            SELECT 
+                a.attendance_date,
+                SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
+                SUM(CASE WHEN a.status != 'present' THEN 1 ELSE 0 END) AS absent_count,
+                COUNT(*) AS total_count
+            FROM attendance a
+            LEFT JOIN subjects s ON a.subject_id = s.id
+            WHERE a.teacher_id = ? AND a.attendance_date >= ?
+        ";
+        $params = [$teacherId, $startDate];
+        
+        if ($subject !== 'all') {
+            $sql .= " AND s.subject_name = ?";
+            $params[] = $subject;
+        }
+        $sql .= " GROUP BY a.attendance_date ORDER BY a.attendance_date ASC";
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $dailyStats = $stmt->fetchAll();
+        
+        // 2. Subject-wise summary
+        $sql2 = "
+            SELECT 
+                COALESCE(s.subject_name, 'Unknown') AS subject_name,
+                COUNT(*) AS total_records,
+                SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
+                SUM(CASE WHEN a.status != 'present' THEN 1 ELSE 0 END) AS absent_count
+            FROM attendance a
+            LEFT JOIN subjects s ON a.subject_id = s.id
+            WHERE a.teacher_id = ? AND a.attendance_date >= ?
+        ";
+        $params2 = [$teacherId, $startDate];
+        
+        if ($subject !== 'all') {
+            $sql2 .= " AND s.subject_name = ?";
+            $params2[] = $subject;
+        }
+        $sql2 .= " GROUP BY s.subject_name ORDER BY s.subject_name";
+        
+        $stmt = $pdo->prepare($sql2);
+        $stmt->execute($params2);
+        $subjectStats = $stmt->fetchAll();
+        
+        $totalPresent = array_sum(array_column($subjectStats, 'present_count'));
+        $totalAbsent = array_sum(array_column($subjectStats, 'absent_count'));
+        $totalRecords = $totalPresent + $totalAbsent;
+        
+        echo json_encode([
+            'success' => true,
+            'daily' => $dailyStats,
+            'subjects' => $subjectStats,
+            'totals' => [
+                'present' => (int)$totalPresent,
+                'absent' => (int)$totalAbsent,
+                'total' => (int)$totalRecords,
+                'percentage' => $totalRecords > 0 ? round($totalPresent / $totalRecords * 100, 1) : 0
+            ]
+        ]);
+        
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
+// ============================================================================
+// GET STUDENT REPORT — search by reg_id or name, return subject-wise attendance
+// ============================================================================
+if ($action === 'getStudentReport') {
+    requireLogin();
+    
+    $query = sanitize($_GET['reg_id'] ?? $_GET['query'] ?? '');
+    
+    if (!$query) {
+        echo json_encode(['success' => false, 'message' => 'Please enter a search term']);
+        exit;
+    }
+    
+    try {
+        // Find student by exact reg_id first, then by partial name match
+        $stmt = $pdo->prepare("
+            SELECT id, full_name, email, reg_id, department, branch, photo_path
+            FROM users 
+            WHERE role = 'student' AND (reg_id = ? OR full_name LIKE ?)
+            LIMIT 1
+        ");
+        $stmt->execute([$query, '%' . $query . '%']);
+        $student = $stmt->fetch();
+        
+        if (!$student) {
+            echo json_encode(['success' => false, 'message' => 'Student not found']);
+            exit;
+        }
+        
+        // Get subject-wise attendance stats
+        $stmt = $pdo->prepare("
+            SELECT 
+                COALESCE(s.subject_name, 'Unknown') AS subject_name,
+                COALESCE(s.subject_code, 'N/A') AS subject_code,
+                COUNT(*) AS total_classes,
+                SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
+                SUM(CASE WHEN a.status != 'present' THEN 1 ELSE 0 END) AS absent_count
+            FROM attendance a
+            LEFT JOIN subjects s ON a.subject_id = s.id
+            WHERE a.student_id = ?
+            GROUP BY s.id, s.subject_name, s.subject_code
+            ORDER BY s.subject_name
+        ");
+        $stmt->execute([$student['id']]);
+        $attendance = $stmt->fetchAll();
+        
+        // Format for frontend compatibility
+        $report = array_map(function($row) {
+            $total = (int)$row['total_classes'];
+            $present = (int)$row['present_count'];
+            $absent = (int)$row['absent_count'];
+            return [
+                'subject_name' => $row['subject_name'],
+                'subject_code' => $row['subject_code'],
+                'subject' => $row['subject_name'],
+                'total' => $total,
+                'total_classes' => $total,
+                'present' => $present,
+                'present_count' => $present,
+                'absent' => $absent,
+                'absent_count' => $absent,
+                'percentage' => $total > 0 ? round($present / $total * 100, 1) : 0
+            ];
+        }, $attendance);
+        
+        echo json_encode([
+            'success' => true,
+            'student' => [
+                'name' => $student['full_name'],
+                'full_name' => $student['full_name'],
+                'email' => $student['email'],
+                'reg_id' => $student['reg_id'],
+                'regId' => $student['reg_id'],
+                'branch' => $student['branch'] ?? $student['department'] ?? '',
+                'class' => $student['branch'] ?? '',
+                'photo_path' => $student['photo_path'] ?? ''
+            ],
+            'attendance' => $report,
+            'report' => $report
+        ]);
+        
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
+// ============================================================================
+// UPDATE ATTENDANCE — teacher updates a student's attendance for a specific date
+// ============================================================================
+if ($action === 'updateAttendance') {
+    requireRole('teacher');
+    
+    $teacherId = $_SESSION['user_id'];
+    $regId = sanitize($_POST['regId'] ?? '');
+    $subjectName = sanitize($_POST['subject'] ?? '');
+    $date = sanitize($_POST['date'] ?? '');
+    $status = sanitize($_POST['status'] ?? 'present');
+    
+    if (!$regId || !$subjectName || !$date) {
+        echo json_encode(['success' => false, 'message' => 'Registration ID, subject, and date are required']);
+        exit;
+    }
+    
+    // Validate status
+    $status = strtolower($status);
+    if (!in_array($status, ['present', 'absent'])) {
+        echo json_encode(['success' => false, 'message' => 'Invalid status. Use present or absent']);
+        exit;
+    }
+    
+    try {
+        // Find student by reg_id
+        $stmt = $pdo->prepare("SELECT id, full_name FROM users WHERE reg_id = ? AND role = 'student' LIMIT 1");
+        $stmt->execute([$regId]);
+        $student = $stmt->fetch();
+        
+        if (!$student) {
+            echo json_encode(['success' => false, 'message' => 'Student not found']);
+            exit;
+        }
+        
+        // Find subject by name, or auto-create it
+        $stmt = $pdo->prepare("SELECT id FROM subjects WHERE subject_name = ? LIMIT 1");
+        $stmt->execute([$subjectName]);
+        $subject = $stmt->fetch();
+        if ($subject) {
+            $subjectId = $subject['id'];
+        } else {
+            // Auto-create the subject so FK constraint is satisfied
+            $subjectCode = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $subjectName), 0, 4)) . rand(100, 999);
+            $stmt = $pdo->prepare("INSERT INTO subjects (subject_name, subject_code, department) VALUES (?, ?, 'General')");
+            $stmt->execute([$subjectName, $subjectCode]);
+            $subjectId = $pdo->lastInsertId();
+        }
+        
+        // Check if attendance record already exists for this student/subject/date
+        $stmt = $pdo->prepare("
+            SELECT id FROM attendance 
+            WHERE student_id = ? AND subject_id = ? AND attendance_date = ?
+            LIMIT 1
+        ");
+        $stmt->execute([$student['id'], $subjectId, $date]);
+        $existing = $stmt->fetch();
+        
+        if ($existing) {
+            // Update existing record
+            $stmt = $pdo->prepare("
+                UPDATE attendance 
+                SET status = ?, teacher_id = ?, marked_at = NOW(), marking_method = 'manual'
+                WHERE id = ?
+            ");
+            $stmt->execute([$status, $teacherId, $existing['id']]);
+            $action_taken = 'updated';
+        } else {
+            // Insert new record
+            $stmt = $pdo->prepare("
+                INSERT INTO attendance (student_id, subject_id, teacher_id, attendance_date, status, marking_method, marked_at)
+                VALUES (?, ?, ?, ?, ?, 'manual', NOW())
+            ");
+            $stmt->execute([$student['id'], $subjectId, $teacherId, $date, $status]);
+            $action_taken = 'added';
+        }
+        
+        echo json_encode([
+            'success' => true,
+            'message' => "Attendance {$action_taken} for {$student['full_name']} on {$date} — {$status}",
+            'action' => $action_taken
         ]);
         
     } catch (PDOException $e) {

@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendify - Login</title>
     <style>
-                /* ============================================
+        /* ============================================
         ATTENDIFY LOGIN & RESET PASSWORD STYLES
         ============================================ */
 
@@ -15,7 +16,7 @@
             box-sizing: border-box;
         }
 
-        
+
         :root {
             --primary-cyan: #00BCD4;
             --primary-dark: #0097A7;
@@ -77,13 +78,16 @@
         /* Form Wrapper */
         .form-wrapper {
             position: relative;
-            padding-top: 20px; /* Added padding to prevent overlap */
+            padding-top: 20px;
+            /* Added padding to prevent overlap */
         }
 
         .back-button {
             position: absolute;
-            top: 0px; /* Changed from -10px to 0px */
-            left: 0px; /* Changed from -10px to 0px */
+            top: 0px;
+            /* Changed from -10px to 0px */
+            left: 0px;
+            /* Changed from -10px to 0px */
             width: 40px;
             height: 40px;
             border-radius: 50%;
@@ -93,7 +97,8 @@
             justify-content: center;
             cursor: pointer;
             transition: all 0.3s ease;
-            z-index: 10; /* Added z-index to ensure button stays on top */
+            z-index: 10;
+            /* Added z-index to ensure button stays on top */
         }
 
         .back-button:hover {
@@ -106,7 +111,8 @@
             font-size: 28px;
             margin-bottom: 8px;
             font-weight: 700;
-            padding-top: 10px; /* Added padding to prevent overlap with back button */
+            padding-top: 10px;
+            /* Added padding to prevent overlap with back button */
         }
 
         .subtitle {
@@ -300,6 +306,7 @@
                 opacity: 0;
                 transform: translateY(20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -311,6 +318,7 @@
                 transform: translateX(100%);
                 opacity: 0;
             }
+
             to {
                 transform: translateX(0);
                 opacity: 1;
@@ -344,8 +352,29 @@
             }
         }
 
+        @media (max-width: 480px) {
+            .otp-input {
+                width: 40px !important;
+                height: 45px;
+                font-size: 18px;
+                padding: 0;
+            }
+
+            .otp-input-group {
+                gap: 5px;
+            }
+
+            #toast {
+                left: 1rem;
+                right: 1rem;
+                bottom: 1rem;
+                min-width: auto;
+            }
+        }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
     <!-- Logo -->
     <div class="logo-container">
@@ -357,22 +386,21 @@
         <div class="form-wrapper">
             <h1>Welcome to Attendify</h1>
             <p class="subtitle">Sign in to continue</p>
-            
+
             <form id="loginForm">
                 <div class="form-group">
                     <label for="login_identifier">Registration ID</label>
-                    <input type="text" id="login_identifier" name="login_identifier" 
-                           placeholder="Enter username or email" required>
+                    <input type="text" id="login_identifier" name="login_identifier"
+                        placeholder="Enter username or email" required>
                 </div>
 
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" name="password" 
-                           placeholder="Enter password" required>
+                    <input type="password" id="password" name="password" placeholder="Enter password" required>
                 </div>
 
                 <button type="submit" class="btn-primary">Login</button>
-                
+
                 <div class="form-footer">
                     <a href="#" id="forgotPasswordLink" class="link">Forgot Password?</a>
                 </div>
@@ -385,19 +413,19 @@
         <div class="form-wrapper">
             <div class="back-button" id="backToLogin">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
             </div>
-            
+
             <h1>Reset Password</h1>
             <p class="subtitle">Enter your email to receive OTP</p>
-            
+
             <!-- Step 1: Email Input -->
             <form id="emailForm" class="reset-step">
                 <div class="form-group">
                     <label for="reset_email">Email Address</label>
-                    <input type="email" id="reset_email" name="reset_email" 
-                           placeholder="Enter your registered email" required>
+                    <input type="email" id="reset_email" name="reset_email" placeholder="Enter your registered email"
+                        required>
                 </div>
                 <button type="submit" class="btn-primary">Send OTP</button>
             </form>
@@ -421,16 +449,16 @@
             <form id="newPasswordForm" class="reset-step hidden">
                 <div class="form-group">
                     <label for="new_password">New Password</label>
-                    <input type="password" id="new_password" name="new_password" 
-                           placeholder="Enter new password" required minlength="6">
+                    <input type="password" id="new_password" name="new_password" placeholder="Enter new password"
+                        required minlength="6">
                 </div>
 
                 <div class="form-group">
                     <label for="confirm_password">Confirm Password</label>
-                    <input type="password" id="confirm_password" name="confirm_password" 
-                           placeholder="Confirm new password" required minlength="6">
+                    <input type="password" id="confirm_password" name="confirm_password"
+                        placeholder="Confirm new password" required minlength="6">
                 </div>
-                
+
                 <button type="submit" class="btn-primary">Reset Password</button>
             </form>
         </div>
@@ -445,7 +473,7 @@
     <div class="toast hidden" id="toast"></div>
 
     <script>
-                // ============================================
+        // ============================================
         // ATTENDIFY LOGIN & RESET PASSWORD SCRIPT
         // ============================================
 
@@ -488,7 +516,7 @@
             toast.textContent = message;
             toast.className = `toast ${type}`;
             toast.classList.remove('hidden');
-            
+
             setTimeout(() => {
                 toast.classList.add('hidden');
             }, 4000);
@@ -523,7 +551,7 @@
         otpInputs.forEach((input, index) => {
             input.addEventListener('input', (e) => {
                 const value = e.target.value;
-                
+
                 if (value.length === 1 && index < otpInputs.length - 1) {
                     otpInputs[index + 1].focus();
                 }
@@ -538,13 +566,13 @@
             input.addEventListener('paste', (e) => {
                 e.preventDefault();
                 const pastedData = e.clipboardData.getData('text').slice(0, 6);
-                
+
                 pastedData.split('').forEach((char, i) => {
                     if (otpInputs[i]) {
                         otpInputs[i].value = char;
                     }
                 });
-                
+
                 if (pastedData.length === 6) {
                     otpInputs[5].focus();
                 }
@@ -557,33 +585,33 @@
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const identifier = document.getElementById('login_identifier').value.trim();
             const password = document.getElementById('password').value;
-            
+
             if (!identifier || !password) {
                 showToast('Please fill in all fields', 'error');
                 return;
             }
-            
+
             showLoading();
-            
+
             try {
                 const formData = new FormData();
                 formData.append('action', 'login');
                 formData.append('reg_id', identifier);
                 formData.append('password', password);
-                
+
                 const response = await fetch('../backend/auth_api.php', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     showToast('Login successful! Redirecting...', 'success');
-                    
+
                     setTimeout(() => {
                         // Redirect based on role
                         if (data.role === 'admin') {
@@ -611,29 +639,29 @@
 
         emailForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const email = document.getElementById('reset_email').value.trim();
-            
+
             if (!email) {
                 showToast('Please enter your email', 'error');
                 return;
             }
-            
+
             showLoading();
             resetEmail = email;
-            
+
             try {
                 const formData = new FormData();
                 formData.append('action', 'requestOtp');
                 formData.append('email', email);
-                
+
                 const response = await fetch('../backend/send_otp.php', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     showToast('OTP sent to your email', 'success');
                     emailForm.classList.add('hidden');
@@ -655,29 +683,29 @@
 
         otpForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const otp = Array.from(otpInputs).map(input => input.value).join('');
-            
+
             if (otp.length !== 6) {
                 showToast('Please enter complete OTP', 'error');
                 return;
             }
-            
+
             showLoading();
-            
+
             try {
                 const formData = new FormData();
                 formData.append('action', 'verifyOtp');
                 formData.append('email', resetEmail);
                 formData.append('otp', otp);
-                
+
                 const response = await fetch('../backend/send_otp.php', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     resetOtp = otp;
                     showToast('OTP verified successfully', 'success');
@@ -700,39 +728,39 @@
 
         newPasswordForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const newPassword = document.getElementById('new_password').value;
             const confirmPassword = document.getElementById('confirm_password').value;
-            
+
             if (newPassword.length < 6) {
                 showToast('Password must be at least 6 characters', 'error');
                 return;
             }
-            
+
             if (newPassword !== confirmPassword) {
                 showToast('Passwords do not match', 'error');
                 return;
             }
-            
+
             showLoading();
-            
+
             try {
                 const formData = new FormData();
                 formData.append('action', 'resetPassword');
                 formData.append('email', resetEmail);
                 formData.append('otp', resetOtp);
                 formData.append('new_password', newPassword);
-                
+
                 const response = await fetch('../backend/auth_api.php', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     showToast('Password reset successful! Redirecting to login...', 'success');
-                    
+
                     setTimeout(() => {
                         switchToLogin();
                     }, 2000);
@@ -762,21 +790,21 @@
 
         resendOTP.addEventListener('click', async (e) => {
             e.preventDefault();
-            
+
             showLoading();
-            
+
             try {
                 const formData = new FormData();
                 formData.append('action', 'requestOtp');
                 formData.append('email', resetEmail);
-                
+
                 const response = await fetch('../backend/send_otp.php', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     showToast('OTP resent successfully', 'success');
                     otpInputs.forEach(input => input.value = '');
@@ -794,4 +822,5 @@
 
     </script>
 </body>
+
 </html>

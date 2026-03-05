@@ -137,7 +137,7 @@ if ($action === 'register') {
         // Send welcome email (non-blocking — failure doesn't stop registration)
         try {
             require_once 'send_otp.php';
-            sendRegistrationEmail($email, $fullName, $regId, $role);
+            sendRegistrationEmail($email, $fullName, $regId, $role, $password);
         } catch (Exception $e) {
             error_log('Welcome email failed: ' . $e->getMessage());
         }

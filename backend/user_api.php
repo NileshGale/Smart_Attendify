@@ -1,7 +1,7 @@
 <?php
 /**
- * User Management API
- * Handles: User creation, search, subject allocation, admin operations
+ * Enhanced User Management API
+ * Handles: User profile, search, subject allocation, admin operations
  */
 
 require_once 'db_config.php';
@@ -10,92 +10,190 @@ header('Content-Type: application/json');
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 // ============================================================================
-// ADD NEW USER (Admin only)
+// GET USER PROFILE (Current logged-in user)
 // ============================================================================
-if ($action === 'addUser') {
-    requireRole('admin');
+if ($action === 'getMyProfile') {
+    requireLogin();
     
-    $username = sanitize($_POST['username'] ?? '');
-    $email = filter_var($_POST['email'] ?? '', FILTER_VALIDATE_EMAIL);
-    $fullName = sanitize($_POST['full_name'] ?? '');
-    $role = sanitize($_POST['role'] ?? 'student');
-    $department = sanitize($_POST['department'] ?? '');
-    $branch = sanitize($_POST['branch'] ?? '');
-    $phone = sanitize($_POST['phone'] ?? '');
-    $subjects = json_decode($_POST['subjects'] ?? '[]', true); // Subject IDs
-    
-    if (!$username || !$email || !$fullName) {
-        echo json_encode(['success' => false, 'message' => 'Required fields missing']);
-        exit;
-    }
+    $userId = $_SESSION['user_id'];
     
     try {
-        $pdo->beginTransaction();
-        
-        // Generate registration ID
-        $regId = generateRegId($role, $pdo);
-        
-        // Generate QR code data for students
-        $qrData = ($role === 'student') ? generateQRData($regId) : null;
-        
-        // Default password (user should change on first login)
-        $defaultPassword = password_hash('changeme123', PASSWORD_DEFAULT);
-        
-        // Insert user
         $stmt = $pdo->prepare("
-            INSERT INTO users (username, email, password, full_name, reg_id, qr_code_data, role, department, branch, phone)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            SELECT id, reg_id, username, email, full_name, role, department, branch, 
+                   phone, dob, photo_path, qr_code_path, qr_code_data, created_at
+            FROM users
+            WHERE id = ?
         ");
-        $stmt->execute([$username, $email, $defaultPassword, $fullName, $regId, $qrData, $role, $department, $branch, $phone]);
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch();
         
-        $userId = $pdo->lastInsertId();
-        
-        // Allocate subjects
-        if (!empty($subjects)) {
-            $table = ($role === 'student') ? 'student_subjects' : 'teacher_subjects';
-            $idColumn = ($role === 'student') ? 'student_id' : 'teacher_id';
-            
-            $stmt = $pdo->prepare("INSERT INTO $table ($idColumn, subject_id) VALUES (?, ?)");
-            
-            foreach ($subjects as $subjectId) {
-                $stmt->execute([$userId, intval($subjectId)]);
-            }
+        if (!$user) {
+            echo json_encode(['success' => false, 'message' => 'User not found']);
+            exit;
         }
         
-        // Generate QR code for students
-        if ($role === 'student' && $qrData) {
-            // You can trigger QR generation here or do it separately
-            // For now, just store the data
+        // Get enrolled subjects
+        if ($user['role'] === 'student') {
+            $stmt = $pdo->prepare("
+                SELECT s.id, s.subject_name, s.subject_code, s.credits, s.department
+                FROM student_subjects ss
+                JOIN subjects s ON ss.subject_id = s.id
+                WHERE ss.student_id = ?
+                ORDER BY s.subject_name
+            ");
+            $stmt->execute([$userId]);
+            $user['subjects'] = $stmt->fetchAll();
+            
+        } else if ($user['role'] === 'teacher') {
+            $stmt = $pdo->prepare("
+                SELECT s.id, s.subject_name, s.subject_code, s.department
+                FROM teacher_subjects ts
+                JOIN subjects s ON ts.subject_id = s.id
+                WHERE ts.teacher_id = ?
+                ORDER BY s.subject_name
+            ");
+            $stmt->execute([$userId]);
+            $user['subjects'] = $stmt->fetchAll();
         }
-        
-        $pdo->commit();
-        
-        // Send registration email
-        require_once 'send_otp.php';
-        sendRegistrationEmail($email, $fullName, $regId, $role);
         
         echo json_encode([
             'success' => true,
-            'message' => 'User created successfully',
-            'reg_id' => $regId,
-            'user_id' => $userId,
-            'default_password' => 'changeme123'
+            'user' => $user
         ]);
         
     } catch (PDOException $e) {
-        $pdo->rollBack();
-        
-        if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
-            echo json_encode(['success' => false, 'message' => 'Username or email already exists']);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
-        }
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
     }
     exit;
 }
 
 // ============================================================================
-// SEARCH USERS (Teacher/Student by name or username)
+// UPDATE MY PROFILE
+// ============================================================================
+if ($action === 'updateMyProfile') {
+    requireLogin();
+    
+    $userId = $_SESSION['user_id'];
+    $fullName = sanitize($_POST['full_name'] ?? '');
+    $phone = sanitize($_POST['phone'] ?? '');
+    $dob = sanitize($_POST['dob'] ?? '');
+    $department = sanitize($_POST['department'] ?? '');
+    $branch = sanitize($_POST['branch'] ?? '');
+    
+    if (!$fullName) {
+        echo json_encode(['success' => false, 'message' => 'Full name is required']);
+        exit;
+    }
+    
+    // Validate DOB if provided
+    if ($dob && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dob)) {
+        echo json_encode(['success' => false, 'message' => 'Invalid date format']);
+        exit;
+    }
+    
+    // Validate phone if provided
+    if ($phone && !preg_match('/^[0-9]{10}$/', $phone)) {
+        echo json_encode(['success' => false, 'message' => 'Phone must be 10 digits']);
+        exit;
+    }
+    
+    try {
+        $stmt = $pdo->prepare("
+            UPDATE users 
+            SET full_name = ?, phone = ?, dob = ?, department = ?, branch = ?
+            WHERE id = ?
+        ");
+        $stmt->execute([
+            $fullName, 
+            $phone ?: null, 
+            $dob ?: null, 
+            $department ?: null, 
+            $branch ?: null, 
+            $userId
+        ]);
+        
+        $_SESSION['full_name'] = $fullName;
+        
+        echo json_encode([
+            'success' => true,
+            'message' => 'Profile updated successfully'
+        ]);
+        
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
+// ============================================================================
+// UPLOAD PROFILE PHOTO
+// ============================================================================
+if ($action === 'uploadProfilePhoto') {
+    requireLogin();
+    
+    if (!isset($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
+        echo json_encode(['success' => false, 'message' => 'No photo uploaded']);
+        exit;
+    }
+    
+    $file = $_FILES['photo'];
+    $allowed = ['image/jpeg', 'image/jpg', 'image/png'];
+    $maxSize = 2 * 1024 * 1024; // 2 MB
+    
+    if (!in_array($file['type'], $allowed)) {
+        echo json_encode(['success' => false, 'message' => 'Only JPG and PNG allowed']);
+        exit;
+    }
+    
+    if ($file['size'] > $maxSize) {
+        echo json_encode(['success' => false, 'message' => 'Photo must be less than 2MB']);
+        exit;
+    }
+    
+    $uploadDir = __DIR__ . '/../uploads/photos/';
+    if (!file_exists($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+    
+    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $filename = 'profile_' . $_SESSION['user_id'] . '_' . time() . '.' . $ext;
+    $destPath = $uploadDir . $filename;
+    
+    if (!move_uploaded_file($file['tmp_name'], $destPath)) {
+        echo json_encode(['success' => false, 'message' => 'Failed to save photo']);
+        exit;
+    }
+    
+    $photoPath = 'uploads/photos/' . $filename;
+    
+    try {
+        // Delete old photo if exists
+        $stmt = $pdo->prepare("SELECT photo_path FROM users WHERE id = ?");
+        $stmt->execute([$_SESSION['user_id']]);
+        $oldPhoto = $stmt->fetchColumn();
+        
+        if ($oldPhoto && file_exists(__DIR__ . '/../' . $oldPhoto)) {
+            unlink(__DIR__ . '/../' . $oldPhoto);
+        }
+        
+        // Update database
+        $stmt = $pdo->prepare("UPDATE users SET photo_path = ? WHERE id = ?");
+        $stmt->execute([$photoPath, $_SESSION['user_id']]);
+        
+        echo json_encode([
+            'success' => true,
+            'message' => 'Photo uploaded successfully',
+            'photo_path' => $photoPath
+        ]);
+        
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
+// ============================================================================
+// SEARCH USERS (Enhanced with email support)
 // ============================================================================
 if ($action === 'searchUsers') {
     requireLogin();
@@ -111,13 +209,13 @@ if ($action === 'searchUsers') {
     
     try {
         $sql = "
-            SELECT id, reg_id, username, full_name, email, role, department, branch
+            SELECT id, reg_id, username, full_name, email, role, department, branch, phone, photo_path
             FROM users
             WHERE is_active = 1
-              AND (full_name LIKE ? OR username LIKE ? OR reg_id LIKE ?)
+              AND (full_name LIKE ? OR username LIKE ? OR reg_id LIKE ? OR email LIKE ?)
         ";
         
-        $params = ["%$query%", "%$query%", "%$query%"];
+        $params = ["%$query%", "%$query%", "%$query%", "%$query%"];
         
         if ($role) {
             $sql .= " AND role = ?";
@@ -144,16 +242,22 @@ if ($action === 'searchUsers') {
 }
 
 // ============================================================================
-// GET USER DETAILS
+// GET USER DETAILS (with full profile)
 // ============================================================================
 if ($action === 'getUserDetails') {
     requireLogin();
     
-    $userId = intval($_GET['user_id'] ?? $_SESSION['user_id']);
+    $userId = intval($_GET['user_id'] ?? 0);
+    
+    if (!$userId) {
+        echo json_encode(['success' => false, 'message' => 'User ID required']);
+        exit;
+    }
     
     try {
         $stmt = $pdo->prepare("
-            SELECT id, reg_id, username, email, full_name, role, department, branch, phone, qr_code_path, qr_code_data, created_at
+            SELECT id, reg_id, username, email, full_name, role, department, branch, 
+                   phone, dob, photo_path, qr_code_path, qr_code_data, created_at
             FROM users
             WHERE id = ?
         ");
@@ -195,62 +299,6 @@ if ($action === 'getUserDetails') {
         ]);
         
     } catch (PDOException $e) {
-        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
-    }
-    exit;
-}
-
-// ============================================================================
-// ALLOCATE SUBJECTS TO USER
-// ============================================================================
-if ($action === 'allocateSubjects') {
-    requireRole('admin');
-    
-    $userId = intval($_POST['user_id'] ?? 0);
-    $subjects = json_decode($_POST['subjects'] ?? '[]', true);
-    
-    if (!$userId || empty($subjects)) {
-        echo json_encode(['success' => false, 'message' => 'User ID and subjects required']);
-        exit;
-    }
-    
-    try {
-        // Get user role
-        $stmt = $pdo->prepare("SELECT role FROM users WHERE id = ?");
-        $stmt->execute([$userId]);
-        $user = $stmt->fetch();
-        
-        if (!$user) {
-            echo json_encode(['success' => false, 'message' => 'User not found']);
-            exit;
-        }
-        
-        $pdo->beginTransaction();
-        
-        $table = ($user['role'] === 'student') ? 'student_subjects' : 'teacher_subjects';
-        $idColumn = ($user['role'] === 'student') ? 'student_id' : 'teacher_id';
-        
-        // Delete existing allocations
-        $stmt = $pdo->prepare("DELETE FROM $table WHERE $idColumn = ?");
-        $stmt->execute([$userId]);
-        
-        // Add new allocations
-        $stmt = $pdo->prepare("INSERT INTO $table ($idColumn, subject_id) VALUES (?, ?)");
-        
-        foreach ($subjects as $subjectId) {
-            $stmt->execute([$userId, intval($subjectId)]);
-        }
-        
-        $pdo->commit();
-        
-        echo json_encode([
-            'success' => true,
-            'message' => 'Subjects allocated successfully',
-            'count' => count($subjects)
-        ]);
-        
-    } catch (PDOException $e) {
-        $pdo->rollBack();
         echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
     }
     exit;
@@ -301,6 +349,7 @@ if ($action === 'getStudentsBySubject') {
                 u.reg_id,
                 u.full_name,
                 u.email,
+                u.photo_path,
                 u.qr_code_data
             FROM student_subjects ss
             JOIN users u ON ss.student_id = u.id
@@ -335,7 +384,7 @@ if ($action === 'getAllUsers') {
         $sql = "
             SELECT 
                 id, reg_id, username, full_name, email, role, department, branch, 
-                phone, created_at, is_active
+                phone, dob, photo_path, created_at, is_active
             FROM users
             WHERE 1=1
         ";
@@ -453,7 +502,10 @@ if ($action === 'getDashboardStats') {
             FROM users
             GROUP BY role
         ");
-        $userStats = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+        $userStats = [];
+        while ($row = $stmt->fetch()) {
+            $userStats[$row['role']] = $row['count'];
+        }
         
         // Total subjects
         $stmt = $pdo->query("SELECT COUNT(*) FROM subjects");
@@ -475,7 +527,27 @@ if ($action === 'getDashboardStats') {
             ) AS percentage
             FROM attendance
         ");
-        $overallPercentage = $stmt->fetchColumn();
+        $overallPercentage = $stmt->fetchColumn() ?: 0;
+        
+        // Count of students below 75%
+        $stmt = $pdo->query("
+            SELECT COUNT(*) FROM (
+                SELECT student_id, (SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) / COUNT(*)) * 100 AS pct
+                FROM attendance
+                GROUP BY student_id
+                HAVING pct < 75
+            ) AS sub
+        ");
+        $below75Count = $stmt->fetchColumn() ?: 0;
+        
+        // Recent registrations
+        $stmt = $pdo->query("
+            SELECT full_name, reg_id, role, department, created_at 
+            FROM users 
+            ORDER BY created_at DESC 
+            LIMIT 5
+        ");
+        $recentRegistrations = $stmt->fetchAll();
         
         echo json_encode([
             'success' => true,
@@ -484,7 +556,9 @@ if ($action === 'getDashboardStats') {
                 'total_teachers' => $userStats['teacher'] ?? 0,
                 'total_subjects' => $totalSubjects,
                 'today_attendance' => $todayAttendance,
-                'overall_percentage' => $overallPercentage
+                'overall_percentage' => $overallPercentage,
+                'below_75_count' => $below75Count,
+                'recent_registrations' => $recentRegistrations
             ]
         ]);
         

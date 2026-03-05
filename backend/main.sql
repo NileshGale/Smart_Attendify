@@ -224,181 +224,24 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 
 -- ============================================================================
 -- DEFAULT DATA
--- ============================================================================
--- Default password: admin123  (bcrypt hash — change in production!)
-SET @default_password = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
 
--- ── Admin ──────────────────────────────────────────────────────────────────
-INSERT INTO users (username, email, password, full_name, reg_id, role, is_active)
-VALUES ('admin', 'admin@attendify.com', @default_password, 'System Administrator', 'ADMIN001', 'admin', TRUE);
 
--- ── Teachers ───────────────────────────────────────────────────────────────
-INSERT INTO users (username, email, password, full_name, reg_id, qr_code_data, role, department, is_active)
-VALUES
-('bhagyashree.ambulkar', 'bhagyashree@attendify.com', @default_password,
- 'Bhagyashree Ambulkar', 'TEA2024001', 'QRT001', 'teacher', 'Computer Science', TRUE),
-('rekha.israni',         'rekha@attendify.com',        @default_password,
- 'Rekha Israni',         'TEA2024002', 'QRT002', 'teacher', 'Computer Science', TRUE),
-('alina.sani',           'alina@attendify.com',         @default_password,
- 'Alina Sani',           'TEA2024003', 'QRT003', 'teacher', 'Management',       TRUE);
 
--- ── Students ───────────────────────────────────────────────────────────────
-INSERT INTO users (username, email, password, full_name, reg_id, qr_code_data, role, branch, is_active)
-VALUES
-('nilesh.gale',     'nilesh@student.attendify.com',   @default_password, 'Nilesh Gale',     'SEE2004001', 'QRS2004001', 'student', 'Computer Science', TRUE),
-('parinita.paigwar','parinita@student.attendify.com', @default_password, 'Parinita Paigwar','SEE2004002', 'QRS2004002', 'student', 'Computer Science', TRUE),
-('mohit.mawre',     'mohit@student.attendify.com',    @default_password, 'Mohit Mawre',     'SEE2004003', 'QRS2004003', 'student', 'Computer Science', TRUE),
-('prajwal.pimple',  'prajwal@student.attendify.com',  @default_password, 'Prajwal Pimple',  'SEE2004004', 'QRS2004004', 'student', 'Computer Science', TRUE),
-('vivek.mandve',    'vivek@student.attendify.com',    @default_password, 'Vivek Mandve',    'SEE2004005', 'QRS2004005', 'student', 'Management',       TRUE),
-('karan.konge',     'karan@student.attendify.com',    @default_password, 'Karan Konge',     'SEE2004006', 'QRS2004006', 'student', 'Management',       TRUE),
-('tanvi.rane',      'tanvi@student.attendify.com',    @default_password, 'Tanvi Rane',      'SEE2004007', 'QRS2004007', 'student', 'Computer Science', TRUE);
+
 
 -- ── Subjects ───────────────────────────────────────────────────────────────
 INSERT INTO subjects (subject_name, subject_code, department, credits)
 VALUES
-('Java Programming',            'CS101', 'Computer Science', 4),
-('SQL & Database',              'CS102', 'Computer Science', 4),
-('Python Programming',          'CS103', 'Computer Science', 4),
-('ICI (Internet & Computing)',  'CS104', 'Computer Science', 3),
-('C Programming',               'CS105', 'Computer Science', 4),
-('Cloud Computing',             'CS201', 'Computer Science', 3),
-('E-Commerce',                  'CS202', 'Computer Science', 3),
-('PHP Web Development',         'CS203', 'Computer Science', 4),
-('Operating System',            'CS204', 'Computer Science', 4),
-('Operation Research',          'CS205', 'Computer Science', 3),
-('Digital Marketing',           'MG101', 'Management',       3),
-('Organisational Behaviour',    'MG102', 'Management',       3),
-('Microsoft Excel',             'MG103', 'Management',       2),
-('Sales Management',            'MG104', 'Management',       3);
+('C Programming',       'CP101',  
+'Computer Science', 4),
+('Core Java',           'CJ201',  'Computer Science', 4),
+('Python Programming',  'PP301',  'Computer Science', 4),
+('PHP',                 'PHP101', 'Computer Science', 4),
+('SQL with Oracle',     'SQL201', 'Computer Science', 4),
+('E Commerce',          'EC301',  'Commerce',         3),
+('Cloud Computing',     'CC401',  'Computer Science', 3),
+('Digital Marketing',   'DM201',  'Commerce',         3);
 
--- ── Teacher ↔ Subject mapping ──────────────────────────────────────────────
--- Bhagyashree Ambulkar (id=2): Java, SQL, Python, ICI, C Programming
-INSERT INTO teacher_subjects (teacher_id, subject_id) VALUES (2,1),(2,2),(2,3),(2,4),(2,5);
-
--- Rekha Israni (id=3): Cloud, E-Commerce, PHP, OS, Operation Research
-INSERT INTO teacher_subjects (teacher_id, subject_id) VALUES (3,6),(3,7),(3,8),(3,9),(3,10);
-
--- Alina Sani (id=4): Digital Marketing, OB, Excel, Sales Management
-INSERT INTO teacher_subjects (teacher_id, subject_id) VALUES (4,11),(4,12),(4,13),(4,14);
-
--- ── Student ↔ Subject mapping ──────────────────────────────────────────────
--- Nilesh Gale (id=5)
-INSERT INTO student_subjects (student_id, subject_id) VALUES (5,2),(5,3),(5,9),(5,8);
--- Parinita Paigwar (id=6)
-INSERT INTO student_subjects (student_id, subject_id) VALUES (6,2),(6,3),(6,9),(6,8);
--- Mohit Mawre (id=7)
-INSERT INTO student_subjects (student_id, subject_id) VALUES (7,7),(7,6),(7,10),(7,11);
--- Prajwal Pimple (id=8)
-INSERT INTO student_subjects (student_id, subject_id) VALUES (8,11),(8,13),(8,14),(8,1);
--- Vivek Mandve (id=9)
-INSERT INTO student_subjects (student_id, subject_id) VALUES (9,12),(9,13),(9,10),(9,11);
--- Karan Konge (id=10)
-INSERT INTO student_subjects (student_id, subject_id) VALUES (10,13),(10,14),(10,7),(10,6);
--- Tanvi Rane (id=11)
-INSERT INTO student_subjects (student_id, subject_id) VALUES (11,2),(11,3),(11,12),(11,1);
-
--- ── Teacher Schedule seed data ─────────────────────────────────────────────
--- Bhagyashree Ambulkar (teacher_id = 2) — full week timetable
-INSERT INTO teacher_schedules
-    (teacher_id, day_of_week, start_time, end_time, subject_name,              subject_code, class_section)
-VALUES
--- Monday
-(2, 'Monday',    '10:00:00', '11:00:00', 'C Programming',              'CS105', 'CSE-2A'),
-(2, 'Monday',    '11:00:00', '12:00:00', 'Java Programming',           'CS101', 'CSE-2B'),
-(2, 'Monday',    '12:30:00', '13:30:00', 'SQL & Database',             'CS102', 'CSE-2C'),
-(2, 'Monday',    '13:30:00', '14:30:00', 'ICI (Internet & Computing)', 'CS104', 'CSE-3B'),
--- Tuesday
-(2, 'Tuesday',   '10:00:00', '11:00:00', 'Python Programming',         'CS103', 'CSE-3A'),
-(2, 'Tuesday',   '11:00:00', '12:00:00', 'SQL & Database',             'CS102', 'CSE-2C'),
-(2, 'Tuesday',   '12:30:00', '13:30:00', 'C Programming',              'CS105', 'CSE-2A'),
-(2, 'Tuesday',   '13:30:00', '14:30:00', 'Java Programming',           'CS101', 'CSE-2B'),
--- Wednesday
-(2, 'Wednesday', '10:00:00', '11:00:00', 'ICI (Internet & Computing)', 'CS104', 'CSE-3B'),
-(2, 'Wednesday', '11:00:00', '12:00:00', 'C Programming',              'CS105', 'CSE-2A'),
-(2, 'Wednesday', '12:30:00', '13:30:00', 'Python Programming',         'CS103', 'CSE-3A'),
--- Thursday
-(2, 'Thursday',  '10:00:00', '11:00:00', 'Java Programming',           'CS101', 'CSE-2B'),
-(2, 'Thursday',  '11:00:00', '12:00:00', 'SQL & Database',             'CS102', 'CSE-2C'),
-(2, 'Thursday',  '12:30:00', '13:30:00', 'ICI (Internet & Computing)', 'CS104', 'CSE-3B'),
--- Friday
-(2, 'Friday',    '10:00:00', '11:00:00', 'Python Programming',         'CS103', 'CSE-3A'),
-(2, 'Friday',    '11:00:00', '12:00:00', 'C Programming',              'CS105', 'CSE-2A'),
-(2, 'Friday',    '12:30:00', '13:30:00', 'Java Programming',           'CS101', 'CSE-2B');
-
--- Rekha Israni (teacher_id = 3) — sample timetable
-INSERT INTO teacher_schedules
-    (teacher_id, day_of_week, start_time, end_time, subject_name,      subject_code, class_section)
-VALUES
-(3, 'Monday',    '10:00:00', '11:00:00', 'Cloud Computing',    'CS201', 'CSE-3A'),
-(3, 'Monday',    '11:00:00', '12:00:00', 'PHP Web Development','CS203', 'CSE-3B'),
-(3, 'Tuesday',   '10:00:00', '11:00:00', 'E-Commerce',         'CS202', 'CSE-2A'),
-(3, 'Tuesday',   '11:00:00', '12:00:00', 'Operating System',   'CS204', 'CSE-2B'),
-(3, 'Wednesday', '10:00:00', '11:00:00', 'Operation Research', 'CS205', 'CSE-2C'),
-(3, 'Thursday',  '10:00:00', '11:00:00', 'Cloud Computing',    'CS201', 'CSE-3A'),
-(3, 'Friday',    '10:00:00', '11:00:00', 'PHP Web Development','CS203', 'CSE-3B');
-
--- Alina Sani (teacher_id = 4) — sample timetable
-INSERT INTO teacher_schedules
-    (teacher_id, day_of_week, start_time, end_time, subject_name,             subject_code, class_section)
-VALUES
-(4, 'Monday',    '10:00:00', '11:00:00', 'Digital Marketing',        'MG101', 'MGMT-1A'),
-(4, 'Monday',    '11:00:00', '12:00:00', 'Sales Management',         'MG104', 'MGMT-2A'),
-(4, 'Tuesday',   '10:00:00', '11:00:00', 'Organisational Behaviour', 'MG102', 'MGMT-2B'),
-(4, 'Tuesday',   '11:00:00', '12:00:00', 'Microsoft Excel',          'MG103', 'MGMT-1B'),
-(4, 'Wednesday', '10:00:00', '11:00:00', 'Sales Management',         'MG104', 'MGMT-2A'),
-(4, 'Thursday',  '10:00:00', '11:00:00', 'Digital Marketing',        'MG101', 'MGMT-1A'),
-(4, 'Friday',    '10:00:00', '11:00:00', 'Organisational Behaviour', 'MG102', 'MGMT-2B');
-
--- ============================================================================
--- SAMPLE ATTENDANCE DATA (last 30 days, realistic percentages)
--- ============================================================================
-
--- Nilesh Gale (id=5) — SQL (subject 2)
-INSERT INTO attendance (student_id, subject_id, teacher_id, attendance_date, marking_method, status)
-SELECT 5, 2, 2, DATE_SUB(CURDATE(), INTERVAL n DAY),
-       'manual',
-       CASE WHEN n % 7 IN (1,2) THEN 'absent' ELSE 'present' END
-FROM (
-    SELECT 1 n UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5
-    UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10
-    UNION SELECT 11 UNION SELECT 12 UNION SELECT 13 UNION SELECT 14 UNION SELECT 15
-    UNION SELECT 16 UNION SELECT 17 UNION SELECT 18 UNION SELECT 19 UNION SELECT 20
-    UNION SELECT 21 UNION SELECT 22 UNION SELECT 23 UNION SELECT 24 UNION SELECT 25
-    UNION SELECT 26 UNION SELECT 27 UNION SELECT 28 UNION SELECT 29 UNION SELECT 30
-) nums
-ON DUPLICATE KEY UPDATE status = VALUES(status);
-
--- Nilesh Gale (id=5) — Python (subject 3)
-INSERT INTO attendance (student_id, subject_id, teacher_id, attendance_date, marking_method, status)
-SELECT 5, 3, 2, DATE_SUB(CURDATE(), INTERVAL n DAY),
-       'manual',
-       CASE WHEN n % 10 IN (3) THEN 'absent' ELSE 'present' END
-FROM (
-    SELECT 1 n UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5
-    UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10
-    UNION SELECT 11 UNION SELECT 12 UNION SELECT 13 UNION SELECT 14 UNION SELECT 15
-    UNION SELECT 16 UNION SELECT 17 UNION SELECT 18 UNION SELECT 19 UNION SELECT 20
-    UNION SELECT 21 UNION SELECT 22 UNION SELECT 23 UNION SELECT 24 UNION SELECT 25
-) nums
-ON DUPLICATE KEY UPDATE status = VALUES(status);
-
--- Mohit Mawre (id=7) — E-Commerce (subject 7)
-INSERT INTO attendance (student_id, subject_id, teacher_id, attendance_date, marking_method, status)
-SELECT 7, 7, 3, DATE_SUB(CURDATE(), INTERVAL n DAY),
-       'manual',
-       CASE WHEN n IN (2,5,9,14,19,22) THEN 'absent' ELSE 'present' END
-FROM (
-    SELECT 1 n UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5
-    UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10
-    UNION SELECT 11 UNION SELECT 12 UNION SELECT 13 UNION SELECT 14 UNION SELECT 15
-    UNION SELECT 16 UNION SELECT 17 UNION SELECT 18 UNION SELECT 19 UNION SELECT 20
-    UNION SELECT 21 UNION SELECT 22 UNION SELECT 23 UNION SELECT 24 UNION SELECT 25
-) nums
-ON DUPLICATE KEY UPDATE status = VALUES(status);
-
--- ============================================================================
--- VIEWS
--- ============================================================================
 
 -- View: Student Subject Allocation
 CREATE OR REPLACE VIEW view_student_subjects AS
@@ -554,7 +397,20 @@ BEGIN
     END IF;
 END //
 
+
+-- Add the new subjects to your existing subjects table
+INSERT IGNORE INTO subjects (subject_name, subject_code, department, credits) VALUES
+('C Programming',       'CP101',  'Computer Science', 4),
+('Core Java',           'CJ201',  'Computer Science', 4),
+('Python Programming',  'PP301',  'Computer Science', 4),
+('PHP',                 'PHP101', 'Computer Science', 4),
+('SQL with Oracle',     'SQL201', 'Computer Science', 4),
+('E Commerce',          'EC301',  'Commerce',         3),
+('Cloud Computing',     'CC401',  'Computer Science', 3),
+('Digital Marketing',   'DM201',  'Commerce',         3);
+
 -- Increase Attendance Percentage
+DELIMITER //
 CREATE PROCEDURE sp_increase_attendance(
     IN p_student_id          INT,
     IN p_subject_id          INT,
@@ -609,3 +465,6 @@ SELECT '✓ Attendify Complete Database (v2.1) Created Successfully!' AS status;
 SELECT 'Default password for all users: admin123'                    AS note;
 SELECT '⚠  Change all passwords after first login!'                  AS warning;
 SELECT 'Table teacher_schedules is ready for admin schedule mgmt'    AS info;
+
+
+

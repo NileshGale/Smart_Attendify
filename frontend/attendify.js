@@ -735,39 +735,3 @@ function displayDashboardStats(stats) {
     document.getElementById('overallPercentage').textContent = stats.overall_percentage + '%';
 }
 
-// ============================================================================
-// EXAMPLE USAGE IN HTML
-// ============================================================================
-
-/*
-<!-- Login Form -->
-<form id="loginForm">
-    <input type="text" name="reg_id" placeholder="Registration ID" required>
-    <input type="password" name="password" placeholder="Password" required>
-    <button type="submit">Login</button>
-</form>
-
-<script>
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    await login(formData.get('reg_id'), formData.get('password'));
-});
-</script>
-
-<!-- Student QR Code Download -->
-<button onclick="downloadQRCode(<?= $_SESSION['user_id'] ?>)">
-    Download My QR Code
-</button>
-
-<!-- Teacher Generate Unique Code -->
-<button onclick="generateAttendanceCode(1, 15)">
-    Generate 15-Minute Code
-</button>
-
-<!-- Student Submit Code -->
-<input type="text" id="codeInput" placeholder="Enter code">
-<button onclick="submitAttendanceCode(document.getElementById('codeInput').value)">
-    Submit
-</button>
-*/
