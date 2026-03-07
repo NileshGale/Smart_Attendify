@@ -999,7 +999,16 @@
                 <div class="section-title">👥 Student Attendance</div>
                 <div class="card">
                     <div class="search-row">
-                        <input type="text" id="studentSearch" placeholder="Enter Registration ID or Roll Number">
+                        <div style="position:relative;flex:1">
+                            <input type="text" id="studentSearch" placeholder="Enter Registration ID or Roll Number"
+                                style="width: 100%; box-sizing: border-box; padding-right: 32px;">
+                            <button type="button"
+                                onclick="document.getElementById('studentSearch').value='';this.style.display='none';document.getElementById('studentResults').style.display='none';"
+                                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;padding:4px;display:none"
+                                id="searchClearBtn">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
                         <button class="btn-primary" onclick="searchStudent()"><i
                                 class="fa-solid fa-magnifying-glass"></i> Search</button>
                     </div>
@@ -1025,6 +1034,21 @@
                             Download PDF
                         </button>
                     </div>
+
+                    <!-- Filters -->
+                    <div style="display:flex; gap:1rem; margin-top:1rem; margin-bottom:1rem;" id="attendanceFilters">
+                        <select id="filterSubject" class="form-control" style="max-width:250px;"
+                            onchange="applyFilters()">
+                            <option value="all">All Subjects</option>
+                        </select>
+                        <select id="filterStatus" class="form-control" style="max-width:200px;"
+                            onchange="applyFilters()">
+                            <option value="all">All Status (Present & Absent)</option>
+                            <option value="present">Present Only</option>
+                            <option value="absent">Absent Only</option>
+                        </select>
+                    </div>
+
                     <div class="card">
                         <div class="table-wrap">
                             <table>
@@ -1337,6 +1361,18 @@
         }
 
         // Search Student Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('studentSearch');
+            const clearBtn = document.getElementById('searchClearBtn');
+            if (searchInput && clearBtn) {
+                searchInput.addEventListener('input', function () {
+                    clearBtn.style.display = this.value.trim().length > 0 ? 'block' : 'none';
+                });
+            }
+        });
+
+        let currentStudentReport = [];
+
         async function searchStudent() {
             const query = document.getElementById('studentSearch').value.trim();
             if (!query) {
@@ -1363,30 +1399,26 @@
                     document.getElementById('studentBranch').textContent = student.branch || 'N/A';
                     document.getElementById('studentDept').textContent = student.department || 'N/A';
 
-                    tbody.innerHTML = '';
-                    if (data.report.length > 0) {
-                        data.report.forEach(item => {
-                            const pct = parseFloat(item.percentage);
-                            let statusClass = pct >= 75 ? 'badge-present' : (pct >= 65 ? 'badge-warn' : 'badge-absent');
-                            let statusText = pct >= 75 ? 'Good' : (pct >= 65 ? 'Low' : 'Critical');
+                    currentStudentReport = data.report;
 
-                            tbody.innerHTML += `
-                                <tr>
-                                    <td><strong>${item.subject_name}</strong></td>
-                                    <td>${item.subject_code}</td>
-                                    <td>${item.total_classes}</td>
-                                    <td style="color:var(--success)">${item.present_count}</td>
-                                    <td style="color:var(--danger)">${item.absent_count}</td>
-                                    <td><strong>${pct.toFixed(2)}%</strong></td>
-                                    <td><span class="badge ${statusClass}">${statusText}</span></td>
-                                    <td>-</td>
-                                </tr>
-                            `;
-                        });
-                    } else {
-                        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No attendance records found.</td></tr>';
-                    }
+                    // Populate Subject Filter
+                    const subjectFilter = document.getElementById('filterSubject');
+                    subjectFilter.innerHTML = '<option value="all">All Subjects</option>';
+                    const subjects = [...new Set(currentStudentReport.map(item => item.subject_name))];
+                    subjects.forEach(sub => {
+                        const opt = document.createElement('option');
+                        opt.value = sub;
+                        opt.textContent = sub;
+                        subjectFilter.appendChild(opt);
+                    });
+
+                    // Reset Status Filter to all
+                    document.getElementById('filterStatus').value = 'all';
+
+                    applyFilters();
+
                 } else {
+                    currentStudentReport = [];
                     document.getElementById('studentName').textContent = 'Student Not Found';
                     document.getElementById('studentEmail').textContent = '';
                     document.getElementById('studentRegId').textContent = '';
@@ -1396,7 +1428,59 @@
                 }
             } catch (e) {
                 console.error(e);
+                currentStudentReport = [];
                 tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--danger);">Network Error. Please try again.</td></tr>';
+            }
+        }
+
+        function applyFilters() {
+            const tbody = document.getElementById('attendanceTableBody');
+            const subjectFilter = document.getElementById('filterSubject').value;
+            const statusFilter = document.getElementById('filterStatus').value;
+
+            let filteredReport = currentStudentReport;
+
+            if (subjectFilter !== 'all') {
+                filteredReport = filteredReport.filter(item => item.subject_name === subjectFilter);
+            }
+
+            if (statusFilter === 'present') {
+                filteredReport = filteredReport.filter(item => item.present_count > 0);
+            } else if (statusFilter === 'absent') {
+                filteredReport = filteredReport.filter(item => item.present_count == 0 && item.absent_count > 0);
+            }
+
+            tbody.innerHTML = '';
+            if (filteredReport.length > 0) {
+                filteredReport.forEach(item => {
+                    const pct = parseFloat(item.percentage);
+                    let statusClass = pct >= 75 ? 'badge-present' : (pct >= 65 ? 'badge-warn' : 'badge-absent');
+                    let statusText = pct >= 75 ? 'Good' : (pct >= 65 ? 'Low' : 'Critical');
+
+                    let absCount = parseInt(item.absent_count);
+                    let presCount = parseInt(item.present_count);
+
+                    if (statusFilter === 'present') {
+                        absCount = 0;
+                    } else if (statusFilter === 'absent') {
+                        presCount = 0;
+                    }
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><strong>${item.subject_name}</strong></td>
+                            <td>${item.subject_code}</td>
+                            <td>${item.total_classes}</td>
+                            <td style="color:var(--success)">${presCount}</td>
+                            <td style="color:var(--danger)">${absCount}</td>
+                            <td><strong>${pct.toFixed(2)}%</strong></td>
+                            <td><span class="badge ${statusClass}">${statusText}</span></td>
+                            <td>-</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No matching records found.</td></tr>';
             }
         }
 
@@ -1405,57 +1489,81 @@
             const studentName = document.getElementById('studentName').textContent || 'Student';
             const regId = document.getElementById('studentRegId').textContent || '';
             const email = document.getElementById('studentEmail').textContent || '';
+            const branch = document.getElementById('studentBranch').textContent || 'N/A';
+            const dept = document.getElementById('studentDept').textContent || 'N/A';
 
             if (studentName === 'Student Not Found' || studentName === 'Student') {
                 showToast('No valid report to download', true);
                 return;
             }
 
-            // Hide actions column for PDF print
-            const tableWrap = document.querySelector('#studentResults .table-wrap').cloneNode(true);
-            const thead = tableWrap.querySelector('thead tr');
-            if (thead.children.length >= 8) thead.removeChild(thead.children[7]); // Remove Actions hdr
+            // Collect table data (skip Actions column)
+            const tableRows = document.querySelectorAll('#attendanceTableBody tr');
+            let tableRowsHTML = '';
+            tableRows.forEach((row, idx) => {
+                const cells = row.querySelectorAll('td');
+                if (cells.length < 7) return;
+                const bgColor = idx % 2 === 0 ? '#ffffff' : '#f8fbfc';
+                // Extract status badge text
+                const statusBadge = cells[6].querySelector('.badge');
+                const statusText = statusBadge ? statusBadge.textContent.trim() : '-';
+                const statusColor = statusText === 'Good' ? '#10b981' : (statusText === 'Low' ? '#f59e0b' : '#ef4444');
+                const statusBg = statusText === 'Good' ? 'rgba(16,185,129,0.12)' : (statusText === 'Low' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)');
 
-            const rows = tableWrap.querySelectorAll('tbody tr');
-            rows.forEach(row => {
-                if (row.children.length >= 8) row.removeChild(row.children[7]); // Remove Actions td
+                tableRowsHTML += `
+                    <tr style="background:${bgColor}">
+                        <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#1e3a5f">${cells[0].textContent.trim()}</td>
+                        <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;color:#6b7280">${cells[1].textContent.trim()}</td>
+                        <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;color:#374151">${cells[2].textContent.trim()}</td>
+                        <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;color:#10b981;font-weight:600">${cells[3].textContent.trim()}</td>
+                        <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;color:#ef4444;font-weight:600">${cells[4].textContent.trim()}</td>
+                        <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;font-weight:700;color:#1e3a5f">${cells[5].textContent.trim()}</td>
+                        <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb">
+                            <span style="background:${statusBg};color:${statusColor};padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600">${statusText}</span>
+                        </td>
+                    </tr>`;
             });
 
-            // Make a temporary container for rendering PDF
+            const generatedDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'numeric', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString('en-IN');
+
+            // Build styled PDF container matching student dashboard style
             const pdfContainer = document.createElement('div');
             pdfContainer.innerHTML = `
-                <div style="font-family: Arial, sans-serif; padding: 20px;">
-                    <h2 style="text-align:center; color:#00BCD4; margin-bottom: 20px;">Attendify - Student Attendance Report</h2>
-                    <div style="margin-bottom: 20px; border: 1px solid #ccc; padding: 15px; border-radius: 8px;">
-                        <h3 style="margin: 0 0 10px 0;">Student Name: ${studentName}</h3>
-                        <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
-                        <p style="margin: 5px 0;"><strong>Reg ID:</strong> ${regId}</p>
-                        <p style="margin: 5px 0;"><strong>Branch:</strong> ${document.getElementById('studentBranch').textContent}</p>
-                        <p style="margin: 5px 0;"><strong>Department:</strong> ${document.getElementById('studentDept').textContent}</p>
+                <div style="font-family: 'Segoe UI', Arial, sans-serif; background: #ffffff; max-width: 800px; margin: 0 auto;">
+                    <!-- Dark Navy Header -->
+                    <div style="background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%); padding: 30px 35px 25px; border-radius: 0 0 0 0;">
+                        <h1 style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0 0 12px 0; letter-spacing: -0.3px;">Attendify — Attendance Report</h1>
+                        <div style="margin-bottom: 10px;">
+                            <p style="color: #ffffff; font-size: 14px; font-weight: 700; margin: 0 0 4px 0;">${studentName}</p>
+                            <p style="color: #00BCD4; font-size: 13px; font-weight: 600; margin: 0 0 8px 0; font-family: 'Courier New', monospace; letter-spacing: 0.5px;">${regId}</p>
+                            <p style="color: #f8f8ff; font-size: 11px; margin: 0 0 2px 0;">Email: ${email || 'N/A'}</p>
+                            <p style="color: #f8f8ff; font-size: 11px; margin: 0 0 2px 0;">Branch: ${branch}</p>
+                            <p style="color: #f8f8ff; font-size: 11px; margin: 0 0 3px 0;">Department: ${dept}</p>
+                        </div>
+                        <p style="color: rgba(255,255,255,0.7); font-size: 11px; margin: 0; text-align: right;">Generated: ${generatedDate}</p>
                     </div>
-                    <div style="width: 100%;">
-                        ${tableWrap.outerHTML}
+
+                    <!-- Table Section -->
+                    <div style="padding: 25px 20px 30px;">
+                        <table style="width: 100%; border-collapse: collapse; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                            <thead>
+                                <tr style="background: linear-gradient(135deg, #00BCD4, #0097A7);">
+                                    <th style="padding: 11px 14px; text-align: left; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Subject</th>
+                                    <th style="padding: 11px 14px; text-align: left; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Code</th>
+                                    <th style="padding: 11px 14px; text-align: left; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Total</th>
+                                    <th style="padding: 11px 14px; text-align: left; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Present</th>
+                                    <th style="padding: 11px 14px; text-align: left; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Absent</th>
+                                    <th style="padding: 11px 14px; text-align: left; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: none;">%</th>
+                                    <th style="padding: 11px 14px; text-align: left; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRowsHTML}
+                            </tbody>
+                        </table>
                     </div>
-                    <p style="margin-top:20px; font-size:12px; text-align:right; color:#666;">Generated on: ${new Date().toLocaleString()}</p>
                 </div>
             `;
-
-            // Adding inline styles to the table for correct PDF rendering
-            const tables = pdfContainer.querySelectorAll('table');
-            tables.forEach(t => {
-                t.style.width = '100%';
-                t.style.borderCollapse = 'collapse';
-                const tds = t.querySelectorAll('td, th');
-                tds.forEach(td => {
-                    td.style.border = '1px solid #ddd';
-                    td.style.padding = '8px';
-                    td.style.textAlign = 'left';
-                });
-                const ths = t.querySelectorAll('th');
-                ths.forEach(th => {
-                    th.style.backgroundColor = '#f2f2f2';
-                });
-            });
 
             showToast('Generating PDF...');
 
