@@ -592,7 +592,7 @@ if ($action === 'getRecentRegistrations') {
         $sql .= " ORDER BY created_at DESC";
         $limit = $_GET['limit'] ?? 'all';
         if ($limit !== 'all' && is_numeric($limit)) {
-            $sql = "SELECT full_name, reg_id, role, department, created_at FROM ($sql) as filtered_users LIMIT " . intval($limit);
+            $sql .= " LIMIT " . intval($limit);
         }
         
         $stmt = $pdo->prepare($sql);
