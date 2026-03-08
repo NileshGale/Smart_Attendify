@@ -326,7 +326,8 @@
             min-width: 180px;
         }
 
-        .search-row input:focus {
+        .search-row input:focus,
+        .search-row select:focus {
             outline: none;
             border-color: var(--primary-cyan);
         }
@@ -1036,16 +1037,26 @@
                     </div>
 
                     <!-- Filters -->
-                    <div style="display:flex; gap:1rem; margin-top:1rem; margin-bottom:1rem;" id="attendanceFilters">
-                        <select id="filterSubject" class="form-control" style="max-width:250px;"
+                    <div class="search-row" id="attendanceFilters" style="margin-top:1rem; margin-bottom:1rem;">
+                        <select id="filterSubject"
+                            style="max-width:250px; background:var(--surface); color:var(--text); cursor:pointer;"
                             onchange="applyFilters()">
                             <option value="all">All Subjects</option>
                         </select>
-                        <select id="filterStatus" class="form-control" style="max-width:200px;"
+                        <select id="filterStatus"
+                            style="max-width:200px; background:var(--surface); color:var(--text); cursor:pointer;"
                             onchange="applyFilters()">
                             <option value="all">All Status (Present & Absent)</option>
                             <option value="present">Present Only</option>
                             <option value="absent">Absent Only</option>
+                        </select>
+                        <select id="filterRows"
+                            style="max-width:180px; background:var(--surface); color:var(--text); cursor:pointer;"
+                            onchange="applyFilters()">
+                            <option value="all">All Rows</option>
+                            <option value="10">First 10 Rows</option>
+                            <option value="20">First 20 Rows</option>
+                            <option value="30">First 30 Rows</option>
                         </select>
                     </div>
 
@@ -1437,6 +1448,8 @@
             const tbody = document.getElementById('attendanceTableBody');
             const subjectFilter = document.getElementById('filterSubject').value;
             const statusFilter = document.getElementById('filterStatus').value;
+            const filterRowsSelect = document.getElementById('filterRows');
+            const rowsFilter = filterRowsSelect ? filterRowsSelect.value : 'all';
 
             let filteredReport = currentStudentReport;
 
@@ -1448,6 +1461,13 @@
                 filteredReport = filteredReport.filter(item => item.present_count > 0);
             } else if (statusFilter === 'absent') {
                 filteredReport = filteredReport.filter(item => item.present_count == 0 && item.absent_count > 0);
+            }
+
+            if (rowsFilter !== 'all') {
+                const limit = parseInt(rowsFilter, 10);
+                if (!isNaN(limit)) {
+                    filteredReport = filteredReport.slice(0, limit);
+                }
             }
 
             tbody.innerHTML = '';

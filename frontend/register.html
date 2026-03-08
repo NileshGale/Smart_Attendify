@@ -424,12 +424,13 @@
 
         .modal-content {
             background: white;
-            border-radius: 24px;
-            padding: 50px;
-            max-width: 600px;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
             width: 90%;
             text-align: center;
             animation: scaleIn 0.3s ease;
+            position: relative;
         }
 
         @keyframes scaleIn {
@@ -445,37 +446,37 @@
         }
 
         .modal-icon {
-            width: 100px;
-            height: 100px;
+            width: 80px;
+            height: 80px;
             background: linear-gradient(135deg, var(--success), #059669);
             border-radius: 50%;
-            margin: 0 auto 30px;
+            margin: 0 auto 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 50px;
+            font-size: 40px;
             color: white;
-            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
         }
 
         .modal-title {
-            font-size: 32px;
+            font-size: 26px;
             color: var(--navy-dark);
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
 
         .credentials-box {
             background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            border-radius: 16px;
-            padding: 30px;
-            margin: 30px 0;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
             border: 2px solid var(--primary-cyan);
         }
 
         .credential-item {
             display: flex;
             justify-content: space-between;
-            padding: 15px 0;
+            padding: 12px 0;
             border-bottom: 1px solid #cbd5e1;
         }
 
@@ -694,30 +695,36 @@
 
     <!-- Success Modal -->
     <div class="modal hidden" id="successModal">
-        <div class="modal-content">
-            <div class="modal-icon">✓</div>
-            <h2 class="modal-title">Registration Successful!</h2>
-            <p style="color: var(--text-light); font-size: 16px; margin-bottom: 20px;">
+        <div class="modal-content"
+            style="max-width: 380px; padding: 30px 25px; border-radius: 16px; position: relative;">
+            <button type="button" onclick="window.location.href='register.html'"
+                style="position: absolute; top: 16px; right: 20px; background: none; border: none; font-size: 20px; color: #9ca3af; cursor: pointer; transition: color 0.2s;"
+                onmouseover="this.style.color='#4b5563'" onmouseout="this.style.color='#9ca3af'">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="modal-icon" style="width: 70px; height: 70px; margin: 0 auto 15px; font-size: 32px;">✓</div>
+            <h2 class="modal-title" style="font-size: 24px; margin-bottom: 8px;">Registration Successful!</h2>
+            <p style="color: var(--text-light); font-size: 14px; margin-bottom: 15px;">
                 Your account has been created successfully.
             </p>
-            <div class="credentials-box">
-                <div class="credential-item">
-                    <span class="credential-label">Username:</span>
-                    <span class="credential-value" id="usernameDisplay">-</span>
+            <div class="credentials-box" style="padding: 15px; margin: 15px 0;">
+                <div class="credential-item" style="padding: 8px 0;">
+                    <span class="credential-label" style="font-size: 13px;">Username:</span>
+                    <span class="credential-value" id="usernameDisplay" style="font-size: 15px;">-</span>
                 </div>
-                <div class="credential-item">
-                    <span class="credential-label">Registration ID:</span>
-                    <span class="credential-value" id="regIdDisplay">-</span>
+                <div class="credential-item" style="padding: 8px 0;">
+                    <span class="credential-label" style="font-size: 13px;">Registration ID:</span>
+                    <span class="credential-value" id="regIdDisplay" style="font-size: 15px;">-</span>
                 </div>
-                <div class="credential-item">
-                    <span class="credential-label">Email:</span>
-                    <span class="credential-value" id="emailDisplay">-</span>
+                <div class="credential-item" style="padding: 8px 0;">
+                    <span class="credential-label" style="font-size: 13px;">Email:</span>
+                    <span class="credential-value" id="emailDisplay" style="font-size: 14px;">-</span>
                 </div>
             </div>
-            <p style="color: var(--text-light); font-size: 14px; margin-bottom: 30px;">
+            <p style="color: var(--text-light); font-size: 12px; margin-bottom: 15px;">
                 📧 Check your email for complete login details
             </p>
-            <button class="btn btn-primary" id="closeModal" style="width: 100%; padding: 16px;">
+            <button class="btn btn-primary" id="closeModal" style="width: 100%; padding: 12px; font-size: 15px;">
                 Go to Login Page
             </button>
         </div>
