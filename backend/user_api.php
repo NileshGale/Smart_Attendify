@@ -545,7 +545,6 @@ if ($action === 'getDashboardStats') {
             SELECT full_name, reg_id, role, department, created_at 
             FROM users 
             ORDER BY created_at DESC 
-            LIMIT 5
         ");
         $recentRegistrations = $stmt->fetchAll();
         
@@ -562,6 +561,48 @@ if ($action === 'getDashboardStats') {
             ]
         ]);
         
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
+// ============================================================================
+// GET RECENT REGISTRATIONS (Admin)
+// ============================================================================
+if ($action === 'getRecentRegistrations') {
+    requireRole('admin');
+    
+    $role = sanitize($_GET['role'] ?? 'all');
+    $dept = sanitize($_GET['dept'] ?? 'all');
+    
+    try {
+        $sql = "SELECT full_name, reg_id, role, department, created_at FROM users WHERE 1=1";
+        $params = [];
+        
+        if ($role !== 'all') {
+            $sql .= " AND role = ?";
+            $params[] = $role;
+        }
+        if ($dept !== 'all') {
+            $sql .= " AND department = ?";
+            $params[] = $dept;
+        }
+        
+        $sql .= " ORDER BY created_at DESC";
+        $limit = $_GET['limit'] ?? 'all';
+        if ($limit !== 'all' && is_numeric($limit)) {
+            $sql = "SELECT full_name, reg_id, role, department, created_at FROM ($sql) as filtered_users LIMIT " . intval($limit);
+        }
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $recentRegistrations = $stmt->fetchAll();
+        
+        echo json_encode([
+            'success' => true,
+            'recent_registrations' => $recentRegistrations
+        ]);
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
     }
