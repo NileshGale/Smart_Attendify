@@ -596,6 +596,207 @@
             color: var(--text-muted);
         }
 
+        /* TEACHER SCHEDULE STYLES */
+        .teacher-profile-card {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+
+        .profile-avatar {
+            width: 64px;
+            height: 64px;
+            background: var(--primary-cyan);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0, 188, 212, 0.2);
+        }
+
+        .profile-title h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: var(--text);
+        }
+
+        .profile-title p {
+            margin: 0.25rem 0 0;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .profile-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+
+        .detail-item i {
+            color: var(--primary-cyan);
+            width: 16px;
+        }
+
+        .timetable-container h4 {
+            margin-bottom: 1.25rem;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .days-strip {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 1rem;
+            overflow-x: auto;
+            padding-bottom: 1rem;
+        }
+
+        @media (max-width: 1200px) {
+            .days-strip {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .days-strip {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .day-column {
+            background: #fff;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .day-name {
+            background: #f8fafc;
+            padding: 0.75rem;
+            text-align: center;
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .class-list {
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            min-height: 100px;
+        }
+
+        .class-card {
+            background: #f1f5f9;
+            padding: 0.75rem;
+            border-radius: 8px;
+            position: relative;
+            transition: all 0.2s;
+            border-left: 3px solid var(--primary-cyan);
+        }
+
+        .class-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .class-time {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--primary-cyan);
+            margin-bottom: 0.25rem;
+        }
+
+        .class-subject {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .class-info {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .class-actions {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            display: flex;
+            gap: 0.25rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .class-card:hover .class-actions {
+            opacity: 1;
+        }
+
+        .class-actions button {
+            background: white;
+            border: 1px solid var(--border);
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .class-actions button:hover {
+            color: var(--primary-cyan);
+            border-color: var(--primary-cyan);
+        }
+
+        .class-actions button.delete:hover {
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .no-classes {
+            text-align: center;
+            padding: 1.5rem 0;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
         .input-group input,
         .input-group select {
             width: 100%;
@@ -1380,17 +1581,226 @@
                                         <td>${r.reg_id || '-'}</td>
                                         <td><span class="badge ${badgeClass}">${roleText}</span></td>
                                         <td>${r.department || '-'}</td>
-                                        <td>${date}</td>
-                                    </tr>
-                                `;
+                                        </tr>
+                            `;
                             });
                         } else {
-                            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">No recent registrations</td></tr>';
+                            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem">No recent registrations found</td></tr>';
                         }
                     }
                 }
             } catch (err) {
                 console.error("Failed to load admin stats", err);
+                showToast('Failed to load dashboard statistics', true);
+            }
+        }
+
+        // ─── TEACHER SCHEDULE MANAGEMENT ───
+        let currentEditingScheduleId = null;
+
+        async function searchTeacher() {
+            const query = document.getElementById('teacherSearch').value.trim();
+            if (!query) {
+                showToast('Enter name or ID to search', true);
+                return;
+            }
+
+            const grid = document.getElementById('scheduleGrid');
+            grid.innerHTML = '<div style="text-align:center;padding:4rem"><i class="fa-solid fa-spinner fa-spin fa-2x" style="color:var(--primary-cyan)"></i><p style="margin-top:1rem;color:var(--text-muted)">Searching Teacher Data...</p></div>';
+
+            try {
+                const res = await fetch(`../backend/schedule_api.php?action=searchTeacherSchedule&query=${encodeURIComponent(query)}`);
+                const data = await res.json();
+
+                if (data.success && data.teacher) {
+                    renderTeacherSchedule(data);
+                } else {
+                    grid.innerHTML = `<div style="text-align:center;padding:4rem">
+                        <i class="fa-solid fa-user-slash fa-3x" style="color:var(--text-muted);margin-bottom:1.5rem"></i>
+                        <p style="color:var(--danger);font-weight:600">${data.message || 'Teacher not found'}</p>
+                        <p style="color:var(--text-muted);font-size:0.9rem">Try searching with a different name or Registration ID</p>
+                    </div>`;
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Search failed', true);
+                grid.innerHTML = '<p style="color:var(--danger);text-align:center;padding:2rem">Connection error. Please try again.</p>';
+            }
+        }
+
+        function renderTeacherSchedule(data) {
+            const t = data.teacher;
+            const s = data.schedule;
+            const grid = document.getElementById('scheduleGrid');
+
+            const dateOfBirth = t.dob ? new Date(t.dob).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+
+            let scheduleHTML = `
+                <div class="teacher-profile-card">
+                    <div class="profile-header">
+                        <div class="profile-avatar">${t.full_name.charAt(0).toUpperCase()}</div>
+                        <div class="profile-title">
+                            <h3>${t.full_name}</h3>
+                            <p>${t.reg_id} • <span style="color:var(--primary-cyan);font-weight:600">${t.department}</span></p>
+                        </div>
+                    </div>
+                    <div class="profile-details">
+                        <div class="detail-item"><i class="fa-solid fa-envelope"></i> <span><strong>Email:</strong> ${t.email || '-'}</span></div>
+                        <div class="detail-item"><i class="fa-solid fa-phone"></i> <span><strong>Mobile:</strong> ${t.phone || '-'}</span></div>
+                        <div class="detail-item"><i class="fa-solid fa-cake-candles"></i> <span><strong>DOB:</strong> ${dateOfBirth}</span></div>
+                        <div class="detail-item"><i class="fa-solid fa-building"></i> <span><strong>Branch:</strong> ${t.branch || 'Main Campus'}</span></div>
+                    </div>
+                </div>
+                <div class="timetable-container">
+                    <h4><i class="fa-regular fa-calendar-check" style="color:var(--primary-cyan)"></i> Weekly Timetable</h4>
+            `;
+
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+            scheduleHTML += '<div class="days-strip">';
+            days.forEach(day => {
+                const dayClasses = s[day] || [];
+
+                scheduleHTML += `
+                    <div class="day-column">
+                        <div class="day-name">${day}</div>
+                        <div class="class-list">
+                            ${dayClasses.length > 0 ? dayClasses.map(c => `
+                                <div class="class-card">
+                                    <div class="class-time">${c.time}</div>
+                                    <div class="class-subject">${c.subject}</div>
+                                    <div class="class-info">
+                                        <span><i class="fa-solid fa-tag"></i> ${c.code || '-'}</span>
+                                        <span><i class="fa-solid fa-users"></i> ${c.class || '-'}</span>
+                                    </div>
+                                    <div class="class-actions">
+                                        <button onclick="editSchedule(${c.id})" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                                        <button onclick="deleteSchedule(${c.id})" class="delete" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                                    </div>
+                                </div>
+                            `).join('') : '<div class="no-classes">No Classes</div>'}
+                        </div>
+                    </div>
+                `;
+            });
+
+            scheduleHTML += '</div></div>';
+            grid.innerHTML = scheduleHTML;
+        }
+
+        async function showAddScheduleForm() {
+            currentEditingScheduleId = null;
+            document.getElementById('scheduleModalTitle').innerHTML = '<i class="fa-solid fa-plus"></i> Add Schedule';
+            document.getElementById('scheduleModal').classList.add('show');
+
+            const form = document.querySelector('#scheduleModal form');
+            form.reset();
+
+            await loadTeachersIntoSelect();
+        }
+
+        function closeScheduleModal() {
+            document.getElementById('scheduleModal').classList.remove('show');
+        }
+
+        async function loadTeachersIntoSelect(selectedId = null) {
+            const select = document.getElementById('scheduleTeacher');
+            try {
+                const res = await fetch('../backend/user_api.php?action=getAllUsers&role=teacher');
+                const data = await res.json();
+
+                if (data.success) {
+                    select.innerHTML = '<option value="">Select Teacher</option>';
+                    data.users.forEach(u => {
+                        const opt = document.createElement('option');
+                        opt.value = u.id;
+                        opt.textContent = `${u.full_name} (${u.reg_id})`;
+                        if (selectedId && u.id == selectedId) opt.selected = true;
+                        select.appendChild(opt);
+                    });
+                }
+            } catch (err) {
+                showToast('Failed to load teachers', true);
+            }
+        }
+
+        async function editSchedule(id) {
+            try {
+                const res = await fetch(`../backend/schedule_api.php?action=getScheduleById&id=${id}`);
+                const data = await res.json();
+
+                if (data.success) {
+                    currentEditingScheduleId = id;
+                    document.getElementById('scheduleModalTitle').innerHTML = '<i class="fa-solid fa-pen"></i> Edit Schedule';
+
+                    await loadTeachersIntoSelect(data.schedule.teacher_id);
+                    document.getElementById('scheduleDay').value = data.schedule.day_of_week;
+                    document.getElementById('scheduleClass').value = data.schedule.class_section;
+                    document.getElementById('scheduleSubject').value = data.schedule.subject_name;
+                    document.getElementById('scheduleStartTime').value = data.schedule.start_time;
+                    document.getElementById('scheduleEndTime').value = data.schedule.end_time;
+
+                    document.getElementById('scheduleModal').classList.add('show');
+                }
+            } catch (err) {
+                showToast('Failed to load schedule', true);
+            }
+        }
+
+        async function submitSchedule(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const action = currentEditingScheduleId ? 'updateSchedule' : 'addSchedule';
+
+            formData.append('action', action);
+            if (currentEditingScheduleId) formData.append('id', currentEditingScheduleId);
+
+            formData.append('teacher_id', document.getElementById('scheduleTeacher').value);
+            formData.append('day', document.getElementById('scheduleDay').value);
+            formData.append('subject', document.getElementById('scheduleSubject').value);
+            formData.append('class_section', document.getElementById('scheduleClass').value);
+            formData.append('start_time', document.getElementById('scheduleStartTime').value);
+            formData.append('end_time', document.getElementById('scheduleEndTime').value);
+
+            try {
+                const res = await fetch('../backend/schedule_api.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    showToast(data.message);
+                    closeScheduleModal();
+                    const query = document.getElementById('teacherSearch').value.trim();
+                    if (query) searchTeacher();
+                } else {
+                    showToast(data.message || 'Action failed', true);
+                }
+            } catch (err) {
+                showToast('Network error', true);
+            }
+        }
+
+        async function deleteSchedule(id) {
+            if (!confirm('Are you sure you want to delete this class?')) return;
+
+            try {
+                const res = await fetch('../backend/schedule_api.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `action=deleteSchedule&id=${id}`
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    showToast('Deleted successfully');
+                    searchTeacher();
+                } else {
+                    showToast(data.message || 'Delete failed', true);
+                }
+            } catch (err) {
+                showToast('Network error', true);
             }
         }
 

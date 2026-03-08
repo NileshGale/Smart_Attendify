@@ -25,7 +25,7 @@ if ($action === 'getTeacherSchedule') {
     try {
         // Get teacher info first
         $stmt = $pdo->prepare("
-            SELECT id, reg_id, full_name, email, department, phone
+            SELECT id, reg_id, full_name, email, department, branch, phone, dob
             FROM users
             WHERE id = ? AND role = 'teacher' AND is_active = 1
         ");
@@ -96,7 +96,7 @@ if ($action === 'searchTeacherSchedule') {
     try {
         // Find teacher by name, reg_id, or email
         $stmt = $pdo->prepare("
-            SELECT id, reg_id, full_name, email, department, phone
+            SELECT id, reg_id, full_name, email, department, branch, phone, dob
             FROM users
             WHERE role = 'teacher' 
               AND is_active = 1
