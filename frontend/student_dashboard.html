@@ -1511,12 +1511,13 @@
                         generateQRCode();
 
                         // Populate Subjects
+                        const collegeEventOpt = '<option value="College Event">-- College Event --</option>';
                         if (data.user.subjects && data.user.subjects.length > 0) {
                             ALL_SUBJECTS = data.user.subjects.map(s => s.subject_name);
                             const opts = data.user.subjects.map(s => `<option value="${s.subject_name}">${s.subject_name} (${s.subject_code || ''})</option>`).join('');
-                            document.getElementById('codeSubjectSelect').innerHTML = '<option value="">-- Select Subject --</option>' + opts;
+                            document.getElementById('codeSubjectSelect').innerHTML = '<option value="">-- Select Subject --</option>' + collegeEventOpt + opts;
                             document.getElementById('graphSubject').innerHTML = '<option value="all">All Subjects</option>' + opts;
-                            document.getElementById('histSubject').innerHTML = '<option value="all">All Subjects</option>' + opts;
+                            document.getElementById('histSubject').innerHTML = '<option value="all">All Subjects</option>' + collegeEventOpt + opts;
                         } else {
                             // Fetch all subjects if no enrolled subjects found
                             return fetch('../backend/user_api.php?action=getAllSubjects');
@@ -1529,9 +1530,10 @@
                     if (data && data.success && data.subjects) {
                         ALL_SUBJECTS = data.subjects.map(s => s.subject_name);
                         const opts = data.subjects.map(s => `<option value="${s.subject_name}">${s.subject_name} (${s.subject_code || ''})</option>`).join('');
-                        document.getElementById('codeSubjectSelect').innerHTML = '<option value="">-- Select Subject --</option>' + opts;
+                        const collegeEventOpt = '<option value="College Event">-- College Event --</option>';
+                        document.getElementById('codeSubjectSelect').innerHTML = '<option value="">-- Select Subject --</option>' + collegeEventOpt + opts;
                         document.getElementById('graphSubject').innerHTML = '<option value="all">All Subjects</option>' + opts;
-                        document.getElementById('histSubject').innerHTML = '<option value="all">All Subjects</option>' + opts;
+                        document.getElementById('histSubject').innerHTML = '<option value="all">All Subjects</option>' + collegeEventOpt + opts;
                     }
 
                     // Proceed to fetch real attendance overview data
@@ -1687,9 +1689,36 @@
         // ── ATTENDANCE CODE ───────────────────────────────────────────────────────────
         function submitAttendanceCode() {
             const code = document.getElementById('attendanceCodeInput').value.trim().toUpperCase();
+            const selectedSubject = document.getElementById('codeSubjectSelect').value;
+
             if (code.length < 6) { showStatus('Please enter a valid code (6-8 characters)', false); return; }
 
-            // First try regular subject attendance
+            const checkEventAttendance = () => {
+                const formData = new FormData();
+                formData.append('action', 'markEventAttendance');
+                formData.append('unique_code', code);
+                formData.append('method', 'unique_code');
+
+                fetch('../backend/event_api.php', { method: 'POST', body: formData })
+                    .then(r => r.json())
+                    .then(evData => {
+                        if (evData.success) {
+                            showStatus('<i class="fa-solid fa-check-circle"></i> ' + evData.message, true);
+                            document.getElementById('attendanceCodeInput').value = '';
+                        } else {
+                            showStatus(evData.message || 'Invalid or expired code', false);
+                        }
+                    })
+                    .catch(() => showStatus('Network error — please try again', false));
+            };
+
+            // If "College Event" is selected, prioritize event attendance
+            if (selectedSubject === 'College Event') {
+                checkEventAttendance();
+                return;
+            }
+
+            // Otherwise, try regular subject attendance first
             fetch('../backend/attendance_api.php', {
                 method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `action=markByUniqueCode&unique_code=${encodeURIComponent(code)}`
@@ -1701,23 +1730,8 @@
                         document.getElementById('attendanceCodeInput').value = '';
                         loadData();
                     } else {
-                        // If subject fails, try event attendance
-                        const formData = new FormData();
-                        formData.append('action', 'markEventAttendance');
-                        formData.append('unique_code', code);
-                        formData.append('method', 'unique_code');
-
-                        fetch('../backend/event_api.php', { method: 'POST', body: formData })
-                            .then(r => r.json())
-                            .then(evData => {
-                                if (evData.success) {
-                                    showStatus('<i class="fa-solid fa-check-circle"></i> ' + evData.message, true);
-                                    document.getElementById('attendanceCodeInput').value = '';
-                                } else {
-                                    showStatus(evData.message || 'Invalid or expired code', false);
-                                }
-                            })
-                            .catch(() => showStatus('Network error — please try again', false));
+                        // If subject fails, then check if it's an event (fallback)
+                        checkEventAttendance();
                     }
                 })
                 .catch(() => showStatus('Network error — please try again', false));

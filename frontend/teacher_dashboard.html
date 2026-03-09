@@ -1889,11 +1889,26 @@
                         </button>
                         <div id="eventCodeDisplay"
                             style="display:none;align-items:center;gap:.75rem;padding:.625rem 1.25rem;background:var(--navy-dark);color:white;border-radius:12px;margin:0;box-shadow: 0 4px 15px rgba(30, 58, 95, 0.3)">
-                            <span
-                                style="font-size:.7rem;font-weight:700;opacity:.8;text-transform:uppercase;letter-spacing:1px">Event
-                                Code:</span>
-                            <span id="currentEventCode"
-                                style="font-size:1.4rem;font-weight:900;letter-spacing:3px;font-family:'Courier New', monospace;color:var(--primary-cyan)">------</span>
+                            <div style="display:flex;flex-direction:column;gap:2px">
+                                <span
+                                    style="font-size:.65rem;font-weight:700;opacity:.8;text-transform:uppercase;letter-spacing:1px">Event
+                                    Code:</span>
+                                <div style="display:flex;align-items:baseline;gap:.5rem">
+                                    <span id="currentEventCode"
+                                        style="font-size:1.4rem;font-weight:900;letter-spacing:3px;font-family:'Courier New', monospace;color:var(--primary-cyan)">------</span>
+                                    <span id="eventCodeTimer"
+                                        style="font-size:.85rem;font-weight:800;color:var(--warning);font-variant-numeric: tabular-nums;">03:00</span>
+                                </div>
+                            </div>
+                            <div style="width:1px;height:30px;background:rgba(255,255,255,.1);margin:0 .25rem"></div>
+                            <div style="display:flex;flex-direction:column;align-items:center;gap:.25rem">
+                                <button onclick="refreshEventCode()" id="btnRefreshEventCode"
+                                    style="background:rgba(255,255,255,.1);border:none;color:white;padding:.4rem;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s">
+                                    <i class="fa-solid fa-rotate" id="refreshIcon"></i>
+                                </button>
+                                <span id="refreshCountDisplay" style="font-size:.6rem;font-weight:700;opacity:.7">3
+                                    left</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2608,6 +2623,8 @@
 
         // ─── EVENT ATTENDANCE ───
         let eventStream = null, eventScanInterval = null, eventStudents = [], currentEventId = null;
+        let eventCodeTimerInterval = null;
+        let eventCodeRefreshes = 3;
 
         async function createEventRecord(generateCode = false) {
             const eName = document.getElementById('eventName').value.trim();
@@ -2638,12 +2655,70 @@
             }
         }
 
+        function startEventTimer(durationInSeconds) {
+            clearInterval(eventCodeTimerInterval);
+            let timer = durationInSeconds;
+            const timerDisplay = document.getElementById('eventCodeTimer');
+
+            const updateTimer = () => {
+                const minutes = Math.floor(timer / 60);
+                const seconds = timer % 60;
+                timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                if (timer <= 0) {
+                    clearInterval(eventCodeTimerInterval);
+                    timerDisplay.textContent = 'EXPIRED';
+                    timerDisplay.style.color = 'var(--error)';
+                } else {
+                    timerDisplay.style.color = timer <= 30 ? 'var(--error)' : 'var(--warning)';
+                    timer--;
+                }
+            };
+
+            updateTimer();
+            eventCodeTimerInterval = setInterval(updateTimer, 1000);
+        }
+
         async function generateEventCode() {
             const result = await createEventRecord(true);
             if (result && result.unique_code) {
                 document.getElementById('eventCodeDisplay').style.display = 'inline-flex';
                 document.getElementById('currentEventCode').textContent = result.unique_code;
-                showToast('Unique code generated successfully');
+                eventCodeRefreshes = 3;
+                document.getElementById('refreshCountDisplay').textContent = `${eventCodeRefreshes} left`;
+                document.getElementById('btnRefreshEventCode').disabled = false;
+                document.getElementById('btnRefreshEventCode').style.opacity = '1';
+
+                // 3 minutes = 180 seconds
+                startEventTimer(180);
+                showToast('Unique code generated successfully (Valid for 3 mins)');
+            }
+        }
+
+        async function refreshEventCode() {
+            if (eventCodeRefreshes <= 0) {
+                showToast('Refresh limit reached (Max 3 times)', true);
+                return;
+            }
+
+            const icon = document.getElementById('refreshIcon');
+            icon.classList.add('fa-spin');
+
+            const result = await createEventRecord(true);
+            icon.classList.remove('fa-spin');
+
+            if (result && result.unique_code) {
+                document.getElementById('currentEventCode').textContent = result.unique_code;
+                eventCodeRefreshes--;
+                document.getElementById('refreshCountDisplay').textContent = `${eventCodeRefreshes} left`;
+
+                if (eventCodeRefreshes === 0) {
+                    document.getElementById('btnRefreshEventCode').disabled = true;
+                    document.getElementById('btnRefreshEventCode').style.opacity = '0.5';
+                }
+
+                startEventTimer(180);
+                showToast('Code refreshed successfully');
             }
         }
 

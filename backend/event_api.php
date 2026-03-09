@@ -22,7 +22,7 @@ if ($action === 'createEvent') {
 
         if ($generateCode) {
             $uniqueCode = strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 6));
-            $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
+            $expiresAt = date('Y-m-d H:i:s', strtotime('+3 minutes'));
         }
 
         $stmt = $pdo->prepare("INSERT INTO events (event_name, event_date, event_time, teacher_id, unique_code, code_expires_at) VALUES (?, ?, ?, ?, ?, ?)");
@@ -69,7 +69,7 @@ if ($action === 'markEventAttendance') {
             $uniqueCode = strtoupper(sanitize($_POST['unique_code'] ?? ''));
             $studentId = $_SESSION['user_id'];
             
-            $stmt = $pdo->prepare("SELECT id FROM events WHERE unique_code = ? AND code_expires_at > NOW()");
+            $stmt = $pdo->prepare("SELECT id, event_name FROM events WHERE unique_code = ? AND code_expires_at > NOW()");
             $stmt->execute([$uniqueCode]);
             $event = $stmt->fetch();
             
@@ -83,7 +83,15 @@ if ($action === 'markEventAttendance') {
         $stmt = $pdo->prepare("INSERT IGNORE INTO event_attendance (event_id, student_id, marking_method) VALUES (?, ?, ?)");
         $stmt->execute([$eventId, $studentId, $method]);
         
-        echo json_encode(['success' => true, 'message' => 'Attendance marked successfully']);
+        // Fetch event name if not already fetched (for teacher fallback or scanning)
+        if (!isset($event['event_name'])) {
+            $stmt = $pdo->prepare("SELECT event_name FROM events WHERE id = ?");
+            $stmt->execute([$eventId]);
+            $event = $stmt->fetch();
+        }
+        $eventName = $event['event_name'] ?? 'Event';
+
+        echo json_encode(['success' => true, 'message' => "Attendance marked successfully for $eventName", 'event_name' => $eventName]);
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
     }

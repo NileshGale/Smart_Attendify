@@ -393,25 +393,61 @@ if ($action === 'getMyAttendanceHistory') {
     $subjectFilter = sanitize($_GET['subject'] ?? 'all');
     
     try {
-        $sql = "
-            SELECT 
-                a.attendance_date,
-                COALESCE(s.subject_name, 'Unknown') AS subject_name,
-                a.status,
-                a.marking_method,
-                a.marked_at
-            FROM attendance a
-            LEFT JOIN subjects s ON a.subject_id = s.id
-            WHERE a.student_id = ?
-        ";
-        $params = [$studentId];
-        
-        if ($subjectFilter !== 'all') {
-            $sql .= " AND s.subject_name = ?";
-            $params[] = $subjectFilter;
+        if ($subjectFilter === 'College Event') {
+            // Only event attendance
+            $sql = "
+                SELECT 
+                    e.event_date AS attendance_date,
+                    e.event_name AS subject_name,
+                    'present' AS status,
+                    ea.marking_method,
+                    ea.scanned_at AS marked_at
+                FROM event_attendance ea
+                JOIN events e ON ea.event_id = e.id
+                WHERE ea.student_id = ?
+                ORDER BY e.event_date DESC, ea.scanned_at DESC
+                LIMIT 100
+            ";
+            $params = [$studentId];
+        } else {
+            // Regular subject attendance
+            $sql = "
+                SELECT 
+                    a.attendance_date,
+                    COALESCE(s.subject_name, 'Unknown') AS subject_name,
+                    a.status,
+                    a.marking_method,
+                    a.marked_at
+                FROM attendance a
+                LEFT JOIN subjects s ON a.subject_id = s.id
+                WHERE a.student_id = ?
+            ";
+            $params = [$studentId];
+            
+            if ($subjectFilter !== 'all') {
+                $sql .= " AND s.subject_name = ?";
+                $params[] = $subjectFilter;
+            }
+            
+            // Also include event attendance when showing all
+            if ($subjectFilter === 'all') {
+                $sql .= "
+                    UNION ALL
+                    SELECT 
+                        e.event_date AS attendance_date,
+                        e.event_name AS subject_name,
+                        'present' AS status,
+                        ea.marking_method,
+                        ea.scanned_at AS marked_at
+                    FROM event_attendance ea
+                    JOIN events e ON ea.event_id = e.id
+                    WHERE ea.student_id = ?
+                ";
+                $params[] = $studentId;
+            }
+            
+            $sql .= " ORDER BY attendance_date DESC, marked_at DESC LIMIT 100";
         }
-        
-        $sql .= " ORDER BY a.attendance_date DESC, a.marked_at DESC LIMIT 100";
         
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
