@@ -675,6 +675,7 @@ if ($action === 'getStudentReport') {
                 'email' => $student['email'],
                 'reg_id' => $student['reg_id'],
                 'regId' => $student['reg_id'],
+                'department' => $student['department'] ?? '',
                 'branch' => $student['branch'] ?? $student['department'] ?? '',
                 'class' => $student['branch'] ?? '',
                 'photo_path' => $student['photo_path'] ?? ''

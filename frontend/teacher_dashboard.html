@@ -1765,11 +1765,13 @@
                             <span style="font-size:.8rem;color:var(--text-muted)" id="scanDate"></span>
                         </div>
                         <div class="scan-controls">
-                            <button class="btn-start" id="startScanBtn" onclick="startQRScanner()"><i
+                            <button class="btn-start" id="startScanBtn" onclick="startQRScanner()"
+                                style="display:inline-flex;align-items:center;gap:.5rem"><i
                                     class="fa-solid fa-play"></i> Start
                                 Camera</button>
-                            <button class="btn-stop" id="stopScanBtn" onclick="stopQRScanner()"><i
-                                    class="fa-solid fa-square"></i> Stop & Save</button>
+                            <button class="btn-stop" id="stopScanBtn" onclick="stopQRScanner()"
+                                style="display:inline-flex;align-items:center;gap:.5rem"><i
+                                    class="fa-solid fa-square"></i> Stop &amp; Save</button>
                         </div>
                         <div class="scanned-list-wrap" id="scannedList"></div>
                     </div>
@@ -1831,7 +1833,9 @@
                             <input type="time" id="eventTime">
                         </div>
                     </div>
-                    <button class="btn-primary" onclick="startEventScanning()"><i class="fa-solid fa-play"></i> Start QR
+                    <button class="btn-primary" onclick="startEventScanning()"
+                        style="display:inline-flex;align-items:center;gap:.5rem"><i class="fa-solid fa-play"></i> Start
+                        QR
                         Scanning</button>
                 </div>
                 <div class="scanner-panel" id="eventScannerPanel">
