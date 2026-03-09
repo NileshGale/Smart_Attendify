@@ -232,8 +232,7 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 -- ── Subjects ───────────────────────────────────────────────────────────────
 INSERT INTO subjects (subject_name, subject_code, department, credits)
 VALUES
-('C Programming',       'CP101',  
-'Computer Science', 4),
+('C Programming',       'CP101',  'Computer Science', 4),
 ('Core Java',           'CJ201',  'Computer Science', 4),
 ('Python Programming',  'PP301',  'Computer Science', 4),
 ('PHP',                 'PHP101', 'Computer Science', 4),
