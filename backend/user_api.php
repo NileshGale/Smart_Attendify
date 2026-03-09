@@ -556,19 +556,56 @@ if ($action === 'getDashboardStats') {
             SELECT full_name, reg_id, role, department, created_at 
             FROM users 
             ORDER BY created_at DESC 
+            LIMIT 10
         ");
         $recentRegistrations = $stmt->fetchAll();
+
+        // Chart Data: Last 30 days attendance
+        $stmt = $pdo->query("
+            SELECT 
+                attendance_date,
+                SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present,
+                SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent
+            FROM attendance
+            WHERE attendance_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            GROUP BY attendance_date
+            ORDER BY attendance_date ASC
+        ");
+        $dailyAttendance = $stmt->fetchAll();
+
+        // Chart Data: Department-wise attendance
+        $stmt = $pdo->query("
+            SELECT 
+                department,
+                ROUND((SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) / COUNT(*)) * 100, 1) as percentage
+            FROM attendance a
+            JOIN users u ON a.student_id = u.id
+            WHERE department IS NOT NULL
+            GROUP BY department
+        ");
+        $deptAttendance = $stmt->fetchAll();
+
+        // Role Distribution (Doughnut Chart)
+        $roleDistribution = [];
+        foreach ($userStats as $role => $count) {
+            $roleDistribution[] = ['label' => ucfirst($role), 'value' => (int)$count];
+        }
         
         echo json_encode([
             'success' => true,
             'stats' => [
-                'total_students' => $userStats['student'] ?? 0,
-                'total_teachers' => $userStats['teacher'] ?? 0,
-                'total_subjects' => $totalSubjects,
-                'today_attendance' => $todayAttendance,
-                'overall_percentage' => $overallPercentage,
-                'below_50_count' => $below50Count,
-                'recent_registrations' => $recentRegistrations
+                'total_students' => (int)($userStats['student'] ?? 0),
+                'total_teachers' => (int)($userStats['teacher'] ?? 0),
+                'total_subjects' => (int)$totalSubjects,
+                'today_attendance' => (int)$todayAttendance,
+                'overall_percentage' => (float)$overallPercentage,
+                'below_50_count' => (int)$below50Count,
+                'recent_registrations' => $recentRegistrations,
+                'chart_data' => [
+                    'daily_attendance' => $dailyAttendance,
+                    'dept_attendance' => $deptAttendance,
+                    'role_distribution' => $roleDistribution
+                ]
             ]
         ]);
         

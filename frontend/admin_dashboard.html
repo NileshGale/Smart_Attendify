@@ -1349,7 +1349,7 @@
                                     <option value="all">All Departments</option>
                                     <option value="Computer Science">Computer Science</option>
                                     <option value="Information Technology">Information Technology</option>
-                                    <option value="Electronics">Electronics & Communication</option>
+                                    <option value="Electronics">Electronics &amp; Communication</option>
                                     <option value="Electrical">Electrical Engineering</option>
                                 </select>
                                 <select id="recentLimitFilter"
@@ -1645,6 +1645,11 @@
                         } else {
                             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem">No recent registrations found</td></tr>';
                         }
+                    }
+
+                    // Render Charts with Real Data
+                    if (stats.chart_data) {
+                        renderAdminCharts(stats.chart_data);
                     }
                 }
             } catch (err) {
@@ -2307,74 +2312,103 @@
         // ANALYTICS
         let adminCharts = {};
 
-        function renderAdminCharts() {
-            const labels = [], present = [], absent = [];
-            const today = new Date();
-            for (let i = 29; i >= 0; i--) {
-                const d = new Date(today); d.setDate(d.getDate() - i);
-                labels.push(d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }));
-                const p = Math.floor(Math.random() * 30) + 80;
-                const a = Math.floor(Math.random() * 15) + 10;
-                present.push(p); absent.push(a);
+        function renderAdminCharts(chartData) {
+            if (!chartData) return;
+
+            // 1. Line Chart Data (Daily Attendance)
+            const labels = [];
+            const present = [];
+            const absent = [];
+
+            if (chartData.daily_attendance) {
+                chartData.daily_attendance.forEach(d => {
+                    labels.push(new Date(d.attendance_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }));
+                    present.push(parseInt(d.present));
+                    absent.push(parseInt(d.absent));
+                });
             }
 
             const totalP = present.reduce((s, v) => s + v, 0);
             const totalA = absent.reduce((s, v) => s + v, 0);
-            const avg = Math.round(totalP / (totalP + totalA) * 100);
+            const totalC = totalP + totalA;
+            const avg = totalC > 0 ? Math.round(totalP / totalC * 100) : 0;
 
-            document.getElementById('analyticsStats').innerHTML = `
-        <div class="stat-card"><div class="stat-value">${avg}%</div><div class="stat-label">Avg Attendance</div></div>
-        <div class="stat-card"><div class="stat-value">${totalP}</div><div class="stat-label">Total Present</div></div>
-        <div class="stat-card"><div class="stat-value" style="color:var(--danger)">${totalA}</div><div class="stat-label">Total Absent</div></div>
-        <div class="stat-card"><div class="stat-value">142</div><div class="stat-label">Students</div></div>
-    `;
+            // Updated Stats for Analytics Section
+            const analyticsStats = document.getElementById('analyticsStats');
+            if (analyticsStats) {
+                analyticsStats.innerHTML = `
+                    <div class="stat-card"><div class="stat-value">${avg}%</div><div class="stat-label">Avg Attendance</div></div>
+                    <div class="stat-card"><div class="stat-value">${totalP}</div><div class="stat-label">Total Present</div></div>
+                    <div class="stat-card"><div class="stat-value" style="color:var(--danger)">${totalA}</div><div class="stat-label">Total Absent</div></div>
+                    <div class="stat-card"><div class="stat-value">${labels.length}</div><div class="stat-label">Days Tracked</div></div>
+                `;
+            }
 
             const d = id => { if (adminCharts[id]) adminCharts[id].destroy(); };
 
+            // Line Chart
             d('line');
-            adminCharts['line'] = new Chart(document.getElementById('adminLineChart'), {
-                type: 'line',
-                data: {
-                    labels, datasets: [
-                        { label: 'Present', data: present, borderColor: 'var(--primary-cyan)', backgroundColor: 'rgba(0, 188, 212,.08)', fill: true, tension: .4, pointRadius: 2 },
-                        { label: 'Absent', data: absent, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,.06)', fill: true, tension: .4, pointRadius: 2 }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,.05)' } } } }
-            });
+            const lineCtx = document.getElementById('adminLineChart');
+            if (lineCtx) {
+                adminCharts['line'] = new Chart(lineCtx, {
+                    type: 'line',
+                    data: {
+                        labels, datasets: [
+                            { label: 'Present', data: present, borderColor: 'var(--primary-cyan)', backgroundColor: 'rgba(0, 188, 212,.08)', fill: true, tension: .4, pointRadius: 2 },
+                            { label: 'Absent', data: absent, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,.06)', fill: true, tension: .4, pointRadius: 2 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,.05)' } } } }
+                });
+            }
 
+            // Scatter Chart
             d('scatter');
-            adminCharts['scatter'] = new Chart(document.getElementById('adminScatterChart'), {
-                type: 'scatter',
-                data: {
-                    datasets: [
-                        { label: 'Present', data: present.map((y, x) => ({ x, y })), backgroundColor: 'rgba(16,185,129,.6)', pointRadius: 4 },
-                        { label: 'Absent', data: absent.map((y, x) => ({ x, y })), backgroundColor: 'rgba(239,68,68,.6)', pointRadius: 4 }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } } }
-            });
+            const scatterCtx = document.getElementById('adminScatterChart');
+            if (scatterCtx) {
+                adminCharts['scatter'] = new Chart(scatterCtx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [
+                            { label: 'Present', data: present.map((y, x) => ({ x, y })), backgroundColor: 'rgba(16,185,129,.6)', pointRadius: 4 },
+                            { label: 'Absent', data: absent.map((y, x) => ({ x, y })), backgroundColor: 'rgba(239,68,68,.6)', pointRadius: 4 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } } }
+                });
+            }
 
+            // Bar Chart (Department Performance)
             d('bar');
-            adminCharts['bar'] = new Chart(document.getElementById('adminBarChart'), {
-                type: 'bar',
-                data: {
-                    labels: ['CSE', 'ECE', 'ME', 'COMMERCE', 'EE'],
-                    datasets: [{
-                        label: 'Avg %', data: [82, 78, 75, 88, 71],
-                        backgroundColor: ['rgba(0, 188, 212,.75)', 'rgba(6,182,212,.75)', 'rgba(16,185,129,.75)', 'rgba(245,158,11,.75)', 'rgba(239,68,68,.75)'],
-                        borderRadius: 6
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 60, max: 100, ticks: { callback: v => v + '%' }, grid: { color: 'rgba(0,0,0,.05)' } } } }
-            });
+            const barCtx = document.getElementById('adminBarChart');
+            if (barCtx && chartData.dept_attendance) {
+                const deptLabels = chartData.dept_attendance.map(d => d.department);
+                const deptData = chartData.dept_attendance.map(d => parseFloat(d.percentage));
 
+                adminCharts['bar'] = new Chart(barCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: deptLabels,
+                        datasets: [{
+                            label: 'Avg %', data: deptData,
+                            backgroundColor: ['rgba(0, 188, 212,.75)', 'rgba(6,182,212,.75)', 'rgba(16,185,129,.75)', 'rgba(245,158,11,.75)', 'rgba(239,68,68,.75)'],
+                            borderRadius: 6
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 100, ticks: { callback: v => v + '%' }, grid: { color: 'rgba(0,0,0,.05)' } } } }
+                });
+            }
+
+            // Doughnut Chart (Overall Distribution)
             d('doughnut');
-            adminCharts['doughnut'] = new Chart(document.getElementById('adminDoughnutChart'), {
-                type: 'doughnut',
-                data: { labels: ['Present', 'Absent'], datasets: [{ data: [totalP, totalA], backgroundColor: ['var(--primary-cyan)', '#ef4444'], borderWidth: 0, hoverOffset: 4 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }, cutout: '65%' }
-            });
+            const doughnutCtx = document.getElementById('adminDoughnutChart');
+            if (doughnutCtx) {
+                adminCharts['doughnut'] = new Chart(doughnutCtx, {
+                    type: 'doughnut',
+                    data: { labels: ['Present', 'Absent'], datasets: [{ data: [totalP, totalA], backgroundColor: ['var(--primary-cyan)', '#ef4444'], borderWidth: 0, hoverOffset: 4 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }, cutout: '65%' }
+                });
+            }
         }
 
         // ── TOAST MESSAGES ─────

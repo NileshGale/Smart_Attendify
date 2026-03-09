@@ -5,7 +5,7 @@
 -- Features: Unique codes, QR codes, subject allocation, teacher-student mapping,
 --           schedule management, photo/dob support, sample attendance data
 -- ============================================================================
-
+DROP DATABASE IF EXISTS attendify_db;
 CREATE DATABASE IF NOT EXISTS attendify_db
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
@@ -230,7 +230,7 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 
 
 -- ── Subjects ───────────────────────────────────────────────────────────────
-INSERT INTO subjects (subject_name, subject_code, department, credits)
+INSERT IGNORE INTO subjects (subject_name, subject_code, department, credits)
 VALUES
 ('C Programming',       'CP101',  'Computer Science', 4),
 ('Core Java',           'CJ201',  'Computer Science', 4),
@@ -320,8 +320,8 @@ ORDER BY u.full_name,
 -- STORED PROCEDURES
 -- ============================================================================
 
+DROP PROCEDURE IF EXISTS sp_generate_attendance_code;
 DELIMITER //
-
 -- Generate Unique Attendance Code
 CREATE PROCEDURE sp_generate_attendance_code(
     IN  p_teacher_id       INT,
@@ -349,7 +349,10 @@ BEGIN
 
     SELECT v_unique_code AS unique_code, v_expires_at AS expires_at;
 END //
+DELIMITER ;
 
+DROP PROCEDURE IF EXISTS sp_mark_attendance_by_code;
+DELIMITER //
 -- Mark Attendance via Unique Code
 CREATE PROCEDURE sp_mark_attendance_by_code(
     IN p_student_id  INT,
@@ -395,20 +398,10 @@ BEGIN
         SELECT 'error' AS status, 'Invalid or expired code' AS message;
     END IF;
 END //
-
-
--- Add the new subjects to your existing subjects table
-INSERT IGNORE INTO subjects (subject_name, subject_code, department, credits) VALUES
-('C Programming',       'CP101',  'Computer Science', 4),
-('Core Java',           'CJ201',  'Computer Science', 4),
-('Python Programming',  'PP301',  'Computer Science', 4),
-('PHP',                 'PHP101', 'Computer Science', 4),
-('SQL with Oracle',     'SQL201', 'Computer Science', 4),
-('E Commerce',          'EC301',  'Commerce',         3),
-('Cloud Computing',     'CC401',  'Computer Science', 3),
-('Digital Marketing',   'DM201',  'Commerce',         3);
+DELIMITER ;
 
 -- Increase Attendance Percentage
+DROP PROCEDURE IF EXISTS sp_increase_attendance;
 DELIMITER //
 CREATE PROCEDURE sp_increase_attendance(
     IN p_student_id          INT,
@@ -456,6 +449,40 @@ BEGIN
 END //
 
 DELIMITER ;
+
+-- ============================================================================
+-- SAMPLE ATTENDANCE DATA FOR DASHBOARD
+-- ============================================================================
+
+INSERT IGNORE INTO users (username, email, password, full_name, reg_id, role, department)
+VALUES 
+('admin', 'admin@attendify.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'System Admin', 'ADMIN2024001', 'admin', 'Administration'),
+('teacher1', 'teacher1@attendify.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Dr. Smith', 'TEA2024001', 'teacher', 'Computer Science'),
+('student1', 'student1@attendify.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'John Doe', 'SEE2004001', 'student', 'Computer Science');
+
+-- Mock attendance for the last 30 days
+DELIMITER //
+CREATE PROCEDURE sp_generate_mock_attendance()
+BEGIN
+    DECLARE v_date DATE;
+    DECLARE v_counter INT DEFAULT 0;
+    SET v_date = DATE_SUB(CURDATE(), INTERVAL 30 DAY);
+    
+    WHILE v_counter < 30 DO
+        -- For Computer Science (Subject CP101)
+        INSERT IGNORE INTO attendance (student_id, subject_id, teacher_id, attendance_date, status, marking_method)
+        SELECT u.id, s.id, t.id, v_date, IF(RAND() > 0.2, 'present', 'absent'), 'manual'
+        FROM users u, subjects s, users t
+        WHERE u.role = 'student' AND s.subject_code = 'CP101' AND t.role = 'teacher' LIMIT 1;
+        
+        SET v_date = DATE_ADD(v_date, INTERVAL 1 DAY);
+        SET v_counter = v_counter + 1;
+    END WHILE;
+END //
+DELIMITER ;
+
+CALL sp_generate_mock_attendance();
+DROP PROCEDURE IF EXISTS sp_generate_mock_attendance;
 
 -- ============================================================================
 -- COMPLETION MESSAGE

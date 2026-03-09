@@ -487,20 +487,28 @@ if ($action === 'getStudentAnalytics') {
         // 1. Daily attendance records in the date range
         $sql = "
             SELECT 
-                a.attendance_date,
-                a.status,
+                dt.attendance_date,
+                COALESCE(a.status, 'absent') AS status,
                 COALESCE(s.subject_name, 'Unknown') AS subject_name
-            FROM attendance a
-            LEFT JOIN subjects s ON a.subject_id = s.id
-            WHERE a.student_id = ? AND a.attendance_date >= ?
+            FROM student_subjects ss
+            JOIN (
+                SELECT DISTINCT attendance_date, subject_id
+                FROM attendance
+                WHERE attendance_date >= ?
+            ) dt ON ss.subject_id = dt.subject_id
+            JOIN subjects s ON dt.subject_id = s.id
+            LEFT JOIN attendance a ON a.subject_id = dt.subject_id 
+                AND a.attendance_date = dt.attendance_date 
+                AND a.student_id = ss.student_id
+            WHERE ss.student_id = ?
         ";
-        $params = [$studentId, $startDate];
+        $params = [$startDate, $studentId];
         
         if ($subject !== 'all') {
             $sql .= " AND s.subject_name = ?";
             $params[] = $subject;
         }
-        $sql .= " ORDER BY a.attendance_date ASC";
+        $sql .= " ORDER BY dt.attendance_date ASC";
         
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
@@ -513,17 +521,18 @@ if ($action === 'getStudentAnalytics') {
                 (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id AND attendance_date >= ?) AS total_classes,
                 SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
                 (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id AND attendance_date >= ?) - SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS absent_count
-            FROM attendance a
-            LEFT JOIN subjects s ON a.subject_id = s.id
-            WHERE a.student_id = ? AND a.attendance_date >= ?
+            FROM student_subjects ss
+            JOIN subjects s ON ss.subject_id = s.id
+            LEFT JOIN attendance a ON a.subject_id = s.id AND a.student_id = ss.student_id AND a.attendance_date >= ?
+            WHERE ss.student_id = ?
         ";
-        $params2 = [$startDate, $startDate, $studentId, $startDate];
+        $params2 = [$startDate, $startDate, $startDate, $studentId];
         
         if ($subject !== 'all') {
             $sql2 .= " AND s.subject_name = ?";
             $params2[] = $subject;
         }
-        $sql2 .= " GROUP BY s.subject_name ORDER BY s.subject_name";
+        $sql2 .= " GROUP BY s.id, s.subject_name ORDER BY s.subject_name";
         
         $stmt = $pdo->prepare($sql2);
         $stmt->execute($params2);
@@ -700,6 +709,8 @@ if ($action === 'getStudentReport') {
     requireLogin();
     
     $query = sanitize($_GET['reg_id'] ?? $_GET['query'] ?? '');
+    $range = sanitize($_GET['range'] ?? 'all');
+    $fromTeacher = isset($_GET['from_teacher']) && $_GET['from_teacher'] == '1';
     
     if (!$query) {
         echo json_encode(['success' => false, 'message' => 'Please enter a search term']);
@@ -722,21 +733,56 @@ if ($action === 'getStudentReport') {
             exit;
         }
         
+        if ($range === 'all') {
+            $startDate = '2000-01-01';
+        } else {
+            $days = $range === 'month' ? 30 : ($range === '2week' ? 14 : 7);
+            $startDate = date('Y-m-d', strtotime("-{$days} days"));
+        }
+
         // Get subject-wise attendance stats
-        $stmt = $pdo->prepare("
-            SELECT 
-                COALESCE(s.subject_name, 'Unknown') AS subject_name,
-                COALESCE(s.subject_code, 'N/A') AS subject_code,
-                (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id) AS total_classes,
-                SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
-                (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id) - SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS absent_count
-            FROM attendance a
-            LEFT JOIN subjects s ON a.subject_id = s.id
-            WHERE a.student_id = ?
-            GROUP BY s.id, s.subject_name, s.subject_code
-            ORDER BY s.subject_name
-        ");
-        $stmt->execute([$student['id']]);
+        if ($fromTeacher) {
+            $teacherId = $_SESSION['user_id'];
+            $stmt = $pdo->prepare("
+                SELECT 
+                    COALESCE(s.subject_name, 'Unknown') AS subject_name,
+                    COALESCE(s.subject_code, 'N/A') AS subject_code,
+                    (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id AND teacher_id = ? AND attendance_date >= ?) AS total_classes,
+                    SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
+                    (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id AND teacher_id = ? AND attendance_date >= ?) - SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS absent_count
+                FROM (
+                    SELECT DISTINCT subject_id 
+                    FROM attendance 
+                    WHERE teacher_id = ? AND attendance_date >= ?
+                ) taught
+                JOIN subjects s ON taught.subject_id = s.id
+                LEFT JOIN attendance a ON a.subject_id = s.id AND a.student_id = ? AND a.teacher_id = ? AND a.attendance_date >= ?
+                GROUP BY s.id, s.subject_name, s.subject_code
+                ORDER BY s.subject_name
+            ");
+            $stmt->execute([
+                $teacherId, $startDate, 
+                $teacherId, $startDate, 
+                $teacherId, $startDate, 
+                $student['id'], $teacherId, $startDate
+            ]);
+        } else {
+            $stmt = $pdo->prepare("
+                SELECT 
+                    COALESCE(s.subject_name, 'Unknown') AS subject_name,
+                    COALESCE(s.subject_code, 'N/A') AS subject_code,
+                    (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id AND attendance_date >= ?) AS total_classes,
+                    SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
+                    (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id AND attendance_date >= ?) - SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS absent_count
+                FROM attendance a
+                LEFT JOIN subjects s ON a.subject_id = s.id
+                WHERE a.student_id = ? AND a.attendance_date >= ?
+                GROUP BY s.id, s.subject_name, s.subject_code
+                ORDER BY s.subject_name
+            ");
+            $stmt->execute([$startDate, $startDate, $student['id'], $startDate]);
+        }
+        
         $attendance = $stmt->fetchAll();
         
         // Format for frontend compatibility
