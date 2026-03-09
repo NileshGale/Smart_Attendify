@@ -2076,7 +2076,7 @@
 
             // ── Header ──
             doc.setFillColor(30, 58, 95);
-            doc.rect(0, 0, pageW, 44, 'F');
+            doc.rect(0, 0, pageW, 50, 'F');
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(16); doc.setFont('helvetica', 'bold');
             doc.text('Attendify — Attendance Report', 14, 13);
@@ -2093,14 +2093,15 @@
             doc.text('Email: ' + (STUDENT.email || 'N/A'), 14, 34);
             doc.text('Branch: ' + (STUDENT.branch || 'N/A'), 14, 39);
             doc.text('Department: ' + (STUDENT.dept || 'N/A'), 14, 44);
+            // spacer below department
             // Date right-aligned
             doc.setTextColor(200, 220, 255);
             doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
-            doc.text('Generated: ' + new Date().toLocaleDateString('en-IN') + ', ' + new Date().toLocaleTimeString('en-IN'), pageW - 14, 40, { align: 'right' });
+            doc.text('Generated: ' + new Date().toLocaleDateString('en-IN') + ', ' + new Date().toLocaleTimeString('en-IN'), pageW - 14, 46, { align: 'right' });
 
             // ── Table ──
             doc.autoTable({
-                startY: 50,
+                startY: 56,
                 head: [['Date', 'Subject', 'Status']],
                 body: historyRows.map(r => [r.date, r.subject, r.status === 'present' ? 'Present' : 'Absent']),
                 headStyles: { fillColor: [0, 188, 212], textColor: 255, fontStyle: 'bold' },
