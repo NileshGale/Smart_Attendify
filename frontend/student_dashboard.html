@@ -1693,7 +1693,8 @@
 
             if (code.length < 6) { showStatus('Please enter a valid code (6-8 characters)', false); return; }
 
-            const checkEventAttendance = () => {
+            // If "College Event" is selected, use event_api directly
+            if (selectedSubject === 'College Event') {
                 const formData = new FormData();
                 formData.append('action', 'markEventAttendance');
                 formData.append('unique_code', code);
@@ -1710,15 +1711,10 @@
                         }
                     })
                     .catch(() => showStatus('Network error — please try again', false));
-            };
-
-            // If "College Event" is selected, prioritize event attendance
-            if (selectedSubject === 'College Event') {
-                checkEventAttendance();
                 return;
             }
 
-            // Otherwise, try regular subject attendance first
+            // For all subjects (including when none selected), use attendance_api
             fetch('../backend/attendance_api.php', {
                 method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `action=markByUniqueCode&unique_code=${encodeURIComponent(code)}`
@@ -1728,10 +1724,8 @@
                     if (d.success) {
                         showStatus('<i class="fa-solid fa-check-circle"></i> ' + d.message, true);
                         document.getElementById('attendanceCodeInput').value = '';
-                        loadData();
                     } else {
-                        // If subject fails, then check if it's an event (fallback)
-                        checkEventAttendance();
+                        showStatus(d.message || 'Invalid or expired code', false);
                     }
                 })
                 .catch(() => showStatus('Network error — please try again', false));

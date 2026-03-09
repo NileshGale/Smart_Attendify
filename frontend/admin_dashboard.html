@@ -2088,15 +2088,15 @@
                 const statusBg = statusText === 'Good' ? 'rgba(16,185,129,0.12)' : (statusText === 'Low' ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)');
 
                 tableRowsHTML += `
-                    <tr style="background:${bgColor}">
-                        <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#1e3a5f">${cells[0].textContent.trim()}</td>
-                        <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;color:#6b7280">${cells[1].textContent.trim()}</td>
-                        <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;color:#374151">${cells[2].textContent.trim()}</td>
-                        <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;color:#10b981;font-weight:600">${cells[3].textContent.trim()}</td>
-                        <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;color:#ef4444;font-weight:600">${cells[4].textContent.trim()}</td>
-                        <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;font-weight:700;color:#1e3a5f">${cells[5].textContent.trim()}</td>
-                        <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb">
-                            <span style="background:${statusBg};color:${statusColor};padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600">${statusText}</span>
+                    <tr style="background:${bgColor}; page-break-inside: avoid;">
+                        <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#1e3a5f">${cells[0].textContent.trim()}</td>
+                        <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;color:#6b7280">${cells[1].textContent.trim()}</td>
+                        <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;color:#374151">${cells[2].textContent.trim()}</td>
+                        <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;color:#10b981;font-weight:600">${cells[3].textContent.trim()}</td>
+                        <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;color:#ef4444;font-weight:600">${cells[4].textContent.trim()}</td>
+                        <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;font-weight:700;color:#1e3a5f">${cells[5].textContent.trim()}</td>
+                        <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb">
+                            <span style="background:${statusBg};color:${statusColor};padding:4px 12px;border-radius:12px;font-size:11px;font-weight:700;text-transform:uppercase">${statusText}</span>
                         </td>
                     </tr>`;
             });
@@ -2106,32 +2106,32 @@
             // Build styled PDF container matching student dashboard style
             const pdfContainer = document.createElement('div');
             pdfContainer.innerHTML = `
-                <div style="font-family: 'Segoe UI', Arial, sans-serif; background: #ffffff; max-width: 800px; margin: 0 auto;">
+                <div style="font-family: 'Segoe UI', Arial, sans-serif; background: #ffffff; max-width: 800px; margin: 0 auto; padding-bottom: 20px;">
                     <!-- Dark Navy Header -->
-                    <div style="background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%); padding: 30px 35px 25px; border-radius: 0 0 0 0;">
+                    <div style="background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%); padding: 30px 35px 25px; border-radius: 8px 8px 0 0;">
                         <h1 style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0 0 12px 0; letter-spacing: -0.3px;">Attendify — Attendance Report</h1>
-                        <div style="margin-bottom: 10px;">
-                            <p style="color: #ffffff; font-size: 14px; font-weight: 700; margin: 0 0 4px 0;">${studentName}</p>
+                        <div style="margin-bottom: 15px;">
+                            <p style="color: #ffffff; font-size: 15px; font-weight: 700; margin: 0 0 4px 0;">${studentName}</p>
                             <p style="color: #00BCD4; font-size: 13px; font-weight: 600; margin: 0 0 8px 0; font-family: 'Courier New', monospace; letter-spacing: 0.5px;">${regId}</p>
-                            <p style="color: #f8f8ff; font-size: 11px; margin: 0 0 2px 0;">Email: ${email || 'N/A'}</p>
-                            <p style="color: #f8f8ff; font-size: 11px; margin: 0 0 2px 0;">Branch: ${branch}</p>
-                            <p style="color: #f8f8ff; font-size: 11px; margin: 0 0 3px 0;">Department: ${dept}</p>
+                            <p style="color: rgba(255,255,255,0.85); font-size: 11px; margin: 0 0 3px 0;">Email: ${email || 'N/A'}</p>
+                            <p style="color: rgba(255,255,255,0.85); font-size: 11px; margin: 0 0 3px 0;">Branch: ${branch}</p>
+                            <p style="color: rgba(255,255,255,0.85); font-size: 11px; margin: 0 0 4px 0;">Department: ${dept}</p>
                         </div>
-                        <p style="color: rgba(255,255,255,0.7); font-size: 11px; margin: 0; text-align: right;">Generated: ${generatedDate}</p>
+                        <p style="color: rgba(255,255,255,0.6); font-size: 10px; margin: 0; text-align: right; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">Generated: ${generatedDate}</p>
                     </div>
 
                     <!-- Table Section -->
-                    <div style="padding: 25px 20px 30px;">
-                        <table style="width: 100%; border-collapse: collapse; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                    <div style="padding: 25px 20px 10px;">
+                        <table style="width: 100%; border-collapse: collapse; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
                             <thead>
                                 <tr style="background: linear-gradient(135deg, #00BCD4, #0097A7);">
-                                    <th style="padding: 11px 14px; text-align: left; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Subject</th>
-                                    <th style="padding: 11px 14px; text-align: left; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Code</th>
-                                    <th style="padding: 11px 14px; text-align: left; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Total</th>
-                                    <th style="padding: 11px 14px; text-align: left; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Present</th>
-                                    <th style="padding: 11px 14px; text-align: left; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Absent</th>
-                                    <th style="padding: 11px 14px; text-align: left; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: none;">%</th>
-                                    <th style="padding: 11px 14px; text-align: left; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Status</th>
+                                    <th style="padding: 12px 14px; text-align: left; color: #ffffff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Subject</th>
+                                    <th style="padding: 12px 14px; text-align: left; color: #ffffff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Code</th>
+                                    <th style="padding: 12px 14px; text-align: left; color: #ffffff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Total</th>
+                                    <th style="padding: 12px 14px; text-align: left; color: #ffffff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Present</th>
+                                    <th style="padding: 12px 14px; text-align: left; color: #ffffff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Absent</th>
+                                    <th style="padding: 12px 14px; text-align: left; color: #ffffff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: none;">%</th>
+                                    <th style="padding: 12px 14px; text-align: left; color: #ffffff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: none;">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -2145,11 +2145,12 @@
             showToast('Generating PDF...');
 
             var opt = {
-                margin: 0.5,
+                margin: [0.5, 0.4, 0.6, 0.4],
                 filename: `Attendance_Report_${regId || studentName}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
             };
 
             html2pdf().set(opt).from(pdfContainer).save().then(() => {

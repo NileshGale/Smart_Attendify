@@ -245,19 +245,34 @@ if ($action === 'markByQR') {
         }
         
         // Mark attendance
-        $stmt = $pdo->prepare("
-            INSERT INTO attendance (student_id, subject_id, teacher_id, attendance_date, marking_method, status, marked_at)
-            VALUES (?, ?, ?, ?, 'qr', 'present', NOW())
-        ");
-        $stmt->execute([$student['id'], $subjectId, $teacherId, $attendanceDate]);
-        
-        echo json_encode([
-            'success' => true,
-            'message' => 'Attendance marked for ' . $student['full_name'],
-            'student_name' => $student['full_name'],
-            'reg_id' => $student['reg_id'],
-            'marked_at' => date('Y-m-d H:i:s')
-        ]);
+        try {
+            $stmt = $pdo->prepare("
+                INSERT INTO attendance (student_id, subject_id, teacher_id, attendance_date, marking_method, status, marked_at)
+                VALUES (?, ?, ?, ?, 'qr', 'present', NOW())
+            ");
+            $stmt->execute([$student['id'], $subjectId, $teacherId, $attendanceDate]);
+            
+            echo json_encode([
+                'success' => true,
+                'message' => 'Attendance marked for ' . $student['full_name'],
+                'student_name' => $student['full_name'],
+                'reg_id' => $student['reg_id'],
+                'marked_at' => date('Y-m-d H:i:s')
+            ]);
+        } catch (PDOException $e) {
+            // Handle duplicate entry error (Integrity constraint violation: 1062)
+            if ($e->getCode() == 23000) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => $student['full_name'] . ' already marked present today',
+                    'student_name' => $student['full_name'],
+                    'reg_id' => $student['reg_id'],
+                    'already_marked' => true
+                ]);
+            } else {
+                throw $e; // Re-throw other database errors
+            }
+        }
         
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
@@ -490,19 +505,19 @@ if ($action === 'getStudentAnalytics') {
                 dt.attendance_date,
                 COALESCE(a.status, 'absent') AS status,
                 COALESCE(s.subject_name, 'Unknown') AS subject_name
-            FROM student_subjects ss
-            JOIN (
+            FROM (
                 SELECT DISTINCT attendance_date, subject_id
                 FROM attendance
                 WHERE attendance_date >= ?
-            ) dt ON ss.subject_id = dt.subject_id
+            ) dt
             JOIN subjects s ON dt.subject_id = s.id
             LEFT JOIN attendance a ON a.subject_id = dt.subject_id 
                 AND a.attendance_date = dt.attendance_date 
-                AND a.student_id = ss.student_id
-            WHERE ss.student_id = ?
+                AND a.student_id = ?
+            WHERE (s.id IN (SELECT subject_id FROM student_subjects WHERE student_id = ?)
+                OR NOT EXISTS (SELECT 1 FROM student_subjects WHERE student_id = ?))
         ";
-        $params = [$startDate, $studentId];
+        $params = [$startDate, $studentId, $studentId, $studentId];
         
         if ($subject !== 'all') {
             $sql .= " AND s.subject_name = ?";
@@ -521,12 +536,12 @@ if ($action === 'getStudentAnalytics') {
                 (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id AND attendance_date >= ?) AS total_classes,
                 SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
                 (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id AND attendance_date >= ?) - SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS absent_count
-            FROM student_subjects ss
-            JOIN subjects s ON ss.subject_id = s.id
-            LEFT JOIN attendance a ON a.subject_id = s.id AND a.student_id = ss.student_id AND a.attendance_date >= ?
-            WHERE ss.student_id = ?
+            FROM subjects s
+            LEFT JOIN attendance a ON a.subject_id = s.id AND a.student_id = ? AND a.attendance_date >= ?
+            WHERE (s.id IN (SELECT subject_id FROM student_subjects WHERE student_id = ?)
+                OR NOT EXISTS (SELECT 1 FROM student_subjects WHERE student_id = ?))
         ";
-        $params2 = [$startDate, $startDate, $startDate, $studentId];
+        $params2 = [$startDate, $startDate, $studentId, $startDate, $studentId, $studentId];
         
         if ($subject !== 'all') {
             $sql2 .= " AND s.subject_name = ?";

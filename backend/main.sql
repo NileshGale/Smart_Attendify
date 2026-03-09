@@ -207,6 +207,43 @@ CREATE TABLE IF NOT EXISTS attendance_proofs (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
+-- TABLE: events  (College Events for attendance via unique code / QR)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS events (
+    id              INT          AUTO_INCREMENT PRIMARY KEY,
+    event_name      VARCHAR(255) NOT NULL,
+    event_date      DATE         NOT NULL,
+    event_time      TIME         NOT NULL,
+    teacher_id      INT          NOT NULL,
+    unique_code     VARCHAR(10)  DEFAULT NULL,
+    code_expires_at DATETIME     DEFAULT NULL,
+    created_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_unique_code (unique_code),
+    INDEX idx_teacher     (teacher_id),
+    INDEX idx_event_date  (event_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================================
+-- TABLE: event_attendance  (Tracks which students attended which event)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS event_attendance (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    event_id        INT NOT NULL,
+    student_id      INT NOT NULL,
+    marking_method  ENUM('qr','unique_code') DEFAULT 'unique_code',
+    scanned_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (event_id)   REFERENCES events(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES users(id)  ON DELETE CASCADE,
+    UNIQUE KEY unique_event_student (event_id, student_id),
+
+    INDEX idx_event   (event_id),
+    INDEX idx_student (student_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================================
 -- TABLE: password_reset_tokens
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
