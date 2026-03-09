@@ -474,14 +474,14 @@ if ($action === 'getStudentAnalytics') {
         $sql2 = "
             SELECT 
                 COALESCE(s.subject_name, 'Unknown') AS subject_name,
-                COUNT(*) AS total_classes,
+                (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id AND attendance_date >= ?) AS total_classes,
                 SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
-                SUM(CASE WHEN a.status != 'present' THEN 1 ELSE 0 END) AS absent_count
+                (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id AND attendance_date >= ?) - SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS absent_count
             FROM attendance a
             LEFT JOIN subjects s ON a.subject_id = s.id
             WHERE a.student_id = ? AND a.attendance_date >= ?
         ";
-        $params2 = [$studentId, $startDate];
+        $params2 = [$startDate, $startDate, $studentId, $startDate];
         
         if ($subject !== 'all') {
             $sql2 .= " AND s.subject_name = ?";
@@ -636,9 +636,9 @@ if ($action === 'getStudentReport') {
             SELECT 
                 COALESCE(s.subject_name, 'Unknown') AS subject_name,
                 COALESCE(s.subject_code, 'N/A') AS subject_code,
-                COUNT(*) AS total_classes,
+                (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id) AS total_classes,
                 SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
-                SUM(CASE WHEN a.status != 'present' THEN 1 ELSE 0 END) AS absent_count
+                (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id) - SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS absent_count
             FROM attendance a
             LEFT JOIN subjects s ON a.subject_id = s.id
             WHERE a.student_id = ?
@@ -892,14 +892,14 @@ if ($action === 'getStudentReport') {
                 SELECT 
                     s.subject_name,
                     s.subject_code,
-                    COUNT(a.id) AS total_classes,
+                    (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id) AS total_classes,
                     SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
-                    SUM(CASE WHEN a.status = 'absent' THEN 1 ELSE 0 END) AS absent_count,
-                    ROUND((SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) / COUNT(a.id)) * 100, 2) AS percentage
+                    (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id) - SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS absent_count,
+                    ROUND((SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) / NULLIF((SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id), 0)) * 100, 2) AS percentage
                 FROM attendance a
                 JOIN subjects s ON a.subject_id = s.id
                 WHERE a.student_id = ? AND a.subject_id = ?
-                GROUP BY s.subject_name, s.subject_code
+                GROUP BY s.id, s.subject_name, s.subject_code
             ");
             $stmt->execute([$studentId, $subjectId]);
         } else {
@@ -908,14 +908,14 @@ if ($action === 'getStudentReport') {
                 SELECT 
                     s.subject_name,
                     s.subject_code,
-                    COUNT(a.id) AS total_classes,
+                    (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id) AS total_classes,
                     SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
-                    SUM(CASE WHEN a.status = 'absent' THEN 1 ELSE 0 END) AS absent_count,
-                    ROUND((SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) / COUNT(a.id)) * 100, 2) AS percentage
+                    (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id) - SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS absent_count,
+                    ROUND((SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) / NULLIF((SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id), 0)) * 100, 2) AS percentage
                 FROM attendance a
                 JOIN subjects s ON a.subject_id = s.id
                 WHERE a.student_id = ?
-                GROUP BY s.subject_name, s.subject_code
+                GROUP BY s.id, s.subject_name, s.subject_code
                 ORDER BY s.subject_name
             ");
             $stmt->execute([$studentId]);

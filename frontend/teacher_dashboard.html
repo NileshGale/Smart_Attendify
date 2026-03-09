@@ -1279,6 +1279,7 @@
             align-items: center;
             gap: .875rem;
             border-left: 4px solid var(--success);
+            color: var(--navy-dark);
             animation: slideUp .3s ease;
         }
 
@@ -1764,14 +1765,14 @@
                             <span class="counter-badge" id="scanCountBadge">0 Scanned</span>
                             <span style="font-size:.8rem;color:var(--text-muted)" id="scanDate"></span>
                         </div>
-                        <div class="scan-controls">
+                        <div class="scan-controls" style="display:flex;gap:1rem;justify-content:center">
                             <button class="btn-start" id="startScanBtn" onclick="startQRScanner()"
                                 style="display:inline-flex;align-items:center;gap:.5rem"><i
                                     class="fa-solid fa-play"></i> Start
                                 Camera</button>
                             <button class="btn-stop" id="stopScanBtn" onclick="stopQRScanner()"
-                                style="display:inline-flex;align-items:center;gap:.5rem"><i
-                                    class="fa-solid fa-square"></i> Stop &amp; Save</button>
+                                style="display:none;align-items:center;gap:.5rem"><i class="fa-solid fa-square"></i>
+                                Stop &amp; Save</button>
                         </div>
                         <div class="scanned-list-wrap" id="scannedList"></div>
                     </div>
