@@ -1888,7 +1888,7 @@
                             <i class="fa-solid fa-key"></i> Generate Unique Code
                         </button>
                         <div id="eventCodeDisplay"
-                            style="display:none;align-items:center;gap:.75rem;padding:.625rem 1.25rem;background:var(--navy-dark);color:white;border-radius:12px;margin:0;box-shadow: 0 4px 15px rgba(30, 58, 95, 0.3)">
+                            style="display:none;align-items:center;gap:.75rem;padding:.625rem 1.25rem;background:var(--navy-dark);color:white;border-radius:12px;margin:0;box-shadow: 0 4px 15px rgba(30, 58, 95, 0.3);transition:opacity .5s ease">
                             <div style="display:flex;flex-direction:column;gap:2px">
                                 <span
                                     style="font-size:.65rem;font-weight:700;opacity:.8;text-transform:uppercase;letter-spacing:1px">Event
@@ -1909,6 +1909,11 @@
                                 <span id="refreshCountDisplay" style="font-size:.6rem;font-weight:700;opacity:.7">3
                                     left</span>
                             </div>
+                            <div style="width:1px;height:30px;background:rgba(255,255,255,.1);margin:0 .25rem"></div>
+                            <button onclick="hideEventCode()" title="Close"
+                                style="background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.7);padding:.35rem;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:.9rem">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -2659,6 +2664,9 @@
             clearInterval(eventCodeTimerInterval);
             let timer = durationInSeconds;
             const timerDisplay = document.getElementById('eventCodeTimer');
+            // Reset opacity in case it was faded before
+            const codeDisplay = document.getElementById('eventCodeDisplay');
+            codeDisplay.style.opacity = '1';
 
             const updateTimer = () => {
                 const minutes = Math.floor(timer / 60);
@@ -2669,6 +2677,8 @@
                     clearInterval(eventCodeTimerInterval);
                     timerDisplay.textContent = 'EXPIRED';
                     timerDisplay.style.color = 'var(--error)';
+                    // Auto-hide after 3 seconds
+                    setTimeout(() => hideEventCode(), 3000);
                 } else {
                     timerDisplay.style.color = timer <= 30 ? 'var(--error)' : 'var(--warning)';
                     timer--;
@@ -2677,6 +2687,15 @@
 
             updateTimer();
             eventCodeTimerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function hideEventCode() {
+            const codeDisplay = document.getElementById('eventCodeDisplay');
+            codeDisplay.style.opacity = '0';
+            setTimeout(() => {
+                codeDisplay.style.display = 'none';
+                codeDisplay.style.opacity = '1';
+            }, 500);
         }
 
         async function generateEventCode() {
