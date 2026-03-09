@@ -1091,8 +1091,7 @@
                     </svg>
                 </button>
                 <div class="profile-menu" id="profileMenu">
-                    <a href="#" id="profileName" style="font-weight:700;pointer-events:none"><i
-                            class="fa-solid fa-gear"></i> Admin</a>
+                    <a href="#" id="profileName" style="font-weight:700;pointer-events:none"> Admin</a>
                     <div class="divider"></div>
                     <a href="#" onclick="showChangePassword()"><i class="fa-solid fa-lock"></i> Change Password</a>
                     <a href="#" onclick="logout()" style="color:#ef4444"><i class="fa-solid fa-right-from-bracket"></i>
@@ -1577,7 +1576,7 @@
                         const initials = fullName.charAt(0).toUpperCase();
                         document.getElementById('navUserName').textContent = fullName;
                         document.getElementById('navUserId').textContent = regId;
-                        document.getElementById('profileName').innerHTML = '<i class="fa-solid fa-gear"></i> ' + fullName;
+                        document.getElementById('profileName').innerHTML = fullName;
 
                         // Avatar: show photo or fallback to initials
                         const avatarEl = document.getElementById('navUserAvatar');
@@ -1915,6 +1914,7 @@
         }
 
         function showSection(name, el) {
+            document.getElementById('profileMenu').classList.remove('show');
             document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.sidebar-menu li').forEach(i => i.classList.remove('active'));
             document.getElementById(name + 'Section').classList.add('active');
@@ -2389,6 +2389,7 @@
         }
 
         function showChangePassword() {
+            document.getElementById('profileMenu').classList.remove('show');
             document.getElementById('changePasswordModal').classList.add('show');
         }
 

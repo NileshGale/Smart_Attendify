@@ -2203,6 +2203,7 @@
         }
 
         function showSection(name, el) {
+            document.getElementById('profileMenu').classList.remove('show');
             document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.sidebar-menu li').forEach(i => i.classList.remove('active'));
             document.getElementById(name + 'Section').classList.add('active');
@@ -2936,7 +2937,10 @@
         }
 
         // ─── CHANGE PASSWORD ───
-        function showChangePassword() { document.getElementById('changePasswordModal').classList.add('show'); }
+        function showChangePassword() {
+            document.getElementById('profileMenu').classList.remove('show');
+            document.getElementById('changePasswordModal').classList.add('show');
+        }
         function closeChangePassword() { document.getElementById('changePasswordModal').classList.remove('show'); }
         function submitPasswordChange(e) {
             e.preventDefault();
