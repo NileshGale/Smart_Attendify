@@ -1964,8 +1964,17 @@
                         Search Student Attendance
                     </h4>
                     <div class="search-row" style="margin-bottom:0">
-                        <input type="text" id="studentSearchAnalytics"
-                            placeholder="Enter Student Name or Registration ID" style="flex:2">
+                        <div style="position:relative;flex:2">
+                            <input type="text" id="studentSearchAnalytics"
+                                placeholder="Enter Student Name or Registration ID"
+                                style="width: 100%; box-sizing: border-box; padding-right: 32px;">
+                            <button type="button"
+                                onclick="document.getElementById('studentSearchAnalytics').value='';this.style.display='none';document.getElementById('studentAttendanceResult').style.display='none';currentAnalyticsRegId='';renderCharts();"
+                                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;padding:4px;display:none"
+                                id="searchClearBtnAnalytics">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
                         <button class="btn-primary" onclick="searchStudentAttendance()"
                             style="display:flex;align-items:center;gap:.5rem">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -2814,6 +2823,7 @@
 
         // ─── ANALYTICS / CHARTS ───
         let chartInstances = {};
+        let currentAnalyticsRegId = '';
 
         function renderCharts() {
             const range = document.getElementById('graphRange').value;
@@ -2821,7 +2831,12 @@
             const destroyChart = id => { if (chartInstances[id]) { chartInstances[id].destroy(); } };
 
             // Fetch real analytics from backend
-            fetch(`../backend/attendance_api.php?action=getTeacherAnalytics&range=${range}&subject=${encodeURIComponent(subject)}`)
+            let url = `../backend/attendance_api.php?action=getTeacherAnalytics&range=${range}&subject=${encodeURIComponent(subject)}`;
+            if (currentAnalyticsRegId) {
+                url += `&reg_id=${encodeURIComponent(currentAnalyticsRegId)}`;
+            }
+
+            fetch(url)
                 .then(r => r.json())
                 .then(data => {
                     if (!data.success) {
@@ -2873,8 +2888,14 @@
 
                     // Scatter Chart
                     destroyChart('scatter');
-                    const scatterPresent = present.map((y, x) => ({ x, y }));
-                    const scatterAbsent = absent.map((y, x) => ({ x, y }));
+                    const scatterPresent = present.map((count, index) => {
+                        return count > 0 ? { x: index, y: 1 } : null;
+                    }).filter(Boolean);
+
+                    const scatterAbsent = absent.map((count, index) => {
+                        return count > 0 ? { x: index, y: 0 } : null;
+                    }).filter(Boolean);
+
                     chartInstances['scatter'] = new Chart(document.getElementById('scatterChart'), {
                         type: 'scatter',
                         data: {
@@ -2883,7 +2904,42 @@
                                 { label: 'Absent', data: scatterAbsent, backgroundColor: 'rgba(239,68,68,.6)', pointRadius: 5 }
                             ]
                         },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } } }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'top', labels: { font: { size: 11 } } },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            return context.raw.y === 1 ? 'Present' : 'Absent';
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    min: -0.5,
+                                    max: 1.5,
+                                    ticks: {
+                                        stepSize: 1,
+                                        callback: function (value) {
+                                            if (value === 0) return 'Absent';
+                                            if (value === 1) return 'Present';
+                                            return '';
+                                        }
+                                    },
+                                    grid: { display: false }
+                                },
+                                x: {
+                                    ticks: {
+                                        callback: function (value, index, values) {
+                                            return labels[index] || value;
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     });
 
                     // Bar Chart by subject
@@ -3147,6 +3203,16 @@
         }
 
         // ─── SEARCH STUDENT ATTENDANCE IN ANALYTICS ───
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInputAnalytics = document.getElementById('studentSearchAnalytics');
+            const clearBtnAnalytics = document.getElementById('searchClearBtnAnalytics');
+            if (searchInputAnalytics && clearBtnAnalytics) {
+                searchInputAnalytics.addEventListener('input', function () {
+                    clearBtnAnalytics.style.display = this.value.trim().length > 0 ? 'block' : 'none';
+                });
+            }
+        });
+
         function searchStudentAttendance() {
             const query = document.getElementById('studentSearchAnalytics').value.trim();
             const resultDiv = document.getElementById('studentAttendanceResult');
@@ -3171,8 +3237,12 @@
                         const att = data.report || data.attendance;
                         const studentInfo = data.student || { name: query, regId: query, class: 'N/A' };
                         renderStudentAttendanceResult(resultDiv, studentInfo, att);
+                        currentAnalyticsRegId = studentInfo.regId;
+                        renderCharts();
                     } else {
                         resultDiv.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted)"><p><i class="fa-solid fa-xmark"></i> ${data.message || 'Student not found'}</p></div>`;
+                        currentAnalyticsRegId = '';
+                        renderCharts();
                     }
                 })
                 .catch(() => {

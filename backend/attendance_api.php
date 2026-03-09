@@ -561,6 +561,7 @@ if ($action === 'getTeacherAnalytics') {
     $teacherId = $_SESSION['user_id'];
     $range = sanitize($_GET['range'] ?? 'week');
     $subject = sanitize($_GET['subject'] ?? 'all');
+    $regId = sanitize($_GET['reg_id'] ?? '');
     
     if ($range === 'all') {
         $startDate = '2000-01-01'; // Fetch all records
@@ -571,46 +572,100 @@ if ($action === 'getTeacherAnalytics') {
     
     try {
         // 1. Daily attendance counts (present vs absent per day)
-        $sql = "
-            SELECT 
-                a.attendance_date,
-                SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
-                SUM(CASE WHEN a.status != 'present' THEN 1 ELSE 0 END) AS absent_count,
-                COUNT(*) AS total_count
-            FROM attendance a
-            LEFT JOIN subjects s ON a.subject_id = s.id
-            WHERE a.teacher_id = ? AND a.attendance_date >= ?
-        ";
-        $params = [$teacherId, $startDate];
-        
-        if ($subject !== 'all') {
-            $sql .= " AND s.subject_name = ?";
-            $params[] = $subject;
+        if ($regId !== '') {
+            $sql = "
+                SELECT 
+                    dt.attendance_date,
+                    COALESCE(SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END), 0) AS present_count,
+                    COUNT(dt.attendance_date) - COALESCE(SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END), 0) AS absent_count,
+                    COUNT(dt.attendance_date) AS total_count
+                FROM (
+                    SELECT DISTINCT attendance_date, subject_id 
+                    FROM attendance 
+                    WHERE teacher_id = ? AND attendance_date >= ?
+            ";
+            $params = [$teacherId, $startDate];
+            
+            if ($subject !== 'all') {
+                $sql .= " AND subject_id = (SELECT id FROM subjects WHERE subject_name = ? LIMIT 1)";
+                $params[] = $subject;
+            }
+            
+            $sql .= "
+                ) dt
+                LEFT JOIN attendance a ON dt.attendance_date = a.attendance_date 
+                    AND dt.subject_id = a.subject_id
+                    AND a.teacher_id = ? 
+                    AND a.student_id = (SELECT id FROM users WHERE (reg_id = ? OR full_name LIKE ?) AND role='student' LIMIT 1)
+            ";
+            $params[] = $teacherId;
+            $params[] = $regId;
+            $params[] = "%$regId%";
+            
+            $sql .= " GROUP BY dt.attendance_date ORDER BY dt.attendance_date ASC";
+        } else {
+            $sql = "
+                SELECT 
+                    a.attendance_date,
+                    SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
+                    SUM(CASE WHEN a.status != 'present' THEN 1 ELSE 0 END) AS absent_count,
+                    COUNT(*) AS total_count
+                FROM attendance a
+                LEFT JOIN subjects s ON a.subject_id = s.id
+                WHERE a.teacher_id = ? AND a.attendance_date >= ?
+            ";
+            $params = [$teacherId, $startDate];
+            
+            if ($subject !== 'all') {
+                $sql .= " AND s.subject_name = ?";
+                $params[] = $subject;
+            }
+            $sql .= " GROUP BY a.attendance_date ORDER BY a.attendance_date ASC";
         }
-        $sql .= " GROUP BY a.attendance_date ORDER BY a.attendance_date ASC";
         
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         $dailyStats = $stmt->fetchAll();
         
         // 2. Subject-wise summary
-        $sql2 = "
-            SELECT 
-                COALESCE(s.subject_name, 'Unknown') AS subject_name,
-                COUNT(*) AS total_records,
-                SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
-                SUM(CASE WHEN a.status != 'present' THEN 1 ELSE 0 END) AS absent_count
-            FROM attendance a
-            LEFT JOIN subjects s ON a.subject_id = s.id
-            WHERE a.teacher_id = ? AND a.attendance_date >= ?
-        ";
-        $params2 = [$teacherId, $startDate];
-        
-        if ($subject !== 'all') {
-            $sql2 .= " AND s.subject_name = ?";
-            $params2[] = $subject;
+        if ($regId !== '') {
+            $sql2 = "
+                SELECT 
+                    COALESCE(s.subject_name, 'Unknown') AS subject_name,
+                    (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id AND teacher_id = ? AND attendance_date >= ?) AS total_records,
+                    SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
+                    (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id AND teacher_id = ? AND attendance_date >= ?) - SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS absent_count
+                FROM attendance a
+                LEFT JOIN subjects s ON a.subject_id = s.id
+                LEFT JOIN users u ON a.student_id = u.id
+                WHERE a.teacher_id = ? AND a.attendance_date >= ? AND (u.reg_id = ? OR u.full_name LIKE ?)
+            ";
+            $params2 = [$teacherId, $startDate, $teacherId, $startDate, $teacherId, $startDate, $regId, "%$regId%"];
+            
+            if ($subject !== 'all') {
+                $sql2 .= " AND s.subject_name = ?";
+                $params2[] = $subject;
+            }
+            $sql2 .= " GROUP BY s.id, s.subject_name ORDER BY s.subject_name";
+        } else {
+            $sql2 = "
+                SELECT 
+                    COALESCE(s.subject_name, 'Unknown') AS subject_name,
+                    COUNT(*) AS total_records,
+                    SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
+                    SUM(CASE WHEN a.status != 'present' THEN 1 ELSE 0 END) AS absent_count
+                FROM attendance a
+                LEFT JOIN subjects s ON a.subject_id = s.id
+                WHERE a.teacher_id = ? AND a.attendance_date >= ?
+            ";
+            $params2 = [$teacherId, $startDate];
+            
+            if ($subject !== 'all') {
+                $sql2 .= " AND s.subject_name = ?";
+                $params2[] = $subject;
+            }
+            $sql2 .= " GROUP BY s.subject_name ORDER BY s.subject_name";
         }
-        $sql2 .= " GROUP BY s.subject_name ORDER BY s.subject_name";
         
         $stmt = $pdo->prepare($sql2);
         $stmt->execute($params2);
