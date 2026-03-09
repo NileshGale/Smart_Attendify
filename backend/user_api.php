@@ -529,16 +529,27 @@ if ($action === 'getDashboardStats') {
         ");
         $overallPercentage = $stmt->fetchColumn() ?: 0;
         
-        // Count of students below 75%
+        // Count of students below 50%
         $stmt = $pdo->query("
             SELECT COUNT(*) FROM (
-                SELECT student_id, (SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) / COUNT(*)) * 100 AS pct
-                FROM attendance
+                SELECT 
+                    student_id,
+                    SUM(present_count) as total_present,
+                    SUM(total_classes) as grand_total_classes
+                FROM (
+                    SELECT 
+                        a.student_id,
+                        a.subject_id,
+                        SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
+                        (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = a.subject_id) AS total_classes
+                    FROM attendance a
+                    GROUP BY a.student_id, a.subject_id
+                ) student_subjects
                 GROUP BY student_id
-                HAVING pct < 75
+                HAVING (SUM(present_count) / SUM(total_classes)) * 100 < 50
             ) AS sub
         ");
-        $below75Count = $stmt->fetchColumn() ?: 0;
+        $below50Count = $stmt->fetchColumn() ?: 0;
         
         // Recent registrations
         $stmt = $pdo->query("
@@ -556,7 +567,7 @@ if ($action === 'getDashboardStats') {
                 'total_subjects' => $totalSubjects,
                 'today_attendance' => $todayAttendance,
                 'overall_percentage' => $overallPercentage,
-                'below_75_count' => $below75Count,
+                'below_50_count' => $below50Count,
                 'recent_registrations' => $recentRegistrations
             ]
         ]);

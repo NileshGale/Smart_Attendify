@@ -1093,6 +1093,52 @@
             margin-top: .25rem;
         }
 
+        /* ─── BUTTONS ─── */
+        .btn-primary,
+        .btn-success {
+            padding: 0.625rem 1.25rem;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.825rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-cyan) 0%, var(--navy-dark) 100%);
+            box-shadow: 0 4px 12px rgba(0, 188, 212, 0.25);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+        }
+
+        .btn-primary:hover,
+        .btn-success:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary:active,
+        .btn-success:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary i,
+        .btn-success i {
+            font-size: 1rem;
+        }
+
         /* ─── TABLE ─── */
         .table-wrap {
             overflow-x: auto;
@@ -1834,10 +1880,22 @@
                             <input type="time" id="eventTime">
                         </div>
                     </div>
-                    <button class="btn-primary" onclick="startEventScanning()"
-                        style="display:inline-flex;align-items:center;gap:.5rem"><i class="fa-solid fa-play"></i> Start
-                        QR
-                        Scanning</button>
+                    <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
+                        <button class="btn-primary" onclick="startEventScanning()">
+                            <i class="fa-solid fa-play"></i> Start QR Scanning
+                        </button>
+                        <button class="btn-success" onclick="generateEventCode()">
+                            <i class="fa-solid fa-key"></i> Generate Unique Code
+                        </button>
+                        <div id="eventCodeDisplay"
+                            style="display:none;align-items:center;gap:.75rem;padding:.625rem 1.25rem;background:var(--navy-dark);color:white;border-radius:12px;margin:0;box-shadow: 0 4px 15px rgba(30, 58, 95, 0.3)">
+                            <span
+                                style="font-size:.7rem;font-weight:700;opacity:.8;text-transform:uppercase;letter-spacing:1px">Event
+                                Code:</span>
+                            <span id="currentEventCode"
+                                style="font-size:1.4rem;font-weight:900;letter-spacing:3px;font-family:'Courier New', monospace;color:var(--primary-cyan)">------</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="scanner-panel" id="eventScannerPanel">
                     <div class="scanner-panel-header">
@@ -2549,13 +2607,53 @@
         }
 
         // ─── EVENT ATTENDANCE ───
-        let eventStream = null, eventScanInterval = null, eventStudents = [];
+        let eventStream = null, eventScanInterval = null, eventStudents = [], currentEventId = null;
 
-        function startEventScanning() {
+        async function createEventRecord(generateCode = false) {
             const eName = document.getElementById('eventName').value.trim();
             const eDate = document.getElementById('eventDate').value;
             const eTime = document.getElementById('eventTime').value;
-            if (!eName || !eDate || !eTime) { showToast('Please fill all event details', true); return; }
+            if (!eName || !eDate || !eTime) { showToast('Please fill all event details', true); return null; }
+
+            const formData = new FormData();
+            formData.append('action', 'createEvent');
+            formData.append('event_name', eName);
+            formData.append('event_date', eDate);
+            formData.append('event_time', eTime);
+            formData.append('generate_code', generateCode ? 'true' : 'false');
+
+            try {
+                const r = await fetch('../backend/event_api.php', { method: 'POST', body: formData });
+                const d = await r.json();
+                if (d.success) {
+                    currentEventId = d.event_id;
+                    return d;
+                } else {
+                    showToast(d.message || 'Error creating event', true);
+                    return null;
+                }
+            } catch (e) {
+                showToast('Connection error', true);
+                return null;
+            }
+        }
+
+        async function generateEventCode() {
+            const result = await createEventRecord(true);
+            if (result && result.unique_code) {
+                document.getElementById('eventCodeDisplay').style.display = 'inline-flex';
+                document.getElementById('currentEventCode').textContent = result.unique_code;
+                showToast('Unique code generated successfully');
+            }
+        }
+
+        async function startEventScanning() {
+            if (!currentEventId) {
+                const result = await createEventRecord(false);
+                if (!result) return;
+            }
+
+            const eName = document.getElementById('eventName').value.trim();
             document.getElementById('eventNameLabel').textContent = eName;
             eventStudents = [];
             document.getElementById('eventScannedList').innerHTML = '';
@@ -2582,21 +2680,33 @@
                     }, 200);
                 })
                 .catch(() => {
-                    showToast('Camera unavailable – demo mode');
-                    setTimeout(() => processEventQR('25CSECSE1001'), 1000);
-                    setTimeout(() => processEventQR('25CSECSE1002'), 2500);
+                    showToast('Camera unavailable');
                 });
         }
 
         function processEventQR(id) {
             if (eventStudents.includes(id)) return;
-            eventStudents.push(id);
-            const el = document.createElement('div');
-            el.className = 'scanned-item';
-            el.innerHTML = `<div><div class="s-name">Student</div><div class="s-id">${id}</div></div><span class="s-check"><i class="fa-solid fa-check-circle"></i></span>`;
-            document.getElementById('eventScannedList').prepend(el);
-            document.getElementById('eventScanCount').textContent = eventStudents.length + ' Scanned';
-            playBeep();
+
+            const formData = new FormData();
+            formData.append('action', 'markEventAttendance');
+            formData.append('event_id', currentEventId);
+            formData.append('student_reg_id', id);
+            formData.append('method', 'qr');
+
+            fetch('../backend/event_api.php', { method: 'POST', body: formData })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) {
+                        eventStudents.push(id);
+                        const el = document.createElement('div');
+                        el.className = 'scanned-item';
+                        el.innerHTML = `<div><div class="s-name">Student</div><div class="s-id">${id}</div></div><span class="s-check"><i class="fa-solid fa-check-circle"></i></span>`;
+                        document.getElementById('eventScannedList').prepend(el);
+                        document.getElementById('eventScanCount').textContent = eventStudents.length + ' Scanned';
+                        playBeep();
+                    }
+                })
+                .catch(() => { });
         }
 
         function stopEventScanner() {
@@ -2604,20 +2714,8 @@
             if (eventScanInterval) { clearInterval(eventScanInterval); eventScanInterval = null; }
             document.getElementById('eventQrVideo').srcObject = null;
             document.getElementById('eventScannerPanel').classList.remove('show');
-            if (eventStudents.length > 0) {
-                fetch('save_event_attendance.php', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        eventName: document.getElementById('eventName').value,
-                        eventDate: document.getElementById('eventDate').value,
-                        eventTime: document.getElementById('eventTime').value,
-                        students: eventStudents
-                    })
-                })
-                    .then(r => r.json())
-                    .then(d => showToast(d.success ? `<i class="fa-solid fa-check-circle"></i> Event attendance saved for ${eventStudents.length}` : 'Failed'))
-                    .catch(() => showToast(`<i class="fa-solid fa-check-circle"></i> Demo: Event saved for ${eventStudents.length} students`));
-            }
+            currentEventId = null; // Reset for next event
+            document.getElementById('eventCodeDisplay').style.display = 'none';
         }
 
         // ─── ANALYTICS / CHARTS ───

@@ -1688,6 +1688,8 @@
         function submitAttendanceCode() {
             const code = document.getElementById('attendanceCodeInput').value.trim().toUpperCase();
             if (code.length < 6) { showStatus('Please enter a valid code (6-8 characters)', false); return; }
+
+            // First try regular subject attendance
             fetch('../backend/attendance_api.php', {
                 method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `action=markByUniqueCode&unique_code=${encodeURIComponent(code)}`
@@ -1697,11 +1699,28 @@
                     if (d.success) {
                         showStatus('<i class="fa-solid fa-check-circle"></i> ' + d.message, true);
                         document.getElementById('attendanceCodeInput').value = '';
+                        loadData();
                     } else {
-                        showStatus('<i class="fa-solid fa-xmark"></i> ' + (d.message || 'Invalid or expired code'), false);
+                        // If subject fails, try event attendance
+                        const formData = new FormData();
+                        formData.append('action', 'markEventAttendance');
+                        formData.append('unique_code', code);
+                        formData.append('method', 'unique_code');
+
+                        fetch('../backend/event_api.php', { method: 'POST', body: formData })
+                            .then(r => r.json())
+                            .then(evData => {
+                                if (evData.success) {
+                                    showStatus('<i class="fa-solid fa-check-circle"></i> ' + evData.message, true);
+                                    document.getElementById('attendanceCodeInput').value = '';
+                                } else {
+                                    showStatus(evData.message || 'Invalid or expired code', false);
+                                }
+                            })
+                            .catch(() => showStatus('Network error — please try again', false));
                     }
                 })
-                .catch(() => { showStatus('<i class="fa-solid fa-xmark"></i> Network error — please try again', false); });
+                .catch(() => showStatus('Network error — please try again', false));
         }
         function showStatus(msg, ok) {
             const el = document.getElementById('codeStatus');

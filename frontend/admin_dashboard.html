@@ -1181,8 +1181,8 @@
                         <div class="stat-label">Avg Attendance</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value" id="statBelow75" style="color:var(--warning)">...</div>
-                        <div class="stat-label">Below 75%</div>
+                        <div class="stat-value" id="statBelow50" style="color:var(--danger)">...</div>
+                        <div class="stat-label">Below 50%</div>
                     </div>
                 </div>
                 <div class="card">
@@ -1618,7 +1618,7 @@
                     document.getElementById('statTotalStudents').textContent = stats.total_students;
                     document.getElementById('statTotalTeachers').textContent = stats.total_teachers;
                     document.getElementById('statAvgAttendance').textContent = stats.overall_percentage + '%';
-                    document.getElementById('statBelow75').textContent = stats.below_75_count;
+                    document.getElementById('statBelow50').textContent = stats.below_50_count;
 
                     // Update Recent Registrations
                     const tbody = document.getElementById('recentRegistrations');
