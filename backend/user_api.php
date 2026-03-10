@@ -519,15 +519,27 @@ if ($action === 'getDashboardStats') {
         ");
         $todayAttendance = $stmt->fetchColumn();
         
+        // Determine total students for calculation
+        $totalStudents = (int)($userStats['student'] ?? 0);
+        if ($totalStudents === 0) $totalStudents = 1; // Prevent division by zero
+
         // Overall attendance percentage
         $stmt = $pdo->query("
-            SELECT ROUND(
-                (SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) / COUNT(*)) * 100, 
-                2
-            ) AS percentage
-            FROM attendance
+            SELECT 
+                SUM(present_count) as total_present,
+                SUM(subject_count * $totalStudents) as total_expected
+            FROM (
+                SELECT 
+                    attendance_date,
+                    SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present_count,
+                    COUNT(DISTINCT subject_id) as subject_count
+                FROM attendance
+                GROUP BY attendance_date
+            ) daily_stats
         ");
-        $overallPercentage = $stmt->fetchColumn() ?: 0;
+        $overallStats = $stmt->fetch();
+        $totalExpected = $overallStats['total_expected'] ?: 1;
+        $overallPercentage = round(($overallStats['total_present'] / $totalExpected) * 100, 2);
         
         // Count of students below 50%
         $stmt = $pdo->query("
@@ -565,7 +577,7 @@ if ($action === 'getDashboardStats') {
             SELECT 
                 attendance_date,
                 SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present,
-                SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent
+                (COUNT(DISTINCT subject_id) * $totalStudents) - SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as absent
             FROM attendance
             WHERE attendance_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
             GROUP BY attendance_date
@@ -576,14 +588,25 @@ if ($action === 'getDashboardStats') {
         // Chart Data: Department-wise attendance
         $stmt = $pdo->query("
             SELECT 
-                department,
-                ROUND((SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) / COUNT(*)) * 100, 1) as percentage
-            FROM attendance a
-            JOIN users u ON a.student_id = u.id
-            WHERE department IS NOT NULL
-            GROUP BY department
+                u.department,
+                COUNT(a.id) as present_count,
+                (SELECT COUNT(DISTINCT attendance_date, subject_id) FROM attendance) * 
+                (SELECT COUNT(*) FROM users u2 WHERE u2.department = u.department AND u2.role = 'student') as expected_count
+            FROM users u
+            LEFT JOIN attendance a ON u.id = a.student_id AND a.status = 'present'
+            WHERE u.department IS NOT NULL AND u.role = 'student'
+            GROUP BY u.department
         ");
-        $deptAttendance = $stmt->fetchAll();
+        $deptAttendanceRaw = $stmt->fetchAll();
+        $deptAttendance = [];
+        foreach ($deptAttendanceRaw as $row) {
+            $expected = $row['expected_count'] > 0 ? $row['expected_count'] : 1;
+            $pct = round(($row['present_count'] / $expected) * 100, 1);
+            $deptAttendance[] = [
+                'department' => $row['department'],
+                'percentage' => $pct
+            ];
+        }
 
         // Role Distribution (Doughnut Chart)
         $roleDistribution = [];

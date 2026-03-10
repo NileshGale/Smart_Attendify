@@ -16,6 +16,20 @@ if ($action === 'createEvent') {
         exit;
     }
 
+    $eventTimestamp = strtotime("$eventDate $eventTime");
+    $currentTimestamp = time();
+    $fiveDaysAgo = strtotime('-5 days');
+
+    if ($eventTimestamp > $currentTimestamp) {
+        echo json_encode(['success' => false, 'message' => 'Event date and time cannot be in the future.']);
+        exit;
+    }
+
+    if ($eventTimestamp < $fiveDaysAgo) {
+        echo json_encode(['success' => false, 'message' => 'Event date and time cannot be older than 5 days.']);
+        exit;
+    }
+
     try {
         $uniqueCode = null;
         $expiresAt = null;
@@ -53,8 +67,8 @@ if ($action === 'markEventAttendance') {
             $eventId = intval($_POST['event_id']);
             $studentRegId = sanitize($_POST['student_reg_id']);
             
-            // Find student ID
-            $stmt = $pdo->prepare("SELECT id FROM users WHERE reg_id = ? AND role = 'student'");
+            // Find student ID and details
+            $stmt = $pdo->prepare("SELECT id, full_name, reg_id FROM users WHERE reg_id = ? AND role = 'student'");
             $stmt->execute([$studentRegId]);
             $student = $stmt->fetch();
             
@@ -63,6 +77,8 @@ if ($action === 'markEventAttendance') {
                 exit;
             }
             $studentId = $student['id'];
+            $studentName = $student['full_name'];
+            $studentReg = $student['reg_id'];
         } else {
             // Student entering code
             requireRole('student');
@@ -78,12 +94,27 @@ if ($action === 'markEventAttendance') {
                 exit;
             }
             $eventId = $event['id'];
+            
+            // Get student info for return
+            $stStmt = $pdo->prepare("SELECT full_name, reg_id FROM users WHERE id = ?");
+            $stStmt->execute([$studentId]);
+            $st = $stStmt->fetch();
+            $studentName = $st['full_name'] ?? 'Student';
+            $studentReg = $st['reg_id'] ?? '';
         }
 
-        $stmt = $pdo->prepare("INSERT IGNORE INTO event_attendance (event_id, student_id, marking_method) VALUES (?, ?, ?)");
+        // Check for duplicate attendance
+        $checkStmt = $pdo->prepare("SELECT id FROM event_attendance WHERE event_id = ? AND student_id = ?");
+        $checkStmt->execute([$eventId, $studentId]);
+        if ($checkStmt->fetch()) {
+            echo json_encode(['success' => false, 'message' => 'Student already scanned / marked for this event']);
+            exit;
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO event_attendance (event_id, student_id, marking_method) VALUES (?, ?, ?)");
         $stmt->execute([$eventId, $studentId, $method]);
         
-        // Fetch event name if not already fetched (for teacher fallback or scanning)
+        // Fetch event name if not already fetched
         if (!isset($event['event_name'])) {
             $stmt = $pdo->prepare("SELECT event_name FROM events WHERE id = ?");
             $stmt->execute([$eventId]);
@@ -91,9 +122,98 @@ if ($action === 'markEventAttendance') {
         }
         $eventName = $event['event_name'] ?? 'Event';
 
-        echo json_encode(['success' => true, 'message' => "Attendance marked successfully for $eventName", 'event_name' => $eventName]);
+        $successMessage = ($method === 'qr') 
+            ? "Attendance marked successfully for $studentName" 
+            : "Attendance marked successfully for $eventName";
+
+        echo json_encode([
+            'success' => true, 
+            'message' => $successMessage,
+            'event_name' => $eventName,
+            'student_name' => $studentName,
+            'student_reg_id' => $studentReg
+        ]);
+    } catch (PDOException $e) {
+        // Handle race conditions where a duplicate might still somehow violate a unique constraint if one exists
+        if ($e->getCode() == 23000) {
+            echo json_encode(['success' => false, 'message' => 'Student already scanned / marked for this event']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+    exit;
+}
+
+if ($action === 'verifyEventStudent') {
+    requireRole('teacher');
+    $eventId = intval($_POST['event_id']);
+    $studentRegId = sanitize($_POST['student_reg_id']);
+    
+    try {
+        // Find student ID and details
+        $stmt = $pdo->prepare("SELECT id, full_name, reg_id FROM users WHERE reg_id = ? AND role = 'student'");
+        $stmt->execute([$studentRegId]);
+        $student = $stmt->fetch();
+        
+        if (!$student) {
+            echo json_encode(['success' => false, 'message' => 'Student not found']);
+            exit;
+        }
+        
+        // Check for duplicate attendance in DB
+        $checkStmt = $pdo->prepare("SELECT id FROM event_attendance WHERE event_id = ? AND student_id = ?");
+        $checkStmt->execute([$eventId, $student['id']]);
+        if ($checkStmt->fetch()) {
+            echo json_encode(['success' => false, 'message' => 'Student already scanned / marked for this event']);
+            exit;
+        }
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Student verified',
+            'student_name' => $student['full_name'],
+            'student_reg_id' => $student['reg_id']
+        ]);
+        
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
+if ($action === 'saveEventAttendanceBatch') {
+    requireRole('teacher');
+    $eventId = intval($_POST['event_id']);
+    $regIds = isset($_POST['reg_ids']) ? json_decode($_POST['reg_ids'], true) : [];
+    
+    if (empty($regIds)) {
+        echo json_encode(['success' => true, 'message' => 'No attendance to save.']);
+        exit;
+    }
+    
+    try {
+        $savedCount = 0;
+        $stmtFind = $pdo->prepare("SELECT id FROM users WHERE reg_id = ? AND role = 'student'");
+        $stmtCheck = $pdo->prepare("SELECT id FROM event_attendance WHERE event_id = ? AND student_id = ?");
+        $stmtInsert = $pdo->prepare("INSERT INTO event_attendance (event_id, student_id, marking_method) VALUES (?, ?, 'qr')");
+        
+        foreach ($regIds as $regId) {
+            // Find student
+            $stmtFind->execute([sanitize($regId)]);
+            $student = $stmtFind->fetch();
+            if ($student) {
+                // Check duplicate
+                $stmtCheck->execute([$eventId, $student['id']]);
+                if (!$stmtCheck->fetch()) {
+                    $stmtInsert->execute([$eventId, $student['id']]);
+                    $savedCount++;
+                }
+            }
+        }
+        
+        echo json_encode(['success' => true, 'message' => "$savedCount attendance records saved successfully."]);
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Error saving attendance: ' . $e->getMessage()]);
     }
     exit;
 }
