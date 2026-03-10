@@ -1,20 +1,5 @@
 <?php
-/**
- * send_otp.php — Fixed OTP Email Sender using PHPMailer
- *
- * FOLDER STRUCTURE EXPECTED:
- *   your-project/
- *   ├── send_otp.php          ← this file
- *   ├── db_config.php
- *   └── PHPMailer/            ← extracted GitHub zip (folder name must match exactly)
- *       └── src/
- *           ├── PHPMailer.php
- *           ├── SMTP.php
- *           └── Exception.php
- *
- * If your folder is named differently (e.g. "phpmailer", "PHPMailer-master"),
- * update the require_once paths below to match.
- */
+
 
 require_once 'db_config.php';
 
@@ -41,10 +26,6 @@ use PHPMailer\PHPMailer\Exception;
 
 header('Content-Type: application/json');
 
-// ── EMAIL CONFIGURATION ─────────────────────────────────────────────────────
-// IMPORTANT: Use a Gmail App Password, NOT your regular Gmail password.
-// Generate one at: https://myaccount.google.com/apppasswords
-// (Requires 2-Step Verification to be enabled on your Google account)
 
 define('SMTP_HOST',       'smtp.gmail.com');
 define('SMTP_USERNAME',   'nileshgale520@gmail.com');   // ← your Gmail address
