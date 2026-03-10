@@ -52,13 +52,17 @@ if ($action === 'generateUniqueCode') {
             $code .= $chars[random_int(0, strlen($chars) - 1)];
         }
         
-        $expiresAt = date('Y-m-d H:i:s', time() + $validitySeconds);
-        
+        // Calculate expiry entirely in DB to avoid PHP/MySQL timezone mismatches
         $stmt = $pdo->prepare("
             INSERT INTO attendance_codes (code, teacher_id, subject_name, expires_at)
-            VALUES (?, ?, ?, ?)
+            VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND))
         ");
-        $stmt->execute([$code, $teacherId, $subjectName, $expiresAt]);
+        $stmt->execute([$code, $teacherId, $subjectName, $validitySeconds]);
+        
+        // Fetch the exact DB-assigned expiration time back
+        $stmt = $pdo->prepare("SELECT expires_at FROM attendance_codes WHERE code = ? ORDER BY id DESC LIMIT 1");
+        $stmt->execute([$code]);
+        $expiresAt = $stmt->fetchColumn();
         
         echo json_encode([
             'success' => true,
@@ -89,7 +93,8 @@ if ($action === 'markByUniqueCode') {
     }
     
     $studentId = $_SESSION['user_id'];
-    $uniqueCode = strtoupper(trim($_POST['unique_code'] ?? ''));
+    // Completely remove any spaces or non-alphanumeric chars that students might paste
+    $uniqueCode = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $_POST['unique_code'] ?? ''));
     
     if (!$uniqueCode) {
         echo json_encode(['success' => false, 'message' => 'Please enter the code']);
