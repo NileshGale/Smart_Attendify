@@ -563,12 +563,11 @@ if ($action === 'getDashboardStats') {
         ");
         $below50Count = $stmt->fetchColumn() ?: 0;
         
-        // Recent registrations
+        // Recent registrations (all users including admin, teacher, student)
         $stmt = $pdo->query("
             SELECT full_name, reg_id, role, department, created_at 
             FROM users 
-            ORDER BY created_at DESC 
-            LIMIT 10
+            ORDER BY created_at DESC
         ");
         $recentRegistrations = $stmt->fetchAll();
 

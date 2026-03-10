@@ -1342,6 +1342,7 @@
                                     <option value="all">All Users</option>
                                     <option value="student">Student</option>
                                     <option value="teacher">Teacher</option>
+                                    <option value="admin">Admin</option>
                                 </select>
                                 <select id="recentDeptFilter"
                                     style="max-width:250px; background:var(--surface); color:var(--text); cursor:pointer;"
@@ -1381,6 +1382,7 @@
                         <table>
                             <thead>
                                 <tr>
+                                    <th>Sr No.</th>
                                     <th>Name</th>
                                     <th>Reg ID</th>
                                     <th>Role</th>
@@ -1625,7 +1627,7 @@
                     if (tbody) {
                         tbody.innerHTML = '';
                         if (stats.recent_registrations && stats.recent_registrations.length > 0) {
-                            stats.recent_registrations.forEach(r => {
+                            stats.recent_registrations.forEach((r, idx) => {
                                 let badgeClass = 'badge-present';
                                 if (r.role === 'teacher') badgeClass = 'badge-warn';
                                 else if (r.role === 'admin') badgeClass = 'badge-admin';
@@ -1634,16 +1636,17 @@
                                 const date = new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
                                 tbody.innerHTML += `
                                     <tr>
+                                        <td>${idx + 1}</td>
                                         <td>${r.full_name}</td>
                                         <td>${r.reg_id || '-'}</td>
                                         <td><span class="badge ${badgeClass}">${roleText}</span></td>
                                         <td>${r.department || '-'}</td>
                                         <td>${date}</td>
-                                        </tr>
+                                    </tr>
                             `;
                             });
                         } else {
-                            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem">No recent registrations found</td></tr>';
+                            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem">No recent registrations found</td></tr>';
                         }
                     }
 
@@ -1655,6 +1658,46 @@
             } catch (err) {
                 console.error("Failed to load admin stats", err);
                 showToast('Failed to load dashboard statistics', true);
+            }
+        }
+
+        async function filterRecentRegistrations() {
+            const role = document.getElementById('recentRoleFilter').value;
+            const dept = document.getElementById('recentDeptFilter').value;
+            const limit = document.getElementById('recentLimitFilter').value;
+
+            try {
+                const res = await fetch(`../backend/user_api.php?action=getRecentRegistrations&role=${encodeURIComponent(role)}&dept=${encodeURIComponent(dept)}&limit=${encodeURIComponent(limit)}`);
+                const data = await res.json();
+
+                const tbody = document.getElementById('recentRegistrations');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+
+                if (data.success && data.recent_registrations && data.recent_registrations.length > 0) {
+                    data.recent_registrations.forEach(r => {
+                        let badgeClass = 'badge-present';
+                        if (r.role === 'teacher') badgeClass = 'badge-warn';
+                        else if (r.role === 'admin') badgeClass = 'badge-admin';
+
+                        const roleText = r.role.charAt(0).toUpperCase() + r.role.slice(1);
+                        const date = new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${r.full_name}</td>
+                                <td>${r.reg_id || '-'}</td>
+                                <td><span class="badge ${badgeClass}">${roleText}</span></td>
+                                <td>${r.department || '-'}</td>
+                                <td>${date}</td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem">No registrations found matching filters</td></tr>';
+                }
+            } catch (err) {
+                console.error('Failed to filter registrations', err);
+                showToast('Failed to filter registrations', true);
             }
         }
 
@@ -2187,14 +2230,15 @@
                     else if (r.role === 'admin') { roleColor = '#b100cd'; roleBg = 'rgba(177,0,205,0.12)'; }
 
                     tableRowsHTML += `
-                        <tr style="background:${bgColor}; page-break-inside: avoid;">
-                            <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#1e3a5f">${r.full_name}</td>
-                            <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-family:monospace">${r.reg_id || '-'}</td>
-                            <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb">
+                        <tr style="background:${bgColor};">
+                            <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;color:#475569;text-align:center;font-weight:600">${idx + 1}</td>
+                            <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#1e3a5f">${r.full_name}</td>
+                            <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-family:monospace">${r.reg_id || '-'}</td>
+                            <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb">
                                 <span style="background:${roleBg};color:${roleColor};padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;text-transform:uppercase">${roleText}</span>
                             </td>
-                            <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;color:#374151">${r.department || '-'}</td>
-                            <td style="padding:12px 14px;border-bottom:1px solid #e5e7eb;color:#6b7280">${date}</td>
+                            <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;color:#374151">${r.department || '-'}</td>
+                            <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;color:#6b7280">${date}</td>
                         </tr>`;
                 });
 
@@ -2225,11 +2269,12 @@
                             <table style="width: 100%; border-collapse: collapse;">
                                 <thead>
                                     <tr style="background: #f1f5f9;">
-                                        <th style="padding:14px; text-align:left; color:#475569; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">Full Name</th>
-                                        <th style="padding:14px; text-align:left; color:#475569; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">Reg ID</th>
-                                        <th style="padding:14px; text-align:left; color:#475569; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">Role</th>
-                                        <th style="padding:14px; text-align:left; color:#475569; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">Department</th>
-                                        <th style="padding:14px; text-align:left; color:#475569; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">Reg Date</th>
+                                        <th style="padding:12px; text-align:center; color:#475569; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; width:60px;">Sr No.</th>
+                                        <th style="padding:12px; text-align:left; color:#475569; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">Full Name</th>
+                                        <th style="padding:12px; text-align:left; color:#475569; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">Reg ID</th>
+                                        <th style="padding:12px; text-align:left; color:#475569; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">Role</th>
+                                        <th style="padding:12px; text-align:left; color:#475569; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">Department</th>
+                                        <th style="padding:12px; text-align:left; color:#475569; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">Reg Date</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -2249,8 +2294,9 @@
                     margin: [0.3, 0.3, 0.5, 0.3],
                     filename: `Recent_Registrations_Report_${new Date().getTime()}.pdf`,
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-                    jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
+                    html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
+                    jsPDF: { unit: 'in', format: 'a3', orientation: 'landscape' },
+                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
                 };
 
                 html2pdf().set(opt).from(pdfContainer).save().then(() => {
@@ -2284,7 +2330,7 @@
                 if (tbody && data.success) {
                     tbody.innerHTML = '';
                     if (data.recent_registrations && data.recent_registrations.length > 0) {
-                        data.recent_registrations.forEach(r => {
+                        data.recent_registrations.forEach((r, idx) => {
                             let badgeClass = 'badge-present';
                             if (r.role === 'teacher') badgeClass = 'badge-warn';
                             else if (r.role === 'admin') badgeClass = 'badge-admin';
@@ -2293,6 +2339,7 @@
                             const date = new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
                             tbody.innerHTML += `
                                 <tr>
+                                    <td>${idx + 1}</td>
                                     <td>${r.full_name}</td>
                                     <td>${r.reg_id || '-'}</td>
                                     <td><span class="badge ${badgeClass}">${roleText}</span></td>
@@ -2302,7 +2349,7 @@
                             `;
                         });
                     } else {
-                        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">No records found matching filters</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted);">No records found matching filters</td></tr>';
                     }
                 }
             } catch (err) {
