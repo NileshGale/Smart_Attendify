@@ -96,7 +96,7 @@ if ($action === 'searchTeacherSchedule') {
     try {
         // Find teacher by name, reg_id, or email
         $stmt = $pdo->prepare("
-            SELECT id, reg_id, full_name, email, department, branch, phone, dob
+            SELECT id, reg_id, full_name, email, department, branch, phone, dob, photo_path
             FROM users
             WHERE role = 'teacher' 
               AND is_active = 1

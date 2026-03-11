@@ -1228,14 +1228,12 @@
                     </div>
                 </div>
                 <div id="studentResults" style="display:none;margin-top:1rem">
-                    <div class="student-info-box"
-                        style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
+                    <div class="student-info-box" style="display:flex; align-items:center; gap:1.5rem;">
+                        <div id="studentProfilePhoto" class="profile-avatar" style="width:70px;height:70px;font-size:1.6rem;flex-shrink:0;">?</div>
+                        <div style="flex:1">
                             <h4 id="studentName"></h4>
                             <p style="margin-top: 0.25rem;">Email: <strong id="studentEmail"></strong></p>
-                            <p>Reg ID: <strong id="studentRegId"></strong> &nbsp;|&nbsp; Branch: <strong
-                                    id="studentBranch"></strong> &nbsp;|&nbsp; Dept: <strong id="studentDept"></strong>
-                            </p>
+                            <p>Reg ID: <strong id="studentRegId"></strong> &nbsp;|&nbsp; Branch: <strong id="studentBranch"></strong> &nbsp;|&nbsp; Dept: <strong id="studentDept"></strong></p>
                         </div>
                         <button class="btn-primary" onclick="downloadPDF()" id="pdfDownloadBtn"
                             style="display:flex; align-items:center; gap:0.5rem;">
@@ -1714,15 +1712,17 @@
         // ─── TEACHER SCHEDULE MANAGEMENT ───
         let currentEditingScheduleId = null;
 
-        async function searchTeacher() {
+        async function searchTeacher(isRefresh = false) {
             const query = document.getElementById('teacherSearch').value.trim();
             if (!query) {
-                showToast('Enter name or ID to search', true);
+                if (!isRefresh) showToast('Enter name or ID to search', true);
                 return;
             }
 
             const grid = document.getElementById('scheduleGrid');
-            grid.innerHTML = '<div style="text-align:center;padding:4rem"><i class="fa-solid fa-spinner fa-spin fa-2x" style="color:var(--primary-cyan)"></i><p style="margin-top:1rem;color:var(--text-muted)">Searching Teacher Data...</p></div>';
+            if (!isRefresh) {
+                grid.innerHTML = '<div style="text-align:center;padding:4rem"><i class="fa-solid fa-spinner fa-spin fa-2x" style="color:var(--primary-cyan)"></i><p style="margin-top:1rem;color:var(--text-muted)">Searching Teacher Data...</p></div>';
+            }
 
             try {
                 const res = await fetch(`../backend/schedule_api.php?action=searchTeacherSchedule&query=${encodeURIComponent(query)}`);
@@ -1730,7 +1730,7 @@
 
                 if (data.success && data.teacher) {
                     renderTeacherSchedule(data);
-                } else {
+                } else if (!isRefresh) {
                     grid.innerHTML = `<div style="text-align:center;padding:4rem">
                         <i class="fa-solid fa-user-slash fa-3x" style="color:var(--text-muted);margin-bottom:1.5rem"></i>
                         <p style="color:var(--danger);font-weight:600">${data.message || 'Teacher not found'}</p>
@@ -1760,7 +1760,11 @@
             let scheduleHTML = `
                 <div class="teacher-profile-card">
                     <div class="profile-header">
-                        <div class="profile-avatar">${t.full_name.charAt(0).toUpperCase()}</div>
+                        <div class="profile-avatar">
+                            ${t.photo_path 
+                                ? `<img src="../${t.photo_path}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.innerHTML='${t.full_name.charAt(0).toUpperCase()}'">` 
+                                : t.full_name.charAt(0).toUpperCase()}
+                        </div>
                         <div class="profile-title">
                             <h3>${t.full_name}</h3>
                             <p>${t.reg_id} • <span style="color:var(--primary-cyan);font-weight:600">${t.department}</span></p>
@@ -1900,58 +1904,115 @@
                 return;
             }
 
-            const action = currentEditingScheduleId ? 'updateSchedule' : 'addSchedule';
-            const formData = new FormData();
+            const teacherId = document.getElementById('scheduleTeacher').value;
+            const day = document.getElementById('scheduleDay').value;
+            const dept = document.getElementById('scheduleDepartment').value;
+            const initialStartView = document.getElementById('scheduleStartTime').value;
 
-            formData.append('action', action);
-            if (currentEditingScheduleId) formData.append('id', currentEditingScheduleId);
+            if (currentEditingScheduleId) {
+                // UPDATE SINGLE RECORD
+                const formData = new FormData();
+                formData.append('action', 'updateSchedule');
+                formData.append('id', currentEditingScheduleId);
+                formData.append('teacher_id', teacherId);
+                formData.append('day', day);
+                formData.append('subject', checkedSubjects.join(', '));
+                formData.append('class_section', dept);
+                formData.append('start_time', initialStartView);
+                formData.append('end_time', document.getElementById('scheduleEndTime').value);
 
-            formData.append('teacher_id', document.getElementById('scheduleTeacher').value);
-            formData.append('day', document.getElementById('scheduleDay').value);
-            formData.append('subject', checkedSubjects.join(', '));
-            formData.append('class_section', document.getElementById('scheduleDepartment').value);
-            formData.append('start_time', document.getElementById('scheduleStartTime').value);
-            formData.append('end_time', document.getElementById('scheduleEndTime').value);
+                try {
+                    const res = await fetch('../backend/schedule_api.php', { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (data.success) {
+                        showToast(data.message);
+                        closeScheduleModal();
+                        const query = document.getElementById('teacherSearch').value.trim();
+                        if (query) searchTeacher();
+                    } else {
+                        showToast(data.message || 'Update failed', true);
+                    }
+                } catch (err) {
+                    showToast('Network error', true);
+                }
+            } else {
+                // ADD MULTIPLE RECORDS SEQUENTIALLY
+                let currentTime = initialStartView;
+                let successes = 0;
+                let errors = [];
 
-            try {
-                const res = await fetch('../backend/schedule_api.php', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await res.json();
+                showToast('Processing multiple schedules...', false);
 
-                if (data.success) {
-                    showToast(data.message);
+                for (const sub of checkedSubjects) {
+                    // Calculate 1 hour block for this subject
+                    const [h, m] = currentTime.split(':').map(Number);
+                    const endH = (h + 1) % 24;
+                    const nextTime = String(endH).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+
+                    const formData = new FormData();
+                    formData.append('action', 'addSchedule');
+                    formData.append('teacher_id', teacherId);
+                    formData.append('day', day);
+                    formData.append('subject', sub); // Single subject
+                    formData.append('class_section', dept);
+                    formData.append('start_time', currentTime);
+                    formData.append('end_time', nextTime);
+
+                    try {
+                        const res = await fetch('../backend/schedule_api.php', { method: 'POST', body: formData });
+                        const data = await res.json();
+                        if (data.success) {
+                            successes++;
+                        } else {
+                            errors.push(`${sub}: ${data.message}`);
+                        }
+                    } catch (err) {
+                        errors.push(`${sub}: Network error`);
+                    }
+
+                    // Set start of next subject to end of current
+                    currentTime = nextTime;
+                }
+
+                if (successes > 0) {
+                    showToast(`Successfully added ${successes} class(es)`);
+                    if (errors.length > 0) {
+                        console.warn('Schedule skip(s):', errors);
+                        setTimeout(() => showToast(`Skipped ${errors.length} due to conflicts`, true), 2000);
+                    }
                     closeScheduleModal();
                     const query = document.getElementById('teacherSearch').value.trim();
                     if (query) searchTeacher();
                 } else {
-                    showToast(data.message || 'Action failed', true);
+                    showToast(errors[0] || 'Failed to add schedules', true);
                 }
-            } catch (err) {
-                showToast('Network error', true);
             }
         }
 
         async function deleteSchedule(id) {
             if (!confirm('Are you sure you want to delete this class?')) return;
 
+            const params = new URLSearchParams();
+            params.append('action', 'deleteSchedule');
+            params.append('id', id);
+
             try {
                 const res = await fetch('../backend/schedule_api.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `action=deleteSchedule&id=${id}`
+                    body: params.toString()
                 });
                 const data = await res.json();
 
                 if (data.success) {
-                    showToast('Deleted successfully');
-                    searchTeacher();
+                    showToast('<i class="fa-solid fa-trash-can"></i> Deleted successfully');
+                    searchTeacher(true); // Pass true to avoid loading spinner
                 } else {
                     showToast(data.message || 'Delete failed', true);
                 }
             } catch (err) {
-                showToast('Network error', true);
+                console.error('Delete error:', err);
+                showToast('Network error while deleting', true);
             }
         }
 
@@ -2025,6 +2086,15 @@
                     document.getElementById('studentRegId').textContent = student.reg_id;
                     document.getElementById('studentBranch').textContent = student.branch || 'N/A';
                     document.getElementById('studentDept').textContent = student.department || 'N/A';
+
+                    // Set Profile Photo
+                    const photoDiv = document.getElementById('studentProfilePhoto');
+                    const initials = student.full_name.charAt(0).toUpperCase();
+                    if (student.photo_path) {
+                        photoDiv.innerHTML = `<img src="../${student.photo_path}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.innerHTML='${initials}'">`;
+                    } else {
+                        photoDiv.textContent = initials;
+                    }
 
                     currentStudentReport = data.report;
 
