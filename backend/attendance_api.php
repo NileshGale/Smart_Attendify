@@ -908,8 +908,46 @@ if ($action === 'updateAttendance') {
         echo json_encode(['success' => false, 'message' => 'Invalid status. Use present or absent']);
         exit;
     }
-    
+
+    // 1. Validate Date Range
+    $inputDate = new DateTime($date);
+    $today = new DateTime();
+    $threeMonthsAgo = new DateTime();
+    $threeMonthsAgo->modify('-3 months');
+
+    if ($inputDate > $today) {
+        echo json_encode(['success' => false, 'message' => 'Cannot set a future date.']);
+        exit;
+    }
+    if ($inputDate < $threeMonthsAgo) {
+        echo json_encode(['success' => false, 'message' => 'Cannot set a date older than 3 months.']);
+        exit;
+    }
+
     try {
+        // Find subject by name to check lecture existence
+        $stmt = $pdo->prepare("SELECT id FROM subjects WHERE subject_name = ? LIMIT 1");
+        $stmt->execute([$subjectName]);
+        $subjectRow = $stmt->fetch();
+        
+        if (!$subjectRow) {
+            echo json_encode(['success' => false, 'message' => "Subject '$subjectName' not found in system."]);
+            exit;
+        }
+        $subjectId = $subjectRow['id'];
+
+        // 2. Check if a lecture of this subject happened on that particular date (any record exists)
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) FROM attendance 
+            WHERE subject_id = ? AND attendance_date = ?
+        ");
+        $stmt->execute([$subjectId, $date]);
+        $lectureExists = (int)$stmt->fetchColumn() > 0;
+
+        if (!$lectureExists) {
+            echo json_encode(['success' => false, 'message' => "No lecture record found for '$subjectName' on $date. You cannot update attendance for a date when no lecture happened."]);
+            exit;
+        }
         // Find student by reg_id
         $stmt = $pdo->prepare("SELECT id, full_name FROM users WHERE reg_id = ? AND role = 'student' LIMIT 1");
         $stmt->execute([$regId]);
@@ -920,19 +958,7 @@ if ($action === 'updateAttendance') {
             exit;
         }
         
-        // Find subject by name, or auto-create it
-        $stmt = $pdo->prepare("SELECT id FROM subjects WHERE subject_name = ? LIMIT 1");
-        $stmt->execute([$subjectName]);
-        $subject = $stmt->fetch();
-        if ($subject) {
-            $subjectId = $subject['id'];
-        } else {
-            // Auto-create the subject so FK constraint is satisfied
-            $subjectCode = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $subjectName), 0, 4)) . rand(100, 999);
-            $stmt = $pdo->prepare("INSERT INTO subjects (subject_name, subject_code, department) VALUES (?, ?, 'General')");
-            $stmt->execute([$subjectName, $subjectCode]);
-            $subjectId = $pdo->lastInsertId();
-        }
+
         
         // Check if attendance record already exists for this student/subject/date
         $stmt = $pdo->prepare("

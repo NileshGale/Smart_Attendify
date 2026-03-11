@@ -2326,26 +2326,7 @@
     </div>
 
     <!-- ════ UPDATE ATTENDANCE MODAL ════ -->
-    <div class="modal" id="updateAttendanceModal">
-        <div class="modal-content">
-            <button class="close" onclick="closeUpdateModal()">✕</button>
-            <h2><i class="fa-solid fa-pen-to-square"></i> Update Attendance</h2>
-            <form onsubmit="submitAttendanceUpdate(event)">
-                <div class="input-group">
-                    <label>Date</label>
-                    <input type="date" id="updateDate" required>
-                </div>
-                <div class="input-group">
-                    <label>Status</label>
-                    <select id="updateStatus">
-                        <option value="present">Present</option>
-                        <option value="absent">Absent</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn-primary" style="width:100%;margin-top:.5rem">Save Changes</button>
-            </form>
-        </div>
-    </div>
+
 
     <!-- ════ CHANGE PASSWORD MODAL ════ -->
     <div class="modal" id="changePasswordModal">
@@ -3785,6 +3766,16 @@
         let currentUpdateRegId = '', currentUpdateSubject = '';
         function showUpdateModal(regId, subject) {
             currentUpdateRegId = regId; currentUpdateSubject = subject;
+            
+            // Set date limits: max = today, min = 3 months ago
+            const dateInput = document.getElementById('updateDate');
+            const today = new Date();
+            const threeMonthsAgo = new Date();
+            threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+            
+            dateInput.max = today.toISOString().split('T')[0];
+            dateInput.min = threeMonthsAgo.toISOString().split('T')[0];
+            
             document.getElementById('updateAttendanceModal').classList.add('show');
         }
         function closeUpdateModal() { document.getElementById('updateAttendanceModal').classList.remove('show'); }
