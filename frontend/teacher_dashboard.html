@@ -2428,6 +2428,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
         // ══════════════════════════════════════════
         //  TEACHER DASHBOARD - FULL JAVASCRIPT
@@ -2515,6 +2516,28 @@
                         sessionStorage.setItem('teacherDept', TEACHER.dept);
                         sessionStorage.setItem('teacherPhoto', TEACHER.photo);
                         applyTeacherInfo();
+
+                        // Populate Subject Dropdowns
+                        if (data.user.subjects && data.user.subjects.length > 0) {
+                            const subjects = data.user.subjects;
+                            const manualSelect = document.getElementById('manualSubjectSelect');
+                            const graphFilter = document.getElementById('graphSubjectFilter');
+                            
+                            // Clear existing options except first
+                            manualSelect.innerHTML = '<option value="">-- Select Subject --</option>';
+                            graphFilter.innerHTML = '<option value="all">All Subjects</option>';
+
+                            subjects.forEach(s => {
+                                const optText = `${s.subject_name} (${s.subject_code})`;
+                                const optVal = `${s.subject_name}|${s.subject_code}`;
+                                
+                                const mOpt = new Option(optText, optVal);
+                                manualSelect.add(mOpt);
+                                
+                                const gOpt = new Option(s.subject_name, s.subject_name);
+                                graphFilter.add(gOpt);
+                            });
+                        }
 
                         // Profile Overview Card
                         document.getElementById('overviewFullName').textContent = TEACHER.name;
@@ -3337,46 +3360,104 @@
             showToast('Attendance window closed. You can now download the record.');
         }
 
-        function downloadEventPDF() {
+        async function downloadEventPDF() {
             if (currentEventStudents.length === 0) {
                 showToast('No records to download', true);
                 return;
             }
 
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const eventName = document.getElementById('eventName').value || 'Event';
-            const eventDate = document.getElementById('eventDate').value || new Date().toLocaleDateString();
+            showToast('Generating premium PDF...');
 
-            // Header
-            doc.setFontSize(20);
-            doc.setTextColor(30, 58, 95);
-            doc.text('Event Attendance Record', 105, 15, { align: 'center' });
-            
-            doc.setFontSize(12);
-            doc.setTextColor(100);
-            doc.text(`Event: ${eventName}`, 14, 25);
-            doc.text(`Date: ${eventDate}`, 14, 32);
-            doc.text(`Total Attendees: ${currentEventStudents.length}`, 14, 39);
+            const eventName = document.getElementById('eventName').value || 'College Event';
+            const eventDate = document.getElementById('eventDate').value || new Date().toLocaleDateString('en-IN');
+            const generatedDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString('en-IN');
 
-            // Table
-            const tableData = currentEventStudents.map((s, idx) => [
-                idx + 1,
-                s.full_name,
-                s.reg_id,
-                new Date(s.scanned_at || s.marked_at).toLocaleTimeString('en-IN')
-            ]);
-
-            doc.autoTable({
-                head: [['Sr No.', 'Student Name', 'Registration ID', 'Time']],
-                body: tableData,
-                startY: 45,
-                theme: 'grid',
-                headStyles: { fillColor: [0, 188, 212], textColor: 255 },
-                alternateRowStyles: { fillColor: [245, 248, 250] }
+            let tableRowsHTML = '';
+            currentEventStudents.forEach((s, idx) => {
+                const bgColor = idx % 2 === 0 ? '#ffffff' : '#f8fbfc';
+                const time = new Date(s.scanned_at || s.marked_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+                tableRowsHTML += `
+                    <tr style="background:${bgColor};">
+                        <td style="padding:10px 8px;border-bottom:1px solid #e5e7eb;color:#475569;text-align:center;font-weight:600;font-size:12px">${idx + 1}</td>
+                        <td style="padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#1e3a5f;font-size:13px">${s.full_name}</td>
+                        <td style="padding:10px 8px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-family:monospace;font-size:12px">${s.reg_id}</td>
+                        <td style="padding:10px 8px;border-bottom:1px solid #e5e7eb;color:#374151;font-size:12px;text-align:right">${time}</td>
+                    </tr>`;
             });
 
-            doc.save(`${eventName.replace(/\s+/g, '_')}_Attendance.pdf`);
+            const pdfContainer = document.createElement('div');
+            pdfContainer.style.position = 'fixed';
+            pdfContainer.style.left = '-9999px';
+            pdfContainer.style.top = '0';
+            pdfContainer.innerHTML = `
+                <div style="font-family: 'Segoe UI', Arial, sans-serif; background: #ffffff; padding: 25px; min-height: 1000px; width: 750px;">
+                    <div style="background: linear-gradient(135deg, #1e3a5f 0%, #00bcd4 100%); padding: 30px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h1 style="color: #ffffff; font-size: 28px; font-weight: 800; margin: 0 0 8px 0; letter-spacing: -0.5px;">Attendify</h1>
+                                <p style="color: rgba(255,255,255,0.9); font-size: 15px; font-weight: 600; margin: 0; text-transform: uppercase; letter-spacing: 1px;">Event Attendance Record</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <p style="color: rgba(255,255,255,0.8); font-size: 11px; margin: 0 0 4px 0;">Generation Time</p>
+                                <p style="color: #ffffff; font-size: 12px; font-weight: 600; margin: 0;">${generatedDate}</p>
+                            </div>
+                        </div>
+                        <div style="margin-top: 20px; display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
+                            <div>
+                                <p style="color: rgba(255,255,255,0.7); font-size: 11px; margin: 0 0 2px 0; text-transform: uppercase;">Event Name</p>
+                                <p style="color: #ffffff; font-size: 14px; font-weight: 700; margin: 0;">${eventName}</p>
+                            </div>
+                            <div>
+                                <p style="color: rgba(255,255,255,0.7); font-size: 11px; margin: 0 0 2px 0; text-transform: uppercase;">Event Date</p>
+                                <p style="color: #ffffff; font-size: 14px; font-weight: 700; margin: 0;">${eventDate}</p>
+                            </div>
+                            <div>
+                                <p style="color: rgba(255,255,255,0.7); font-size: 11px; margin: 0 0 2px 0; text-transform: uppercase;">Attendees</p>
+                                <p style="color: #ffffff; font-size: 14px; font-weight: 700; margin: 0;">${currentEventStudents.length}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.02); margin-bottom: 25px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #f1f5f9;">
+                                    <th style="padding:12px 8px; text-align:center; color:#475569; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; width:60px;">Sr No.</th>
+                                    <th style="padding:12px 8px; text-align:left; color:#475569; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">Student Full Name</th>
+                                    <th style="padding:12px 8px; text-align:left; color:#475569; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">Registration ID</th>
+                                    <th style="padding:12px 8px; text-align:right; color:#475569; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">Join Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRowsHTML}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #e2e8f0;">
+                        <p style="color: #94a3b8; font-size: 11px; margin: 0;">© ${new Date().getFullYear()} Attendify - Professional Attendance Management System</p>
+                        <p style="color: #cbd5e1; font-size: 10px; margin: 5px 0 0 0;">This is a system-generated document.</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(pdfContainer);
+
+            const opt = {
+                margin: 0.3,
+                filename: `${eventName.replace(/\s+/g, '_')}_Attendance.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(pdfContainer).save().then(() => {
+                document.body.removeChild(pdfContainer);
+                showToast('Premium PDF downloaded successfully');
+            }).catch(err => {
+                console.error('PDF Error:', err);
+                showToast('Error generating PDF', true);
+                document.body.removeChild(pdfContainer);
+            });
         }
 
         async function generateEventCode() {
@@ -3610,7 +3691,7 @@
                         <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-percent"></i></div><div class="stat-value">${totals.percentage}%</div><div class="stat-label">Avg Attendance</div></div>
                         <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-user-check"></i></div><div class="stat-value">${totals.present}</div><div class="stat-label">Total Present</div></div>
                         <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-user-xmark"></i></div><div class="stat-value">${totals.absent}</div><div class="stat-label">Total Absent</div></div>
-                        <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-calendar-days"></i></div><div class="stat-value">${daily.length}</div><div class="stat-label">Days Tracked</div></div>
+                        <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-users"></i></div><div class="stat-value">${totals.total}</div><div class="stat-label">Total Students</div></div>
                     `;
 
                     if (daily.length === 0) {
