@@ -541,14 +541,23 @@ if ($action === 'getDashboardStats') {
         $totalExpected = $overallStats['total_expected'] ?: 1;
         $overallPercentage = round(($overallStats['total_present'] / $totalExpected) * 100, 2);
         
-        // Count of students below 50%
+        // Count of students below 50% attendance across all their enrolled subjects
+        // Logic: 
+        // 1. Get all students
+        // 2. For each student, get all subjects they are enrolled in
+        // 3. For each subject, get total classes held (distinct dates in attendance table)
+        // 4. Calculate total present across all subjects vs grand total possible classes
         $stmt = $pdo->query("
             SELECT COUNT(*) FROM (
                 SELECT 
-                    student_id,
-                    SUM(present_count) as total_present,
-                    SUM(total_classes) as grand_total_classes
-                FROM (
+                    u.id as student_id,
+                    COALESCE(SUM(att.present_count), 0) as total_present,
+                    COALESCE(SUM(att.total_classes), 0) as grand_total_classes
+                FROM users u
+                -- Get all subjects for all students
+                LEFT JOIN student_subjects ss ON u.id = ss.student_id
+                -- Get attendance stats per student per subject
+                LEFT JOIN (
                     SELECT 
                         a.student_id,
                         a.subject_id,
@@ -556,9 +565,12 @@ if ($action === 'getDashboardStats') {
                         (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = a.subject_id) AS total_classes
                     FROM attendance a
                     GROUP BY a.student_id, a.subject_id
-                ) student_subjects
-                GROUP BY student_id
-                HAVING (SUM(present_count) / SUM(total_classes)) * 100 < 50
+                ) att ON u.id = att.student_id AND ss.subject_id = att.subject_id
+                WHERE u.role = 'student'
+                GROUP BY u.id
+                HAVING grand_total_classes > 0 AND (total_present / grand_total_classes) * 100 < 50
+                   OR grand_total_classes = 0 -- Optionally count students with no classes? Usually 50% of 0 is undefined, but for this metric, we might want to exclude or include them.
+                                             -- Let's stick to students who have HAD classes and are below 50%.
             ) AS sub
         ");
         $below50Count = $stmt->fetchColumn() ?: 0;

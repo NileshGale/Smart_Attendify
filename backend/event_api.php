@@ -170,7 +170,7 @@ if ($action === 'verifyEventStudent') {
 
         echo json_encode([
             'success' => true,
-            'message' => 'Student verified',
+            'message' => 'Successfully attendance marked ' . $student['full_name'],
             'student_name' => $student['full_name'],
             'student_reg_id' => $student['reg_id']
         ]);

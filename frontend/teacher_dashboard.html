@@ -363,6 +363,7 @@
         }
 
         .day-schedule {
+            margin-top: 0 !important;
             margin-bottom: 0;
             border: 3px solid var(--primary-cyan);
             background: white;
@@ -435,7 +436,7 @@
 
         .time-slot-info {
             display: grid;
-            grid-template-columns: auto 1fr auto;
+            grid-template-columns: auto 1fr;
             align-items: center;
             gap: 1rem;
             margin-bottom: 1rem;
@@ -1763,6 +1764,30 @@
         .btn-download-record:active {
             transform: translateY(0);
         }
+        .btn-download-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 1rem;
+            background: #e0f7fa;
+            border: 1.5px solid #00bcd4;
+            color: #00bcd4;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            line-height: 1;
+        }
+        .btn-download-pill:hover {
+            background: #00bcd4;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 188, 212, 0.3);
+        }
+        .btn-download-pill i {
+            font-size: 1.1rem;
+        }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -1977,7 +2002,15 @@
                                 style="display:none;align-items:center;gap:.5rem"><i class="fa-solid fa-square"></i>
                                 Stop &amp; Save</button>
                         </div>
-                        <div class="scanned-list-wrap" id="scannedList"></div>
+                        <div class="scanned-list-wrap" id="scannedListWrap">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; border-bottom:1px solid var(--border); padding-bottom:10px;">
+                                <h4 style="text-align:left;font-size:.875rem;margin:0;color:var(--text-muted)">Scanned Students</h4>
+                                <button id="btnDownloadQR" class="btn-download-pill" onclick="downloadQRRecord()" style="display: none;">
+                                    <i class="fa-solid fa-file-pdf"></i> Download record
+                                </button>
+                            </div>
+                            <div id="scannedList"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -2016,8 +2049,12 @@
                             </button>
                         </div>
                         <div class="code-submissions" id="codeSubmissions">
-                            <h4 style="text-align:left;font-size:.875rem;margin-bottom:.5rem;color:var(--text-muted)">
-                                Submitted Students</h4>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; border-bottom:1px solid var(--border); padding-bottom:5px;">
+                                <h4 style="text-align:left;font-size:.875rem;margin:0;color:var(--text-muted)">Submitted Students</h4>
+                                <button class="btn-chart-download" onclick="downloadCodeRecord()" style="padding: 2px 8px; font-size: 0.7rem;" title="Download PDF">
+                                    <i class="fa-solid fa-file-pdf"></i> PDF
+                                </button>
+                            </div>
                             <div id="submissionList"></div>
                         </div>
                     </div>
@@ -2095,9 +2132,19 @@
                                 style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--error); margin-right:6px; animation:pulse 1.5s infinite;"></span>
                             Live Attendees
                         </h4>
-                        <span id="liveAttendeeCount"
-                            style="font-size:0.85rem; font-weight:600; color:var(--text-muted); padding:0.25rem 0.75rem; background:var(--bg-light); border-radius:20px;">0
-                            joined</span>
+                        <div style="display:flex; gap:0.5rem; align-items:center;">
+                            <span id="liveAttendeeCount"
+                                style="font-size:0.85rem; font-weight:600; color:var(--text-muted); padding:0.25rem 0.75rem; background:var(--bg-light); border-radius:20px;">0
+                                joined</span>
+                            <button id="btnStopEventCode" onclick="stopEventPolling()" 
+                                style="background:var(--error); color:white; border:none; border-radius:6px; padding:0.4rem 1rem; font-size:0.85rem; font-weight:600; cursor:pointer;">
+                                <i class="fa-solid fa-square"></i> Stop & Save
+                            </button>
+                            <button id="btnDownloadEventPDF" onclick="downloadEventPDF()" 
+                                style="display:none; background:var(--success); color:white; border:none; border-radius:6px; padding:0.4rem 1rem; font-size:0.85rem; font-weight:600; cursor:pointer;">
+                                <i class="fa-solid fa-file-pdf"></i> Download record
+                            </button>
+                        </div>
                     </div>
                     <div id="liveAttendeeList"
                         style="display:flex; flex-direction:column; gap:0.5rem; max-height:300px; overflow-y:auto; padding-right:0.5rem;">
@@ -2599,7 +2646,6 @@
                     <div class="time-slot-info">
                         <span class="time">${s.time}</span>
                         <span class="subject">${subjectLabel(s.subject)}</span>
-                        <span class="class-name">${s.cls}</span>
                     </div>
                     <button class="btn-mark" onclick="markAttendanceForClass('${s.subject}','${s.code}','${day}','${s.time}')">Mark Attendance</button>
                    </div>`
@@ -2692,6 +2738,7 @@
                         document.getElementById('startScanBtn').style.display = 'none';
                         document.getElementById('stopScanBtn').style.display = 'inline-flex';
                         document.getElementById('liveIndicator').style.display = 'inline-flex';
+                        document.getElementById('btnDownloadQR').style.display = 'none';
                         showToast('<i class="fa-solid fa-camera"></i> Camera active — scan student QR codes');
 
                         const canvas = document.getElementById('qrCanvas');
@@ -2732,21 +2779,24 @@
                     scannedStudents = scannedStudents.filter(s => s.qr !== qrData);
 
                     if (data.student_name) {
-                        const time = data.marked_at ? new Date(data.marked_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                        const time = data.marked_at ? new Date(data.marked_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) : new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
                         const alreadyInList = scannedStudents.find(s => s.id === data.reg_id);
                         if (!alreadyInList) {
-                            scannedStudents.push({ qr: qrData, id: data.reg_id, name: data.student_name });
+                            scannedStudents.push({ qr: qrData, id: data.reg_id, name: data.student_name, time: time });
                             playBeep();
 
                             const el = document.createElement('div');
                             el.className = 'scanned-item';
+                            el.style.padding = '0.4rem 0.75rem';
                             el.innerHTML = `
-                            <div>
-                                <div class="s-name">${data.student_name}</div>
-                                <div class="s-id">${data.reg_id} · ${time}</div>
-                            </div>
-                            <span class="s-check">${data.success ? '<i class="fa-solid fa-check-circle"></i>' : (data.already_marked ? '<i class="fa-solid fa-rotate-right"></i>' : '<i class="fa-solid fa-xmark"></i>')}</span>
-                        `;
+                                <div style="display: flex; align-items: center; gap: 10px; font-size: 0.825rem; width: 100%; flex-wrap: nowrap;">
+                                    <span style="font-weight: 700; color: var(--navy-dark); min-width: 20px;">${scannedStudents.length}.</span>
+                                    <span style="font-weight: 600; color: var(--text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;">${data.student_name}</span>
+                                    <span style="color: var(--text-muted); font-size: 0.75rem; background: var(--bg-light); padding: 1px 5px; border-radius: 4px; border: 1px solid var(--border); white-space: nowrap;">${data.reg_id}</span>
+                                    <span style="color: var(--text-muted); font-size: 0.75rem; white-space: nowrap;"><i class="fa-regular fa-clock" style="margin-right: 3px;"></i>${time}</span>
+                                    <span class="s-check" style="margin-left: auto; color: var(--success);"><i class="fa-solid fa-check-circle"></i></span>
+                                </div>
+                            `;
                             document.getElementById('scannedList').prepend(el);
                             document.getElementById('scanCountBadge').textContent = scannedStudents.length + ' Scanned';
 
@@ -2771,6 +2821,7 @@
             document.getElementById('stopScanBtn').style.display = 'none';
             document.getElementById('liveIndicator').style.display = 'none';
             if (scannedStudents.length > 0) {
+                document.getElementById('btnDownloadQR').style.display = 'inline-flex';
                 showToast(`<i class="fa-solid fa-check-circle"></i> ${scannedStudents.length} student(s) attendance saved to database`);
             }
         }
@@ -2874,19 +2925,18 @@
                     list.innerHTML = '';
                     if (data.students && data.students.length > 0) {
                         data.students.forEach((s, index) => {
-                            const time = s.marked_at ? new Date(s.marked_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
+                            const time = s.marked_at ? new Date(s.marked_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) : '';
                             const el = document.createElement('div');
                             el.className = 'code-submission-item';
-                            el.style.justifyContent = 'flex-start';
-                            el.style.gap = '15px';
+                            el.style.padding = '0.4rem 0.75rem';
                             el.innerHTML = `
-                                <div style="font-weight: 700; color: var(--navy-dark); min-width: 20px; font-size: 0.85rem;">${index + 1}.</div>
-                                <div style="flex: 1; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; flex-wrap: wrap;">
-                                    <span style="font-weight: 600; color: var(--text-dark);">${s.full_name}</span>
-                                    <span style="color: var(--text-muted); font-size: 0.8rem; background: var(--bg-light); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border);">${s.reg_id}</span>
-                                    <span style="color: var(--text-muted); font-size: 0.8rem;"><i class="fa-regular fa-clock" style="margin-right: 4px;"></i>${time}</span>
+                                <div style="display: flex; align-items: center; gap: 10px; font-size: 0.825rem; width: 100%; flex-wrap: nowrap;">
+                                    <span style="font-weight: 700; color: var(--navy-dark); min-width: 20px;">${index + 1}.</span>
+                                    <span style="font-weight: 600; color: var(--text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;">${s.full_name}</span>
+                                    <span style="color: var(--text-muted); font-size: 0.75rem; background: var(--bg-light); padding: 1px 5px; border-radius: 4px; border: 1px solid var(--border); white-space: nowrap;">${s.reg_id}</span>
+                                    <span style="color: var(--text-muted); font-size: 0.75rem; white-space: nowrap;"><i class="fa-regular fa-clock" style="margin-right: 3px;"></i>${time}</span>
+                                    <span class="s-check" style="margin-left: auto; color: var(--primary-cyan);"><i class="fa-solid fa-check-circle"></i></span>
                                 </div>
-                                <span class="s-check" style="margin-left: auto; color: var(--primary-cyan);"><i class="fa-solid fa-check-circle"></i></span>
                             `;
                             list.appendChild(el);
                         });
@@ -2927,6 +2977,113 @@
                     }
                 })
                 .catch(() => showToast('Network error while saving record', true));
+        }
+
+        function downloadQRRecord() {
+            if (scannedStudents.length === 0) {
+                showToast('No students scanned yet to download', true);
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const today = new Date();
+            const dateStr = today.toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' });
+            const timeStr = today.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            const teacherName = TEACHER.name || 'Teacher';
+            const subjectLabel = currentSubject + (currentSubjectCode ? ` [${currentSubjectCode}]` : '');
+
+            // Header background
+            doc.setFillColor(0, 188, 212);
+            doc.rect(0, 0, pageWidth, 38, 'F');
+
+            // Title
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(20);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Attendance Record (QR)', pageWidth / 2, 16, { align: 'center' });
+
+            // Subtitle
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Attendify - Smart Attendance System', pageWidth / 2, 24, { align: 'center' });
+
+            // Subject badge
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text(subjectLabel, pageWidth / 2, 33, { align: 'center' });
+
+            // Info section
+            let y = 48;
+            doc.setTextColor(30, 58, 95);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Date:', 14, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(dateStr, 36, y);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text('Time:', pageWidth / 2, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(timeStr, pageWidth / 2 + 22, y);
+
+            y += 7;
+            doc.setFont('helvetica', 'bold');
+            doc.text('Teacher:', 14, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(teacherName, 36, y);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text('Total Present:', pageWidth / 2, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(String(scannedStudents.length), pageWidth / 2 + 35, y);
+
+            y += 4;
+            doc.setDrawColor(0, 188, 212);
+            doc.setLineWidth(0.5);
+            doc.line(14, y, pageWidth - 14, y);
+
+            // Student table
+            const tableRows = scannedStudents.map((s, i) => [i + 1, s.name, s.id, s.time, 'Present']);
+
+            doc.autoTable({
+                startY: y + 4,
+                head: [['Sr.', 'Student Name', 'Registration ID', 'Time', 'Status']],
+                body: tableRows,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: [0, 188, 212],
+                    textColor: 255,
+                    fontStyle: 'bold',
+                    fontSize: 9,
+                    halign: 'center'
+                },
+                bodyStyles: {
+                    fontSize: 9,
+                    textColor: [31, 41, 55]
+                },
+                columnStyles: {
+                    0: { halign: 'center', cellWidth: 14 },
+                    1: { cellWidth: 55 },
+                    2: { halign: 'center', cellWidth: 45 },
+                    3: { halign: 'center', cellWidth: 35 },
+                    4: { halign: 'center', cellWidth: 25, textColor: [16, 185, 129], fontStyle: 'bold' }
+                },
+                alternateRowStyles: { fillColor: [248, 250, 252] },
+                margin: { left: 14, right: 14 }
+            });
+
+            // Footer
+            const finalY = doc.lastAutoTable.finalY + 12;
+            doc.setFontSize(8);
+            doc.setTextColor(107, 114, 128);
+            doc.text('Generated by Attendify on ' + today.toLocaleString('en-IN'), pageWidth / 2, finalY, { align: 'center' });
+
+            // Save
+            const fileName = `Attendance_QR_${currentSubject.replace(/\s+/g, '_')}_${today.toISOString().split('T')[0]}.pdf`;
+            doc.save(fileName);
+            showToast('<i class="fa-solid fa-download"></i> PDF downloaded: ' + fileName);
         }
 
         // ─── DOWNLOAD CODE ATTENDANCE RECORD AS PDF ───
@@ -3056,6 +3213,7 @@
         let eventStream = null, eventScanInterval = null, eventStudents = [], currentEventId = null;
         let eventCodeTimerInterval = null;
         let eventCodeRefreshes = 3;
+        let currentEventStudents = []; // To store data for PDF
 
         async function createEventRecord(generateCode = false) {
             const eName = document.getElementById('eventName').value.trim();
@@ -3123,23 +3281,26 @@
                 .then(r => r.json())
                 .then(d => {
                     if (d.success && d.students) {
+                        currentEventStudents = d.students; // Store for PDF
                         const listEl = document.getElementById('liveAttendeeList');
                         document.getElementById('liveAttendeeCount').textContent = `${d.students.length} joined`;
 
                         if (d.students.length === 0) {
                             listEl.innerHTML = `<div style="text-align:center; padding:1rem; color:var(--text-muted); font-size:0.9rem;">Waiting for students to join...</div>`;
                         } else {
-                            listEl.innerHTML = d.students.map(s => {
+                            listEl.innerHTML = d.students.map((s, index) => {
                                 // Format time from scanned_at
-                                const timeObj = new Date(s.scanned_at);
+                                const timeObj = new Date(s.scanned_at || s.marked_at);
                                 const timeStr = timeObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
 
-                                return `<div class="scanned-item" style="margin-bottom:0.25rem;">
-                                    <div>
-                                        <div class="s-name">${s.full_name}</div>
-                                        <div class="s-id"><i class="fa-regular fa-clock" style="margin-right:4px;"></i>${timeStr} &nbsp;&bull;&nbsp; ${s.reg_id}</div>
+                                return `<div class="scanned-item" style="padding:0.4rem 0.75rem; margin-bottom:0.25rem;">
+                                    <div style="display: flex; align-items: center; gap: 10px; font-size: 0.825rem; width: 100%; flex-wrap: nowrap;">
+                                        <span style="font-weight: 700; color: var(--navy-dark); min-width: 20px;">${index + 1}.</span>
+                                        <span style="font-weight: 600; color: var(--text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;">${s.full_name}</span>
+                                        <span style="color: var(--text-muted); font-size: 0.75rem; background: var(--bg-light); padding: 1px 5px; border-radius: 4px; border: 1px solid var(--border); white-space: nowrap;">${s.reg_id}</span>
+                                        <span style="color: var(--text-muted); font-size: 0.75rem; white-space: nowrap;"><i class="fa-regular fa-clock" style="margin-right: 3px;"></i>${timeStr}</span>
+                                        <span class="s-check" style="margin-left: auto; color: var(--primary-cyan);"><i class="fa-solid fa-check-circle"></i></span>
                                     </div>
-                                    <span class="s-check" style="color:var(--primary-cyan);"><i class="fa-solid fa-check-circle"></i></span>
                                 </div>`;
                             }).join('');
                         }
@@ -3159,6 +3320,63 @@
                 codeDisplay.style.opacity = '1';
                 document.getElementById('eventLiveAttendeesPanel').style.display = 'none';
             }, 500);
+        }
+
+        function stopEventPolling() {
+            clearInterval(eventCodeTimerInterval);
+            clearInterval(liveEventPollInterval);
+            
+            // Hide the code display at top
+            const codeDisplay = document.getElementById('eventCodeDisplay');
+            if(codeDisplay) codeDisplay.style.display = 'none';
+            
+            // Toggle buttons in live panel
+            document.getElementById('btnStopEventCode').style.display = 'none';
+            document.getElementById('btnDownloadEventPDF').style.display = 'inline-block';
+            
+            showToast('Attendance window closed. You can now download the record.');
+        }
+
+        function downloadEventPDF() {
+            if (currentEventStudents.length === 0) {
+                showToast('No records to download', true);
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const eventName = document.getElementById('eventName').value || 'Event';
+            const eventDate = document.getElementById('eventDate').value || new Date().toLocaleDateString();
+
+            // Header
+            doc.setFontSize(20);
+            doc.setTextColor(30, 58, 95);
+            doc.text('Event Attendance Record', 105, 15, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.setTextColor(100);
+            doc.text(`Event: ${eventName}`, 14, 25);
+            doc.text(`Date: ${eventDate}`, 14, 32);
+            doc.text(`Total Attendees: ${currentEventStudents.length}`, 14, 39);
+
+            // Table
+            const tableData = currentEventStudents.map((s, idx) => [
+                idx + 1,
+                s.full_name,
+                s.reg_id,
+                new Date(s.scanned_at || s.marked_at).toLocaleTimeString('en-IN')
+            ]);
+
+            doc.autoTable({
+                head: [['Sr No.', 'Student Name', 'Registration ID', 'Time']],
+                body: tableData,
+                startY: 45,
+                theme: 'grid',
+                headStyles: { fillColor: [0, 188, 212], textColor: 255 },
+                alternateRowStyles: { fillColor: [245, 248, 250] }
+            });
+
+            doc.save(`${eventName.replace(/\s+/g, '_')}_Attendance.pdf`);
         }
 
         async function generateEventCode() {
@@ -3187,6 +3405,10 @@
                 clearInterval(liveEventPollInterval);
                 pollEventAttendees();
                 liveEventPollInterval = setInterval(pollEventAttendees, 3000);
+
+                // Reset buttons visibility
+                document.getElementById('btnStopEventCode').style.display = 'inline-block';
+                document.getElementById('btnDownloadEventPDF').style.display = 'none';
 
                 eventCodeRefreshes = 3;
                 document.getElementById('refreshCountDisplay').textContent = `${eventCodeRefreshes} left`;
@@ -3287,13 +3509,21 @@
 
                         const el = document.createElement('div');
                         el.className = 'scanned-item';
-                        el.innerHTML = `<div><div class="s-name">${sName}</div><div class="s-id"><i class="fa-regular fa-clock" style="margin-right:4px;"></i>${timeStr} &nbsp;&bull;&nbsp; ${sReg}</div></div><span class="s-check"><i class="fa-solid fa-check-circle"></i></span>`;
+                        el.style.padding = '0.4rem 0.75rem';
+                        const srNo = document.getElementById('eventScannedList').children.length + 1;
+                        el.innerHTML = `
+                            <div style="display: flex; align-items: center; gap: 10px; font-size: 0.825rem; width: 100%; flex-wrap: nowrap;">
+                                <span style="font-weight: 700; color: var(--navy-dark); min-width: 20px;">${srNo}.</span>
+                                <span style="font-weight: 600; color: var(--text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;">${sName}</span>
+                                <span style="color: var(--text-muted); font-size: 0.75rem; background: var(--bg-light); padding: 1px 5px; border-radius: 4px; border: 1px solid var(--border); white-space: nowrap;">${sReg}</span>
+                                <span style="color: var(--text-muted); font-size: 0.75rem; white-space: nowrap;"><i class="fa-regular fa-clock" style="margin-right: 3px;"></i>${timeStr}</span>
+                                <span class="s-check" style="margin-left: auto; color: var(--primary-cyan);"><i class="fa-solid fa-check-circle"></i></span>
+                            </div>
+                        `;
                         document.getElementById('eventScannedList').prepend(el);
 
                         // Update UI counts
-                        // Note: counting DOM elements is safer than eventStudents if multiple teachers scan
-                        const currentScans = document.getElementById('eventScannedList').children.length;
-                        document.getElementById('eventScanCount').textContent = currentScans + ' Scanned';
+                        document.getElementById('eventScanCount').textContent = (document.getElementById('eventScannedList').children.length) + ' Scanned';
 
                         playBeep();
                         showToast(d.message);

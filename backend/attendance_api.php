@@ -278,7 +278,7 @@ if ($action === 'markByQR') {
             
             echo json_encode([
                 'success' => true,
-                'message' => 'Attendance marked for ' . $student['full_name'],
+                'message' => 'Successfully attendance marked ' . $student['full_name'],
                 'student_name' => $student['full_name'],
                 'reg_id' => $student['reg_id'],
                 'marked_at' => date('Y-m-d H:i:s')
@@ -657,20 +657,26 @@ if ($action === 'getTeacherAnalytics') {
                     AND dt.subject_id = a.subject_id
                     AND a.teacher_id = ? 
                     AND a.student_id = (SELECT id FROM users WHERE (reg_id = ? OR full_name LIKE ?) AND role='student' LIMIT 1)
+                GROUP BY dt.attendance_date 
+                ORDER BY dt.attendance_date ASC
             ";
             $params[] = $teacherId;
             $params[] = $regId;
             $params[] = "%$regId%";
-            
-            $sql .= " GROUP BY dt.attendance_date ORDER BY dt.attendance_date ASC";
         } else {
+            // Calculate true attendance based on enrollment per subject session
             $sql = "
                 SELECT 
                     a.attendance_date,
                     SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
-                    SUM(CASE WHEN a.status != 'present' THEN 1 ELSE 0 END) AS absent_count,
-                    COUNT(*) AS total_count
+                    SUM(q.enrolled_count) AS total_count,
+                    SUM(q.enrolled_count) - SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS absent_count
                 FROM attendance a
+                JOIN (
+                    SELECT subject_id, COUNT(*) as enrolled_count 
+                    FROM student_subjects 
+                    GROUP BY subject_id
+                ) q ON a.subject_id = q.subject_id
                 LEFT JOIN subjects s ON a.subject_id = s.id
                 WHERE a.teacher_id = ? AND a.attendance_date >= ?
             ";
@@ -687,7 +693,6 @@ if ($action === 'getTeacherAnalytics') {
         $stmt->execute($params);
         $dailyStats = $stmt->fetchAll();
         
-        // 2. Subject-wise summary
         // 2. Subject-wise summary
         if ($regId !== '') {
             $sql2 = "
@@ -718,11 +723,16 @@ if ($action === 'getTeacherAnalytics') {
             $sql2 = "
                 SELECT 
                     COALESCE(s.subject_name, 'Unknown') AS subject_name,
-                    COUNT(*) AS total_records,
+                    COUNT(DISTINCT a.attendance_date) * q.enrolled_count AS total_records,
                     SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
-                    SUM(CASE WHEN a.status != 'present' THEN 1 ELSE 0 END) AS absent_count
+                    (COUNT(DISTINCT a.attendance_date) * q.enrolled_count) - SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS absent_count
                 FROM attendance a
-                LEFT JOIN subjects s ON a.subject_id = s.id
+                JOIN subjects s ON a.subject_id = s.id
+                JOIN (
+                    SELECT subject_id, COUNT(*) as enrolled_count 
+                    FROM student_subjects 
+                    GROUP BY subject_id
+                ) q ON a.subject_id = q.subject_id
                 WHERE a.teacher_id = ? AND a.attendance_date >= ?
             ";
             $params2 = [$teacherId, $startDate];
@@ -731,7 +741,7 @@ if ($action === 'getTeacherAnalytics') {
                 $sql2 .= " AND s.subject_name = ?";
                 $params2[] = $subject;
             }
-            $sql2 .= " GROUP BY s.subject_name ORDER BY s.subject_name";
+            $sql2 .= " GROUP BY s.id, s.subject_name ORDER BY s.subject_name";
         }
         
         $stmt = $pdo->prepare($sql2);
@@ -740,7 +750,7 @@ if ($action === 'getTeacherAnalytics') {
         
         $totalPresent = array_sum(array_column($subjectStats, 'present_count'));
         $totalAbsent = array_sum(array_column($subjectStats, 'absent_count'));
-        $totalRecords = $totalPresent + $totalAbsent;
+        $totalRecords = array_sum(array_column($subjectStats, 'total_records'));
         
         echo json_encode([
             'success' => true,

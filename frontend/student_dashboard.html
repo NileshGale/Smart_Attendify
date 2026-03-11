@@ -1684,10 +1684,12 @@
             const avgPct = Math.round(combinedData.reduce((s, d) => s + (d.total > 0 ? d.present / d.total : 0), 0) / Math.max(1, combinedData.length) * 100);
             const totalPresent = combinedData.reduce((s, d) => s + d.present, 0);
             const totalAbsent = combinedData.reduce((s, d) => s + d.absent, 0);
+            const totalLectures = combinedData.reduce((s, d) => s + d.total, 0);
             const low = combinedData.filter(d => d.total > 0 && (d.present / d.total < .75)).length;
 
             document.getElementById('overviewStats').innerHTML = `
         <div class="stat-card"><div class="stat-value" style="color:${avgPct >= 75 ? 'var(--success)' : avgPct >= 60 ? 'var(--warning)' : 'var(--danger)'}">${avgPct}%</div><div class="stat-label">Overall Attendance</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--navy-light)">${totalLectures}</div><div class="stat-label">Total Lectures</div></div>
         <div class="stat-card"><div class="stat-value">${totalPresent}</div><div class="stat-label">Total Present</div></div>
         <div class="stat-card"><div class="stat-value">${totalAbsent}</div><div class="stat-label">Total Absent</div></div>
         <div class="stat-card"><div class="stat-value" style="color:var(--danger)">${low}</div><div class="stat-label">Subjects Below 75%</div></div>`;
