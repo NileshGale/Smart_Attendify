@@ -2278,10 +2278,18 @@
                 </div>
                 <div class="card">
                     <div class="search-row">
-                        <input type="text" id="studentSearchEdit" placeholder="Enter Registration ID or Name">
+                        <div style="position:relative;flex:2">
+                            <input type="text" id="studentSearchEdit" placeholder="Enter Registration ID or Name"
+                                style="width: 100%; box-sizing: border-box; padding-right: 32px;">
+                            <button type="button"
+                                onclick="document.getElementById('studentSearchEdit').value='';this.style.display='none';document.getElementById('studentEditResults').style.display='none';"
+                                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;padding:4px;display:none"
+                                id="searchClearBtnEdit">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
                         <button class="btn-primary" onclick="searchStudentForEdit()"><i
                                 class="fa-solid fa-magnifying-glass"></i> Search</button>
-
                     </div>
                 </div>
                 <div id="studentEditResults" style="display:none;margin-top:1rem"></div>
@@ -2314,6 +2322,28 @@
                     <p>Generate a random code. Students enter it to mark themselves present.</p>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- ════ UPDATE ATTENDANCE MODAL ════ -->
+    <div class="modal" id="updateAttendanceModal">
+        <div class="modal-content">
+            <button class="close" onclick="closeUpdateModal()">✕</button>
+            <h2><i class="fa-solid fa-pen-to-square"></i> Update Attendance</h2>
+            <form onsubmit="submitAttendanceUpdate(event)">
+                <div class="input-group">
+                    <label>Date</label>
+                    <input type="date" id="updateDate" required>
+                </div>
+                <div class="input-group">
+                    <label>Status</label>
+                    <select id="updateStatus">
+                        <option value="present">Present</option>
+                        <option value="absent">Absent</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary" style="width:100%;margin-top:.5rem">Save Changes</button>
+            </form>
         </div>
     </div>
 
@@ -2406,6 +2436,9 @@
             renderSchedule();
             document.getElementById('scanDate').textContent = new Date().toLocaleDateString('en-IN');
             document.getElementById('codeDate').textContent = new Date().toLocaleDateString('en-IN');
+            if (document.getElementById('updateDate')) {
+                document.getElementById('updateDate').max = new Date().toISOString().split('T')[0];
+            }
 
             // --- Event Date & Time Constraints ---
             const eventDateEl = document.getElementById('eventDate');
@@ -3694,7 +3727,7 @@
             container.style.display = 'block';
             container.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted)"><div style="display:inline-block;width:36px;height:36px;border:4px solid var(--border);border-top-color:var(--primary-cyan);border-radius:50%;animation:spin 1s linear infinite"></div><p style="margin-top:.75rem">Searching…</p></div>`;
 
-            fetch('../backend/attendance_api.php?action=getStudentReport&reg_id=' + encodeURIComponent(regId))
+            fetch('../backend/attendance_api.php?action=getStudentReport&reg_id=' + encodeURIComponent(regId) + '&from_teacher=1')
                 .then(r => r.json())
                 .then(data => {
                     if (data.success && data.student) {
@@ -3802,6 +3835,14 @@
             if (searchInputAnalytics && clearBtnAnalytics) {
                 searchInputAnalytics.addEventListener('input', function () {
                     clearBtnAnalytics.style.display = this.value.trim().length > 0 ? 'block' : 'none';
+                });
+            }
+
+            const searchInputEdit = document.getElementById('studentSearchEdit');
+            const clearBtnEdit = document.getElementById('searchClearBtnEdit');
+            if (searchInputEdit && clearBtnEdit) {
+                searchInputEdit.addEventListener('input', function () {
+                    clearBtnEdit.style.display = this.value.trim().length > 0 ? 'block' : 'none';
                 });
             }
         });
