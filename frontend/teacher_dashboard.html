@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="dashboard.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <style>
         :root {
             --primary-cyan: #00BCD4;
@@ -1709,6 +1711,52 @@
                 padding: 1.25rem;
             }
         }
+
+        /* ── SAVE & DOWNLOAD RECORD BUTTONS ── */
+        .btn-save-record {
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+            padding: .6rem 1.25rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: .85rem;
+            cursor: pointer;
+            transition: all .3s ease;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, .35);
+        }
+        .btn-save-record:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, .45);
+        }
+        .btn-save-record:active {
+            transform: translateY(0);
+        }
+        .btn-download-record {
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+            padding: .6rem 1.25rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: .85rem;
+            cursor: pointer;
+            transition: all .3s ease;
+            background: linear-gradient(135deg, #3b82f6 0%, #7c3aed 100%);
+            color: white;
+            box-shadow: 0 4px 14px rgba(59, 130, 246, .35);
+        }
+        .btn-download-record:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, .45);
+        }
+        .btn-download-record:active {
+            transform: translateY(0);
+        }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -1950,6 +1998,14 @@
                         </div>
                         <div class="code-timer" id="codeTimer">00:15</div>
                         <button class="btn-regenerate" onclick="generateUniqueCode()"> Regenerate Code</button>
+                        <div style="display:flex; gap:.75rem; margin-top:.75rem; justify-content:center; flex-wrap:wrap;">
+                            <button class="btn-save-record" onclick="saveCodeRecord()">
+                                <i class="fa-solid fa-floppy-disk"></i> Save Record
+                            </button>
+                            <button class="btn-download-record" onclick="downloadCodeRecord()">
+                                <i class="fa-solid fa-file-pdf"></i> Download Record
+                            </button>
+                        </div>
                         <div class="code-submissions" id="codeSubmissions">
                             <h4 style="text-align:left;font-size:.875rem;margin-bottom:.5rem;color:var(--text-muted)">
                                 Submitted Students</h4>
@@ -2784,6 +2840,163 @@
                     }
                 })
                 .catch(() => { });
+        }
+
+        // ─── SAVE CODE ATTENDANCE RECORD ───
+        function saveCodeRecord() {
+            if (!pollCode) {
+                showToast('No active code session to save', true);
+                return;
+            }
+
+            fetch(`../backend/attendance_api.php?action=getCodeAttendance&code=${encodeURIComponent(pollCode)}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success && data.students && data.students.length > 0) {
+                        showToast(`<i class="fa-solid fa-check-circle"></i> Record saved! ${data.students.length} student(s) attendance for ${currentSubject} saved to database`);
+
+                        // Expire the code — stop timer and polling
+                        clearInterval(codeTimerInterval);
+                        clearInterval(codePollInterval);
+                        activeCode = '';
+
+                        // Show EXPIRED status
+                        const timerEl = document.getElementById('codeTimer');
+                        timerEl.textContent = 'EXPIRED';
+                        timerEl.classList.add('expired');
+                        timerEl.style.color = 'var(--error)';
+
+                        // Fade out the generated code
+                        const codeEl = document.getElementById('generatedCode');
+                        codeEl.style.opacity = '0.4';
+                    } else {
+                        showToast('No students have submitted attendance yet', true);
+                    }
+                })
+                .catch(() => showToast('Network error while saving record', true));
+        }
+
+        // ─── DOWNLOAD CODE ATTENDANCE RECORD AS PDF ───
+        function downloadCodeRecord() {
+            if (!pollCode) {
+                showToast('No active code session to download', true);
+                return;
+            }
+
+            fetch(`../backend/attendance_api.php?action=getCodeAttendance&code=${encodeURIComponent(pollCode)}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success || !data.students || data.students.length === 0) {
+                        showToast('No students found to include in the report', true);
+                        return;
+                    }
+
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    const pageWidth = doc.internal.pageSize.getWidth();
+                    const today = new Date();
+                    const dateStr = today.toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' });
+                    const timeStr = today.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+                    const teacherName = TEACHER.name || 'Teacher';
+                    const subjectLabel = currentSubject + (currentSubjectCode ? ` [${currentSubjectCode}]` : '');
+
+                    // ── Header background ──
+                    doc.setFillColor(0, 188, 212);
+                    doc.rect(0, 0, pageWidth, 38, 'F');
+
+                    // ── Title ──
+                    doc.setTextColor(255, 255, 255);
+                    doc.setFontSize(20);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('Attendance Record', pageWidth / 2, 16, { align: 'center' });
+
+                    // ── Subtitle ──
+                    doc.setFontSize(11);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text('Attendify - Smart Attendance System', pageWidth / 2, 24, { align: 'center' });
+
+                    // ── Subject badge ──
+                    doc.setFontSize(10);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(subjectLabel, pageWidth / 2, 33, { align: 'center' });
+
+                    // ── Info section ──
+                    let y = 48;
+                    doc.setTextColor(30, 58, 95);
+                    doc.setFontSize(10);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('Date:', 14, y);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(dateStr, 36, y);
+
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('Time:', pageWidth / 2, y);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(timeStr, pageWidth / 2 + 22, y);
+
+                    y += 7;
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('Teacher:', 14, y);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(teacherName, 36, y);
+
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('Total Present:', pageWidth / 2, y);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(String(data.students.length), pageWidth / 2 + 35, y);
+
+                    y += 4;
+                    doc.setDrawColor(0, 188, 212);
+                    doc.setLineWidth(0.5);
+                    doc.line(14, y, pageWidth - 14, y);
+
+                    // ── Student table ──
+                    const tableRows = data.students.map((s, i) => {
+                        const markedTime = s.marked_at
+                            ? new Date(s.marked_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
+                            : '-';
+                        return [i + 1, s.full_name, s.reg_id, markedTime, 'Present'];
+                    });
+
+                    doc.autoTable({
+                        startY: y + 4,
+                        head: [['Sr.', 'Student Name', 'Registration ID', 'Time', 'Status']],
+                        body: tableRows,
+                        theme: 'grid',
+                        headStyles: {
+                            fillColor: [0, 188, 212],
+                            textColor: 255,
+                            fontStyle: 'bold',
+                            fontSize: 9,
+                            halign: 'center'
+                        },
+                        bodyStyles: {
+                            fontSize: 9,
+                            textColor: [31, 41, 55]
+                        },
+                        columnStyles: {
+                            0: { halign: 'center', cellWidth: 14 },
+                            1: { cellWidth: 55 },
+                            2: { halign: 'center', cellWidth: 45 },
+                            3: { halign: 'center', cellWidth: 35 },
+                            4: { halign: 'center', cellWidth: 25, textColor: [16, 185, 129], fontStyle: 'bold' }
+                        },
+                        alternateRowStyles: { fillColor: [248, 250, 252] },
+                        margin: { left: 14, right: 14 }
+                    });
+
+                    // ── Footer ──
+                    const finalY = doc.lastAutoTable.finalY + 12;
+                    doc.setFontSize(8);
+                    doc.setTextColor(107, 114, 128);
+                    doc.text('Generated by Attendify on ' + today.toLocaleString('en-IN'), pageWidth / 2, finalY, { align: 'center' });
+
+                    // ── Save ──
+                    const fileName = `Attendance_${currentSubject.replace(/\s+/g, '_')}_${today.toISOString().split('T')[0]}.pdf`;
+                    doc.save(fileName);
+                    showToast('<i class="fa-solid fa-download"></i> PDF downloaded: ' + fileName);
+                })
+                .catch(() => showToast('Network error while generating PDF', true));
         }
 
         // ─── EVENT ATTENDANCE ───
