@@ -2224,7 +2224,7 @@
                         <div class="chart-header">
                             <h4><i class="fa-solid fa-chart-line"></i> Daily Attendance Trend</h4>
                             <button class="btn-chart-download"
-                                onclick="downloadSingleGraph('lineChart','attendance_trend')" title="Download chart">
+                                onclick="downloadChartWithDetails('lineChart','attendance_trend')" title="Download chart">
                                 <i class="fa-solid fa-download"></i> PNG
                             </button>
                         </div>
@@ -2234,7 +2234,7 @@
                         <div class="chart-header">
                             <h4><i class="fa-solid fa-braille"></i> Present vs Absent</h4>
                             <button class="btn-chart-download"
-                                onclick="downloadSingleGraph('scatterChart','present_vs_absent')"
+                                onclick="downloadChartWithDetails('scatterChart','present_vs_absent')"
                                 title="Download chart">
                                 <i class="fa-solid fa-download"></i> PNG
                             </button>
@@ -2246,7 +2246,7 @@
                             <h4><i class="fa-solid fa-chart-column"></i> Subject-wise Attendance
                             </h4>
                             <button class="btn-chart-download"
-                                onclick="downloadSingleGraph('barChart','subject_attendance')" title="Download chart">
+                                onclick="downloadChartWithDetails('barChart','subject_attendance')" title="Download chart">
                                 <i class="fa-solid fa-download"></i> PNG
                             </button>
                         </div>
@@ -2257,7 +2257,7 @@
                             <h4><i class="fa-solid fa-chart-pie"></i> Attendance Distribution
                             </h4>
                             <button class="btn-chart-download"
-                                onclick="downloadSingleGraph('doughnutChart','attendance_distribution')"
+                                onclick="downloadChartWithDetails('doughnutChart','attendance_distribution')"
                                 title="Download chart">
                                 <i class="fa-solid fa-download"></i> PNG
                             </button>
@@ -3336,6 +3336,7 @@
         // ─── ANALYTICS / CHARTS ───
         let chartInstances = {};
         let currentAnalyticsRegId = '';
+        let currentStudentObject = null; // Store full data for downloads
 
         function renderCharts() {
             const range = document.getElementById('graphRange').value;
@@ -3501,14 +3502,91 @@
         }
 
         // ─── DOWNLOAD SINGLE GRAPH ───
-        function downloadSingleGraph(canvasId, filename) {
-            const canvas = document.getElementById(canvasId);
-            if (!canvas) { showToast('Chart not rendered yet. Please open Analytics first.', true); return; }
+        function downloadChartWithDetails(canvasId, chartTitle) {
+            const original = document.getElementById(canvasId);
+            if (!original) { showToast('Chart not rendered yet.', true); return; }
+
+            // High-res canvas with padding for metadata
+            const PAD = 20;
+            const HEADER = 70;
+            const FOOTER = 40;
+            const W = original.width + (PAD * 2);
+            const H = original.height + HEADER + FOOTER;
+
+            const exp = document.createElement('canvas');
+            exp.width = W; exp.height = H;
+            const ctx = exp.getContext('2d');
+
+            // 1. Clean White Background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, W, H);
+
+            // 2. Header: Attendify Branding & Title
+            // Gradient bar at the very top
+            const grad = ctx.createLinearGradient(0, 0, W, 0);
+            grad.addColorStop(0, '#00BCD4');
+            grad.addColorStop(1, '#1e3a5f');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, W, 5);
+
+            ctx.fillStyle = '#1e3a5f';
+            ctx.font = 'bold 18px Segoe UI, sans-serif';
+            ctx.fillText('Attendify Analytics Report', PAD, 30);
+            
+            ctx.fillStyle = '#6b7280';
+            ctx.font = '600 13px Segoe UI, sans-serif';
+            ctx.fillText(chartTitle.replace(/_/g, ' ').toUpperCase(), PAD, 52);
+
+            // 3. Student Details (if searched)
+            if (currentStudentObject) {
+                ctx.fillStyle = '#f8fafc';
+                ctx.fillRect(PAD - 5, 70, W - (PAD * 2) + 10, 60);
+                ctx.strokeStyle = '#e5e7eb';
+                ctx.strokeRect(PAD - 5, 70, W - (PAD * 2) + 10, 60);
+
+                ctx.fillStyle = '#1e3a5f';
+                ctx.font = 'bold 12px Segoe UI, sans-serif';
+                ctx.fillText('Student:', PAD + 5, 88);
+                ctx.font = '600 12px Segoe UI, sans-serif';
+                ctx.fillText(currentStudentObject.name || '---', PAD + 60, 88);
+
+                ctx.fillStyle = '#1e3a5f';
+                ctx.font = 'bold 12px Segoe UI, sans-serif';
+                ctx.fillText('Reg ID:', PAD + 5, 112);
+                ctx.font = '600 12px Segoe UI, sans-serif';
+                ctx.fillText(currentStudentObject.regId || '---', PAD + 60, 112);
+
+                if (currentStudentObject.dept || currentStudentObject.branch) {
+                    ctx.fillStyle = '#1e3a5f';
+                    ctx.font = 'bold 12px Segoe UI, sans-serif';
+                    ctx.fillText('Dept/Br:', (W / 2) + 20, 100);
+                    ctx.font = '600 11px Segoe UI, sans-serif';
+                    ctx.fillText((currentStudentObject.dept || '') + ' ' + (currentStudentObject.branch || ''), (W / 2) + 80, 100);
+                }
+            }
+
+            // 4. Draw the Chart
+            const chartY = currentStudentObject ? 145 : 75;
+            ctx.drawImage(original, PAD, chartY, original.width, original.height);
+
+            // 5. Footer
+            const finalH = H - 25;
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.beginPath(); ctx.moveTo(PAD, finalH); ctx.lineTo(W - PAD, finalH); ctx.stroke();
+            
+            ctx.fillStyle = '#9ca3af';
+            ctx.font = '10px Segoe UI, sans-serif';
+            ctx.fillText('Generated by ' + TEACHER.name + ' via Attendify', PAD, finalH + 15);
+            ctx.textAlign = 'right';
+            ctx.fillText(new Date().toLocaleString('en-IN'), W - PAD, finalH + 15);
+
+            // Download
             const link = document.createElement('a');
-            link.download = filename + '_' + new Date().toISOString().split('T')[0] + '.png';
-            link.href = canvas.toDataURL('image/png');
+            const suffix = currentStudentObject ? `_${currentStudentObject.regId}` : '';
+            link.download = `${chartTitle}${suffix}_${new Date().toISOString().slice(0, 10)}.png`;
+            link.href = exp.toDataURL('image/png');
             link.click();
-            showToast('<i class="fa-solid fa-download"></i> Downloaded: ' + link.download);
+            showToast('<i class="fa-solid fa-download"></i> Downloaded: ' + chartTitle);
         }
 
         // ─── DOWNLOAD ALL GRAPHS ───
@@ -3524,14 +3602,11 @@
                 setTimeout(() => {
                     const canvas = document.getElementById(c.id);
                     if (canvas) {
-                        const link = document.createElement('a');
-                        link.download = c.name + '_' + new Date().toISOString().split('T')[0] + '.png';
-                        link.href = canvas.toDataURL('image/png');
-                        link.click();
+                        downloadChartWithDetails(c.id, c.name);
                         downloaded++;
                         if (downloaded === charts.length) showToast('<i class="fa-solid fa-download"></i> All ' + downloaded + ' graphs downloaded!');
                     }
-                }, i * 400); // stagger downloads
+                }, i * 600); // stagger slightly more for multi-processing
             });
         }
 
@@ -3755,12 +3830,22 @@
                     if (data.success && (data.report || data.attendance)) {
                         const att = data.report || data.attendance;
                         const studentInfo = data.student || { name: query, regId: query, class: 'N/A' };
+                        
+                        // Store full student data for download metadata
+                        currentStudentObject = {
+                            name: studentInfo.name || studentInfo.full_name || query,
+                            regId: studentInfo.regId || studentInfo.reg_id || query,
+                            dept: studentInfo.department || '',
+                            branch: studentInfo.branch || studentInfo.class || ''
+                        };
+
                         renderStudentAttendanceResult(resultDiv, studentInfo, att);
-                        currentAnalyticsRegId = studentInfo.regId;
+                        currentAnalyticsRegId = currentStudentObject.regId;
                         renderCharts();
                     } else {
                         resultDiv.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted)"><p><i class="fa-solid fa-xmark"></i> ${data.message || 'Student not found'}</p></div>`;
                         currentAnalyticsRegId = '';
+                        currentStudentObject = null;
                         renderCharts();
                     }
                 })
