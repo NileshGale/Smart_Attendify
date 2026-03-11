@@ -41,7 +41,10 @@
             font-family: 'Segoe UI', system-ui, sans-serif;
             background: var(--bg);
             color: var(--text);
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         /* ── NAVBAR ── */
@@ -53,9 +56,9 @@
             justify-content: space-between;
             align-items: center;
             box-shadow: 0 2px 20px rgba(0, 188, 212, .3);
-            position: sticky;
-            top: 0;
+            position: relative;
             z-index: 200;
+            flex-shrink: 0;
         }
 
         .nav-brand {
@@ -316,7 +319,8 @@
         /* ── LAYOUT ── */
         .dashboard-container {
             display: flex;
-            min-height: calc(100vh - 58px);
+            flex: 1;
+            overflow: hidden;
         }
 
         .sidebar {
@@ -325,6 +329,7 @@
             box-shadow: 2px 0 10px rgba(0, 0, 0, .05);
             padding: 1.25rem 0;
             flex-shrink: 0;
+            overflow-y: auto;
         }
 
         .sidebar-menu {
@@ -359,6 +364,7 @@
             flex: 1;
             padding: 1.5rem;
             overflow-y: auto;
+            position: relative;
         }
 
         .content-section {
