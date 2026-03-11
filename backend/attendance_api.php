@@ -43,8 +43,26 @@ if ($action === 'generateUniqueCode') {
         echo json_encode(['success' => false, 'message' => 'Subject name required']);
         exit;
     }
-    
     try {
+        // Check daily limit (max 3 codes per subject per day)
+        $limitStmt = $pdo->prepare("
+            SELECT COUNT(*) 
+            FROM attendance_codes 
+            WHERE teacher_id = ? 
+              AND subject_name = ? 
+              AND DATE(created_at) = CURDATE()
+        ");
+        $limitStmt->execute([$teacherId, $subjectName]);
+        $countToday = (int)$limitStmt->fetchColumn();
+
+        if ($countToday >= 3) {
+            echo json_encode([
+                'success' => false, 
+                'message' => "Daily limit reached (3/3) for \"$subjectName\". Please try again in the next lecture."
+            ]);
+            exit;
+        }
+
         // Generate random 7-char alphanumeric code (no I,O,0,1 to avoid confusion)
         $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
         $code = '';
@@ -68,7 +86,8 @@ if ($action === 'generateUniqueCode') {
             'success' => true,
             'unique_code' => $code,
             'expires_at' => $expiresAt,
-            'validity_seconds' => $validitySeconds
+            'validity_seconds' => $validitySeconds,
+            'codes_generated_today' => $countToday + 1
         ]);
         
     } catch (PDOException $e) {

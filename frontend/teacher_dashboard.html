@@ -1997,7 +1997,10 @@
                                     id="codeTeacher"></span></div>
                         </div>
                         <div class="code-timer" id="codeTimer">00:15</div>
-                        <button class="btn-regenerate" onclick="generateUniqueCode()"> Regenerate Code</button>
+                        <div style="display:flex; align-items:center; gap:10px; justify-content:center; margin-top:0.5rem">
+                            <button class="btn-regenerate" id="btnRegenerateCode" onclick="generateUniqueCode()"> Regenerate Code</button>
+                            <div id="codeLimitIndicator" style="font-size:0.75rem; color:var(--text-muted); font-weight:600"></div>
+                        </div>
                         <div style="display:flex; gap:.75rem; margin-top:.75rem; justify-content:center; flex-wrap:wrap;">
                             <button class="btn-save-record" onclick="saveCodeRecord()">
                                 <i class="fa-solid fa-floppy-disk"></i> Save Record
@@ -2772,7 +2775,18 @@
             })
                 .then(r => r.json())
                 .then(data => {
-                    if (!data.success) { showToast(data.message || 'Failed to generate code', true); return; }
+                    if (!data.success) { 
+                        showToast(data.message || 'Failed to generate code', true); 
+                        if (data.message && data.message.includes('Daily limit reached')) {
+                            const limitInd = document.getElementById('codeLimitIndicator');
+                            const regenBtn = document.getElementById('btnRegenerateCode');
+                            limitInd.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Limit reached. Back to tomorrow's lecture.`;
+                            limitInd.style.color = 'var(--error)';
+                            regenBtn.disabled = true;
+                            regenBtn.style.opacity = '0.5';
+                        }
+                        return; 
+                    }
 
                     activeCode = data.unique_code;
                     pollCode = data.unique_code; // Keep for polling even after expiry
@@ -2780,6 +2794,25 @@
                     document.getElementById('codeTime').textContent = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
                     document.getElementById('codeTimer').classList.remove('expired');
                     showToast('<i class="fa-solid fa-key"></i> New code generated: ' + activeCode);
+
+                    // Update limit indicator
+                    const limitInd = document.getElementById('codeLimitIndicator');
+                    const regenBtn = document.getElementById('btnRegenerateCode');
+                    const countToday = data.codes_generated_today || 1;
+                    const left = 3 - countToday;
+                    
+                    if (left > 0) {
+                        limitInd.innerHTML = `<span style="color:var(--primary-cyan)">${left}</span> refreshes left today`;
+                        limitInd.style.color = 'var(--text-muted)';
+                        regenBtn.disabled = false;
+                        regenBtn.style.opacity = '1';
+                    } else {
+                        limitInd.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Limit reached. Back to tomorrow's lecture.`;
+                        limitInd.style.color = 'var(--error)';
+                        regenBtn.disabled = true;
+                        regenBtn.style.opacity = '0.5';
+                        regenBtn.title = "Daily limit reached for this subject";
+                    }
 
                     // Start countdown
                     let seconds = data.validity_seconds || 300;
@@ -3741,8 +3774,8 @@
             resultDiv.innerHTML = `
         <div style="border:2px solid var(--border);border-radius:12px;padding:1.5rem;background:white">
             <div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:1.5rem;flex-wrap:wrap">
-                <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg, var(--primary-cyan), var(--purple-accent));display:flex;align-items:center;justify-content:center;color:white;font-size:2rem;font-weight:800;box-shadow:0 4px 12px rgba(0,188,212,0.3)">
-                    ${name.charAt(0)}
+                <div id="studentResultAvatar" style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg, var(--primary-cyan), var(--purple-accent));display:flex;align-items:center;justify-content:center;color:white;font-size:2rem;font-weight:800;box-shadow:0 4px 12px rgba(0,188,212,0.3);overflow:hidden">
+                    ${student.photo_path ? `<img src="../${student.photo_path}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='${name.charAt(0)}'">` : name.charAt(0)}
                 </div>
                 <div style="flex:1">
                     <h3 style="font-size:1.25rem;font-weight:800;color:var(--navy-dark);margin-bottom:.25rem">${name}</h3>
