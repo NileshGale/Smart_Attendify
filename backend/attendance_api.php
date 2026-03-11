@@ -430,6 +430,7 @@ if ($action === 'getMyAttendanceHistory') {
     
     $studentId = $_SESSION['user_id'];
     $subjectFilter = sanitize($_GET['subject'] ?? 'all');
+    $statusFilter = sanitize($_GET['status'] ?? 'all');
     
     try {
         if ($subjectFilter === 'College Event') {
@@ -449,27 +450,38 @@ if ($action === 'getMyAttendanceHistory') {
             ";
             $params = [$studentId];
         } else {
-            // Regular subject attendance
+            // Regular subject attendance including implicit absences
             $sql = "
                 SELECT 
-                    a.attendance_date,
+                    dt.attendance_date,
                     COALESCE(s.subject_name, 'Unknown') AS subject_name,
-                    a.status,
+                    COALESCE(a.status, 'absent') AS status,
                     a.marking_method,
                     a.marked_at
-                FROM attendance a
-                LEFT JOIN subjects s ON a.subject_id = s.id
-                WHERE a.student_id = ?
+                FROM (
+                    SELECT DISTINCT attendance_date, subject_id
+                    FROM attendance
+                ) dt
+                JOIN subjects s ON dt.subject_id = s.id
+                LEFT JOIN attendance a ON a.subject_id = dt.subject_id 
+                    AND a.attendance_date = dt.attendance_date 
+                    AND a.student_id = ?
+                WHERE (s.id IN (SELECT subject_id FROM student_subjects WHERE student_id = ?)
+                    OR NOT EXISTS (SELECT 1 FROM student_subjects WHERE student_id = ?))
             ";
-            $params = [$studentId];
+            $params = [$studentId, $studentId, $studentId];
             
             if ($subjectFilter !== 'all') {
                 $sql .= " AND s.subject_name = ?";
                 $params[] = $subjectFilter;
             }
+            if ($statusFilter !== 'all') {
+                $sql .= " AND COALESCE(a.status, 'absent') = ?";
+                $params[] = $statusFilter;
+            }
             
-            // Also include event attendance when showing all
-            if ($subjectFilter === 'all') {
+            // Also include event attendance when showing all subjects and status allows it
+            if ($subjectFilter === 'all' && ($statusFilter === 'all' || $statusFilter === 'present')) {
                 $sql .= "
                     UNION ALL
                     SELECT 

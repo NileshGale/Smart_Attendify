@@ -1421,6 +1421,19 @@
                             <option value="4">April</option>
                             <option value="5">May</option>
                             <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                        <select id="histStatus"
+                            style="padding:.5rem .875rem;border:1px solid var(--border);border-radius:8px;font-size:.875rem"
+                            onchange="renderHistory()">
+                            <option value="all">All Status</option>
+                            <option value="present">Present</option>
+                            <option value="absent">Absent</option>
                         </select>
                         <div class="download-group" style="margin-left:auto">
                             <button class="btn-download" onclick="downloadHistoryCSV()">⬇ CSV</button>
@@ -2013,22 +2026,41 @@
         // ── HISTORY ───────────────────────────────────────────────────────────────────
         function renderHistory() {
             const subject = document.getElementById('histSubject').value;
+            const monthFilter = document.getElementById('histMonth').value;
+            const statusFilter = document.getElementById('histStatus').value;
             const histTable = document.getElementById('historyTable');
             histTable.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:2rem">Loading history…</p>';
             historyRows = [];
 
-            fetch(`../backend/attendance_api.php?action=getMyAttendanceHistory&subject=${encodeURIComponent(subject)}`)
+            fetch(`../backend/attendance_api.php?action=getMyAttendanceHistory&subject=${encodeURIComponent(subject)}&status=${encodeURIComponent(statusFilter)}`)
                 .then(r => r.json())
                 .then(data => {
                     if (!data.success || !data.records || data.records.length === 0) {
                         histTable.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:2rem">No attendance records found.</p>';
                         return;
                     }
-                    historyRows = data.records.map(r => ({
+                    let rows = data.records.map(r => ({
                         date: new Date(r.attendance_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+                        rawDate: r.attendance_date,
                         subject: r.subject_name,
                         status: r.status
                     }));
+
+                    // Apply month filter on frontend
+                    if (monthFilter !== 'all') {
+                        const m = parseInt(monthFilter);
+                        rows = rows.filter(r => {
+                            const d = new Date(r.rawDate);
+                            return (d.getMonth() + 1) === m;
+                        });
+                    }
+
+                    if (rows.length === 0) {
+                        histTable.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:2rem">No records match the selected filters.</p>';
+                        return;
+                    }
+
+                    historyRows = rows;
                     histTable.innerHTML = `
                     <table>
                         <thead><tr><th>Date</th><th>Subject</th><th>Status</th></tr></thead>
@@ -2043,20 +2075,60 @@
                 });
         }
 
-        // ── DOWNLOAD HISTORY CSV — name & reg ID in header rows ──────────────────────
+        // ── DOWNLOAD HISTORY EXCEL — Styled HTML Table ───────────────────────────────
         function downloadHistoryCSV() {
             if (!historyRows.length) { showToast('No data to download', true); return; }
-            const header = [
-                `Student Name,${STUDENT.name}`,
-                `Registration ID,${STUDENT.regId}`,
-                `Generated,${new Date().toLocaleDateString('en-IN')}`,
-                ``,
-                `Date,Subject,Status`,
-                ...historyRows.map(r => `${r.date},${r.subject},${r.status === 'present' ? 'Present' : 'Absent'}`)
-            ].join('\n');
+            
+            // Build an HTML table with inline CSS that Excel will render
+            let html = `
+            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    table { border-collapse: collapse; font-family: Calibri, sans-serif; }
+                    td, th { border: 1px solid #000000; padding: 4px; font-size: 11pt; }
+                    .header-info { background-color: #fce4d6; font-weight: bold; text-align: center; font-size: 11pt; border: none; }
+                    .table-header { background-color: #b4c6e7; font-weight: bold; font-size: 11pt; }
+                </style>
+            </head>
+            <body>
+                <table>
+                    <!-- Info Header Rows -->
+                    <tr>
+                        <td colspan="3" class="header-info">Student Name : ${STUDENT.name}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" class="header-info">Registration ID:- ${STUDENT.regId}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" class="header-info">Generated: - ${new Date().toLocaleDateString('en-IN', {day: '2-digit', month: '2-digit', year: 'numeric'}).replace(/\//g, '-')}</td>
+                    </tr>
+                    <tr><td colspan="3" style="border:none;"></td></tr> <!-- Empty row for spacing -->
+                    
+                    <!-- Table Headers -->
+                    <tr>
+                        <th class="table-header" style="width: 120px; text-align: left;">Date</th>
+                        <th class="table-header" style="width: 250px; text-align: left;">Subject</th>
+                        <th class="table-header" style="width: 120px; text-align: left;">Status</th>
+                    </tr>
+                    
+                    <!-- Data Rows -->
+                    ${historyRows.map(r => `
+                    <tr>
+                        <td style="text-align: left;">${r.date.replace(/ /g, '-')}</td>
+                        <td style="text-align: left;">${r.subject}</td>
+                        <td style="text-align: left;">${r.status === 'present' ? 'Present' : 'Absent'}</td>
+                    </tr>
+                    `).join('')}
+                </table>
+            </body>
+            </html>
+            `;
+            
+            const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
             const link = document.createElement('a');
-            link.href = URL.createObjectURL(new Blob([header], { type: 'text/csv' }));
-            link.download = 'Attendance_History_' + STUDENT.regId + '_' + new Date().toISOString().slice(0, 10) + '.csv';
+            link.href = URL.createObjectURL(blob);
+            link.download = 'Attendance_History_' + STUDENT.regId + '_' + new Date().toISOString().slice(0, 10) + '.xls';
             link.click();
         }
 
