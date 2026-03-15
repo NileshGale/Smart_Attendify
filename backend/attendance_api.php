@@ -1121,14 +1121,57 @@ if ($action === 'increaseAttendance') {
     }
     
     try {
-        $stmt = $pdo->prepare("CALL sp_increase_attendance(?, ?, ?)");
-        $stmt->execute([$studentId, $subjectId, $percentageIncrease]);
-        $result = $stmt->fetch();
+        // Get current stats
+        $statsStmt = $pdo->prepare("
+            SELECT COUNT(*) as total_classes,
+                   SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present_count
+            FROM attendance
+            WHERE student_id = ? AND subject_id = ?
+        ");
+        $statsStmt->execute([$studentId, $subjectId]);
+        $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
+
+        $totalClasses = (int)($stats['total_classes'] ?? 0);
+        $presentCount = (int)($stats['present_count'] ?? 0);
+
+        $currentPct = $totalClasses > 0 ? ($presentCount / $totalClasses) * 100 : 0;
+        $targetPct = min($currentPct + $percentageIncrease, 100);
+        $classesToAdd = 0;
+
+        if ($targetPct == 100 && $totalClasses > $presentCount) {
+             // Cannot mathematically reach 100% if there is any absence
+             $targetPct = 99.5;
+        }
+
+        if ($targetPct < 100 && $targetPct > $currentPct) {
+             $x = ($targetPct * $totalClasses - 100 * $presentCount) / (100 - $targetPct);
+             if ($x > 0) {
+                 $classesToAdd = (int)ceil($x);
+             }
+        }
+
+        if ($classesToAdd > 0) {
+            $dateStmt = $pdo->prepare("SELECT MAX(attendance_date) as max_date FROM attendance WHERE student_id = ? AND subject_id = ?");
+            $dateStmt->execute([$studentId, $subjectId]);
+            $dateRow = $dateStmt->fetch(PDO::FETCH_ASSOC);
+            $startDateStr = !empty($dateRow['max_date']) ? $dateRow['max_date'] : date('Y-m-d');
+            
+            $startDate = new DateTime($startDateStr);
+            $insertStmt = $pdo->prepare("
+                INSERT IGNORE INTO attendance (student_id, subject_id, attendance_date, status, marking_method)
+                VALUES (?, ?, ?, 'present', 'manual')
+            ");
+
+            for ($i = 0; $i < $classesToAdd; $i++) {
+                $startDate->modify('+1 day');
+                $insertStmt->execute([$studentId, $subjectId, $startDate->format('Y-m-d')]);
+            }
+        }
         
         echo json_encode([
-            'success' => $result['status'] === 'success',
-            'message' => $result['message'],
-            'classes_added' => $result['classes_added'] ?? 0
+            'success' => true,
+            'message' => 'Added ' . $classesToAdd . ' classes to increase attendance',
+            'classes_added' => $classesToAdd
         ]);
         
     } catch (PDOException $e) {

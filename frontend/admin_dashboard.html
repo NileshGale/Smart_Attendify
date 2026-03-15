@@ -2608,7 +2608,7 @@
                 .then(r => r.json())
                 .then(d => {
                     if (d.success) {
-                        window.location.href = 'attendify.html';
+                        window.location.href = '../index.php';
                     } else {
                         showToast(d.message || 'Logout failed', true);
                     }

@@ -2215,7 +2215,7 @@
         function hideLogoutBanner() { document.getElementById('logoutBanner').classList.remove('show'); }
         function confirmLogout() {
             fetch('../backend/auth_api.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'action=logout' })
-                .catch(() => { }).finally(() => { sessionStorage.clear(); window.location.href = 'Attendify.html'; });
+                .catch(() => { }).finally(() => { sessionStorage.clear(); window.location.href = '../index.php'; });
         }
 
         // ── PASSWORD ──────────────────────────────────────────────────────────────────

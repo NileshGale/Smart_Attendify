@@ -4,14 +4,27 @@
 require_once 'db_config.php';
 
 // ── PHPMailer includes ──────────────────────────────────────────────────────
-// Adjust the folder name below if yours differs
-$phpmailerBase = __DIR__ . '/PHPMailer/src/';
+// We try multiple common patterns to be robust on live/manual uploads
+$possiblePaths = [
+    __DIR__ . '/PHPMailer/src/',
+    __DIR__ . '/phpmailer/src/',
+    __DIR__ . '/PHPMailer/',
+    __DIR__ . '/phpmailer/'
+];
 
-if (!file_exists($phpmailerBase . 'PHPMailer.php')) {
+$phpmailerBase = null;
+foreach ($possiblePaths as $path) {
+    if (file_exists($path . 'PHPMailer.php')) {
+        $phpmailerBase = $path;
+        break;
+    }
+}
+
+if (!$phpmailerBase) {
     header('Content-Type: application/json');
     echo json_encode([
         'success' => false,
-        'message' => 'PHPMailer not found. Check folder path: ' . $phpmailerBase
+        'message' => 'PHPMailer not found on server. Searched paths: ' . implode(', ', $possiblePaths) . '. Please ensure the PHPMailer folder is uploaded correctly to the backend directory.'
     ]);
     exit();
 }

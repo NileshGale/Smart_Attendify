@@ -5,10 +5,10 @@
  */
 
 // Database credentials
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'attendify_db');
-define('DB_USER', 'root');  // Change in production
-define('DB_PASS', '');      // Change in production
+define('DB_HOST', 'sql308.infinityfree.com');
+define('DB_NAME', 'if0_41396868_XXX');
+define('DB_USER', 'if0_41396868');
+define('DB_PASS', 'hope1916dhanno');
 
 // Create PDO connection
 try {
