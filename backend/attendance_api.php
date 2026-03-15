@@ -781,8 +781,41 @@ if ($action === 'getStudentReport') {
     $fromTeacher = isset($_GET['from_teacher']) && $_GET['from_teacher'] == '1';
     
     if (!$query) {
-        echo json_encode(['success' => false, 'message' => 'Please enter a search term']);
-        exit;
+        if ($fromTeacher) {
+            // Fetch all students associated with this teacher's classes with aggregate stats
+            $teacherId = $_SESSION['user_id'];
+            if ($range === 'all') {
+                $startDate = '2000-01-01';
+            } else {
+                $days = $range === 'month' ? 30 : ($range === '2week' ? 14 : 7);
+                $startDate = date('Y-m-d', strtotime("-{$days} days"));
+            }
+
+            // Get all students who have attendance marked by this teacher
+            $stmt = $pdo->prepare("
+                SELECT 
+                    u.id, u.full_name, u.reg_id, u.photo_path, u.department, u.branch,
+                    COUNT(a.id) as present_count,
+                    (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE teacher_id = ? AND attendance_date >= ?) as total_days
+                FROM users u
+                JOIN attendance a ON u.id = a.student_id
+                WHERE a.teacher_id = ? AND a.attendance_date >= ? AND a.status = 'present'
+                GROUP BY u.id
+                ORDER BY u.full_name
+            ");
+            $stmt->execute([$teacherId, $startDate, $teacherId, $startDate]);
+            $students = $stmt->fetchAll();
+
+            echo json_encode([
+                'success' => true,
+                'students' => $students,
+                'count' => count($students)
+            ]);
+            exit;
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Please enter a search term']);
+            exit;
+        }
     }
     
     try {

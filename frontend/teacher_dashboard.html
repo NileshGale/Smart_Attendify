@@ -1925,6 +1925,25 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Stats Row -->
+                <div class="stats-row" id="dashboardStatsRow" style="margin-bottom: 1.5rem;">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-percent"></i></div>
+                        <div class="stat-value" id="statAvgPct">0%</div>
+                        <div class="stat-label">Avg Attendance</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-user-check"></i></div>
+                        <div class="stat-value" id="statTotalPresent">0</div>
+                        <div class="stat-label">Total Present</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-user-xmark"></i></div>
+                        <div class="stat-value" id="statTotalAbsent">0</div>
+                        <div class="stat-label">Total Absent</div>
+                    </div>
+                </div>
 
                 <div class="section-title">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2459,10 +2478,25 @@
             }
         }
 
+        function loadDashboardStats() {
+            fetch('../backend/attendance_api.php?action=getTeacherAnalytics&range=week')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        const totals = data.totals || { percentage: 0, present: 0, absent: 0, total: 0 };
+                        document.getElementById('statAvgPct').textContent = (totals.percentage || 0) + '%';
+                        document.getElementById('statTotalPresent').textContent = totals.present || 0;
+                        document.getElementById('statTotalAbsent').textContent = totals.absent || 0;
+                    }
+                })
+                .catch(err => console.error('Error loading dashboard stats:', err));
+        }
+
         // ─── INIT ───
         document.addEventListener('DOMContentLoaded', () => {
             applyTeacherInfo();
             renderSchedule();
+            loadDashboardStats();
             document.getElementById('scanDate').textContent = new Date().toLocaleDateString('en-IN');
             document.getElementById('codeDate').textContent = new Date().toLocaleDateString('en-IN');
             if (document.getElementById('updateDate')) {
@@ -3691,7 +3725,6 @@
                         <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-percent"></i></div><div class="stat-value">${totals.percentage}%</div><div class="stat-label">Avg Attendance</div></div>
                         <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-user-check"></i></div><div class="stat-value">${totals.present}</div><div class="stat-label">Total Present</div></div>
                         <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-user-xmark"></i></div><div class="stat-value">${totals.absent}</div><div class="stat-label">Total Absent</div></div>
-                        <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-users"></i></div><div class="stat-value">${totals.total}</div><div class="stat-label">Total Students</div></div>
                     `;
 
                     if (daily.length === 0) {
@@ -4013,17 +4046,23 @@
         // ─── VIEW & EDIT ───
         function searchStudentForEdit() {
             const regId = document.getElementById('studentSearchEdit').value.trim();
-            if (!regId) { showToast('Please enter a Registration ID or Name', true); return; }
+            // Removed: if (!regId) { showToast('Please enter a Registration ID or Name', true); return; }
 
             const container = document.getElementById('studentEditResults');
             container.style.display = 'block';
-            container.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted)"><div style="display:inline-block;width:36px;height:36px;border:4px solid var(--border);border-top-color:var(--primary-cyan);border-radius:50%;animation:spin 1s linear infinite"></div><p style="margin-top:.75rem">Searching…</p></div>`;
+            container.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted)"><div style="display:inline-block;width:36px;height:36px;border:4px solid var(--border);border-top-color:var(--primary-cyan);border-radius:50%;animation:spin 1s linear infinite"></div><p style="margin-top:.75rem">${regId ? 'Searching…' : 'Loading all students…'}</p></div>`;
 
             fetch('../backend/attendance_api.php?action=getStudentReport&reg_id=' + encodeURIComponent(regId) + '&from_teacher=1')
                 .then(r => r.json())
                 .then(data => {
-                    if (data.success && data.student) {
-                        displayStudentEditResults(data.student, data.attendance || data.report || []);
+                    if (data.success) {
+                        if (data.student) {
+                            displayStudentEditResults(data.student, data.attendance || data.report || []);
+                        } else if (data.students) {
+                            displayAllStudentsEdit(data.students);
+                        } else {
+                            container.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted)"><p><i class="fa-solid fa-xmark"></i> No students found.</p></div>`;
+                        }
                     } else {
                         container.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted)"><p><i class="fa-solid fa-xmark"></i> ${data.message || 'Student not found'}</p></div>`;
                     }
@@ -4031,6 +4070,50 @@
                 .catch(() => {
                     container.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted)"><p><i class="fa-solid fa-xmark"></i> Failed to search. Please try again.</p></div>`;
                 });
+        }
+
+        function displayAllStudentsEdit(students) {
+            const container = document.getElementById('studentEditResults');
+            if (students.length === 0) {
+                container.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted)"><p><i class="fa-solid fa-xmark"></i> No students found for your classes.</p></div>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="card" style="margin-bottom:1rem">
+                    <h4 style="font-weight:700;margin-bottom:0.5rem">Students Attendance Summary</h4>
+                    <p style="font-size:0.85rem;color:var(--text-muted)">Total ${students.length} students found.</p>
+                </div>
+                <div class="card">
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Student</th><th>Reg ID</th><th>Dept/Branch</th><th>Attendance</th><th>%</th><th>Action</th></tr></thead>
+                            <tbody>
+                                ${students.map(s => {
+                const pct = s.total_days > 0 ? ((s.present_count / s.total_days) * 100).toFixed(1) : '0.0';
+                const cls = pct >= 75 ? 'badge-present' : pct >= 60 ? 'badge-warn' : 'badge-absent';
+                return `<tr>
+                                        <td>
+                                            <div style="display:flex;align-items:center;gap:0.5rem">
+                                                ${s.photo_path 
+                                                    ? `<img src="../${s.photo_path}" style="width:24px;height:24px;border-radius:50%;object-fit:cover">`
+                                                    : `<div style="width:24px;height:24px;background:var(--bg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700">${s.full_name[0]}</div>`
+                                                }
+                                                <span>${s.full_name}</span>
+                                            </div>
+                                        </td>
+                                        <td><code style="font-size:0.8rem">${s.reg_id}</code></td>
+                                        <td>${s.branch || s.department || '-'}</td>
+                                        <td>${s.present_count} / ${s.total_days} days</td>
+                                        <td><span class="badge ${cls}">${pct}%</span></td>
+                                        <td><button class="btn-primary" style="padding:0.35rem 0.75rem;font-size:0.75rem" onclick="document.getElementById('studentSearchEdit').value='${s.reg_id}';searchStudentForEdit();">View Detail</button></td>
+                                    </tr>`;
+            }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
         }
 
         function displayStudentEditResults(student, attendance) {
