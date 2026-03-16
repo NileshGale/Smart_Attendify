@@ -1927,23 +1927,8 @@
                 </div>
                 
                 <!-- Stats Row -->
-                <div class="stats-row" id="dashboardStatsRow" style="margin-bottom: 1.5rem;">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fa-solid fa-percent"></i></div>
-                        <div class="stat-value" id="statAvgPct">0%</div>
-                        <div class="stat-label">Avg Attendance</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fa-solid fa-user-check"></i></div>
-                        <div class="stat-value" id="statTotalPresent">0</div>
-                        <div class="stat-label">Total Present</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fa-solid fa-user-xmark"></i></div>
-                        <div class="stat-value" id="statTotalAbsent">0</div>
-                        <div class="stat-label">Total Absent</div>
-                    </div>
-                </div>
+                <!-- Stats Row Removed as per request -->
+
 
                 <div class="section-title">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2478,25 +2463,15 @@
             }
         }
 
-        function loadDashboardStats() {
-            fetch('../backend/attendance_api.php?action=getTeacherAnalytics&range=week')
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        const totals = data.totals || { percentage: 0, present: 0, absent: 0, total: 0 };
-                        document.getElementById('statAvgPct').textContent = (totals.percentage || 0) + '%';
-                        document.getElementById('statTotalPresent').textContent = totals.present || 0;
-                        document.getElementById('statTotalAbsent').textContent = totals.absent || 0;
-                    }
-                })
-                .catch(err => console.error('Error loading dashboard stats:', err));
-        }
+        // loadDashboardStats removed as per request
+
 
         // ─── INIT ───
         document.addEventListener('DOMContentLoaded', () => {
             applyTeacherInfo();
             renderSchedule();
-            loadDashboardStats();
+            // loadDashboardStats(); removed
+
             document.getElementById('scanDate').textContent = new Date().toLocaleDateString('en-IN');
             document.getElementById('codeDate').textContent = new Date().toLocaleDateString('en-IN');
             if (document.getElementById('updateDate')) {
