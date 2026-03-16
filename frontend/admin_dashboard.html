@@ -1893,7 +1893,25 @@
             const startInput = document.getElementById('scheduleStartTime');
             const endInput = document.getElementById('scheduleEndTime');
             if (!startInput.value) { endInput.value = ''; return; }
+            
             const [h, m] = startInput.value.split(':').map(Number);
+            
+            // Constraint: Working hours are 8 AM to 5 PM
+            if (h < 8 || h >= 17) {
+                showToast('Classes must be between 8:00 AM and 5:00 PM', true);
+                startInput.value = '';
+                endInput.value = '';
+                return;
+            }
+
+            // Constraint: 12 PM to 1 PM is for Recess
+            if (h === 12) {
+                showToast('12:00 PM - 01:00 PM is reserved for Recess', true);
+                startInput.value = '';
+                endInput.value = '';
+                return;
+            }
+
             const endH = (h + 1) % 24;
             endInput.value = String(endH).padStart(2, '0') + ':' + String(m).padStart(2, '0');
         }
@@ -1912,6 +1930,20 @@
             const day = document.getElementById('scheduleDay').value;
             const dept = document.getElementById('scheduleDepartment').value;
             const initialStartView = document.getElementById('scheduleStartTime').value;
+            const initialEndView = document.getElementById('scheduleEndTime').value;
+
+            // Final safety check on constraints
+            const [sh, sm] = initialStartView.split(':').map(Number);
+            const [eh, em] = initialEndView.split(':').map(Number);
+
+            if (sh < 8 || eh > 17) {
+                showToast('Schedule must be within 8 AM - 5 PM', true);
+                return;
+            }
+            if ((sh === 12 && sm === 0) || (eh === 13 && em === 0) || (sh < 12 && eh > 12)) {
+                showToast('12:00 PM - 1:00 PM is reserved for Recess', true);
+                return;
+            }
 
             if (currentEditingScheduleId) {
                 // UPDATE SINGLE RECORD
@@ -1923,7 +1955,7 @@
                 formData.append('subject', checkedSubjects.join(', '));
                 formData.append('class_section', dept);
                 formData.append('start_time', initialStartView);
-                formData.append('end_time', document.getElementById('scheduleEndTime').value);
+                formData.append('end_time', initialEndView);
 
                 try {
                     const res = await fetch('../backend/schedule_api.php', { method: 'POST', body: formData });
@@ -1950,8 +1982,18 @@
                 for (const sub of checkedSubjects) {
                     // Calculate 1 hour block for this subject
                     const [h, m] = currentTime.split(':').map(Number);
+                    
+                    // Skip Recess if it would hit it
+                    if (h === 12) {
+                        currentTime = "13:00"; // Bump to after recess
+                    }
+                    
                     const endH = (h + 1) % 24;
                     const nextTime = String(endH).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+
+                    // If after recess bump, re-check
+                    const [currH] = currentTime.split(':').map(Number);
+                    if (currH >= 17) break; // Out of bounds
 
                     const formData = new FormData();
                     formData.append('action', 'addSchedule');
