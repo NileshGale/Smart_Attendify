@@ -293,7 +293,6 @@
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            object-fit: cover;
             border: 3px solid rgba(255, 255, 255, .4);
             flex-shrink: 0;
             background: rgba(255, 255, 255, .2);
@@ -302,6 +301,14 @@
             justify-content: center;
             font-size: 2rem;
             font-weight: 800;
+            overflow: hidden;
+        }
+
+        .profile-overview-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
         }
 
         .profile-overview-info {
@@ -2571,7 +2578,7 @@
                         const photoOverview = document.getElementById('profilePhoto');
                         const initials = TEACHER.name.charAt(0).toUpperCase();
                         if (TEACHER.photo) {
-                            photoOverview.innerHTML = `<img src="../${TEACHER.photo}" alt="Teacher Profile" onerror="this.outerHTML='${initials}'">`;
+                            photoOverview.innerHTML = `<img src="../${TEACHER.photo}" alt="Teacher Profile" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" onerror="this.outerHTML='${initials}'">`;
                         } else {
                             photoOverview.textContent = initials;
                         }
