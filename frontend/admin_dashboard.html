@@ -1904,13 +1904,7 @@
                 return;
             }
 
-            // Constraint: 12 PM to 1 PM is for Recess
-            if (h === 12) {
-                showToast('12:00 PM - 01:00 PM is reserved for Recess', true);
-                startInput.value = '';
-                endInput.value = '';
-                return;
-            }
+
 
             const endH = (h + 1) % 24;
             endInput.value = String(endH).padStart(2, '0') + ':' + String(m).padStart(2, '0');
@@ -1940,10 +1934,7 @@
                 showToast('Schedule must be within 8 AM - 5 PM', true);
                 return;
             }
-            if ((sh === 12 && sm === 0) || (eh === 13 && em === 0) || (sh < 12 && eh > 12)) {
-                showToast('12:00 PM - 1:00 PM is reserved for Recess', true);
-                return;
-            }
+
 
             if (currentEditingScheduleId) {
                 // UPDATE SINGLE RECORD
@@ -1983,10 +1974,7 @@
                     // Calculate 1 hour block for this subject
                     const [h, m] = currentTime.split(':').map(Number);
                     
-                    // Skip Recess if it would hit it
-                    if (h === 12) {
-                        currentTime = "13:00"; // Bump to after recess
-                    }
+
                     
                     const endH = (h + 1) % 24;
                     const nextTime = String(endH).padStart(2, '0') + ':' + String(m).padStart(2, '0');
@@ -2036,7 +2024,7 @@
         }
 
         async function deleteSchedule(id) {
-            if (!confirm('Are you sure you want to delete this class?')) return;
+
 
             const params = new URLSearchParams();
             params.append('action', 'deleteSchedule');

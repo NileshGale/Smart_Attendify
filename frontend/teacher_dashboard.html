@@ -442,15 +442,7 @@
             margin-bottom: 1rem;
         }
 
-        .time-slot.recess {
-            background: linear-gradient(90deg, rgba(245, 158, 11, 0.08), rgba(245, 158, 11, 0.02));
-            border-left-color: var(--warning);
-            border-color: rgba(245, 158, 11, 0.3);
-        }
 
-        .time-slot.recess .time-slot-info {
-            margin-bottom: 0;
-        }
 
         .time-slot .time {
             font-weight: 800;
@@ -2652,66 +2644,17 @@
                     const div = document.createElement('div');
                     div.className = 'day-schedule card';
                     
-                    // Filter out any data between 12-1 PM (safety) and insert Recess
-                    const processedSlots = [];
-                    let recessAdded = false;
-
-                    // Days that typically have classes (Mon-Sat)
-                    const isAcademicDay = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].includes(day);
-
-                    slots.forEach(s => {
-                        // Check if this slot is before 12 PM
-                        if (s.time.includes('AM') || (s.time.startsWith('10:') || s.time.startsWith('11:'))) {
-                            processedSlots.push(s);
-                        } else if (s.time.startsWith('12:')) {
-                            // Skip actual classes assigned to 12 PM as per new rule
-                        } else {
-                            // Ensure recess is added before afternoon classes
-                            if (!recessAdded && isAcademicDay) {
-                                processedSlots.push({ isRecess: true });
-                                recessAdded = true;
-                            }
-                            processedSlots.push(s);
-                        }
-                    });
-
-                    // If no afternoon classes yet, ensure recess is still shown
-                    if (!recessAdded && isAcademicDay) {
-                        processedSlots.push({ isRecess: true });
-                    }
-
-                    const classCount = processedSlots.filter(s => !s.isRecess).length;
-                    
-                    let slotsHTML = '';
-                    if (processedSlots.length === 0) {
-                        slotsHTML = `<div style="text-align: center; padding: 2rem; color: var(--text-muted); font-style: italic; font-size: 0.85rem;">No Classes</div>`;
-                    } else {
-                        slotsHTML = processedSlots.map(s => {
-                            if (s.isRecess) {
-                                return `
-                                    <div class="time-slot" style="background: var(--surface); border-left: 4px solid var(--text-muted); opacity: 0.8;">
-                                        <div class="time-slot-info">
-                                            <span class="time" style="color: var(--text-muted)">12:00 PM - 01:00 PM</span>
-                                            <span class="subject" style="color: var(--text-muted); font-weight: 600; font-style: italic;">
-                                                <i class="fa-solid fa-mug-hot" style="margin-right: 0.4rem;"></i>Recess Period
-                                            </span>
-                                        </div>
-                                    </div>
-                                `;
-                            }
-                            return `
-                                <div class="time-slot">
-                                    <div class="time-slot-info">
-                                        <span class="time">${s.time}</span>
-                                        <span class="subject">${subjectLabel(s.subject)}</span>
-                                    </div>
-                                    <button class="btn-mark" onclick="markAttendanceForClass('${s.subject.replace(/'/g, "\\'")}','${s.code}','${day}','${s.time}')">Mark Attendance</button>
+                    div.innerHTML = `<h3 data-count="${slots.length} Class${slots.length !== 1 ? 'es' : ''}">${day}</h3><div class="schedule-slots">
+                        ${slots.length > 0 ? slots.map(s => `
+                            <div class="time-slot">
+                                <div class="time-slot-info">
+                                    <span class="time">${s.time}</span>
+                                    <span class="subject">${subjectLabel(s.subject)}</span>
                                 </div>
-                            `;
-                        }).join('');
-                    }
-
-                    div.innerHTML = `<h3 data-count="${classCount} Class${classCount !== 1 ? 'es' : ''}">${day}</h3><div class="schedule-slots">${slotsHTML}</div>`;
+                                <button class="btn-mark" onclick="markAttendanceForClass('${s.subject.replace(/'/g, "\\'")}','${s.code}','${day}','${s.time}')">Mark Attendance</button>
+                            </div>
+                        `).join('') : '<div style="text-align: center; padding: 2rem; color: var(--text-muted); font-style: italic; font-size: 0.85rem;">No Classes</div>'}
+                    </div>`;
                     container.appendChild(div);
                 });
 

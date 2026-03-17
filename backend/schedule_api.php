@@ -189,14 +189,7 @@ if ($action === 'addSchedule') {
         exit;
     }
 
-    // Constraint: 12 PM to 1 PM is for Recess
-    // Check if start_time or end_time falls within the 12:00 - 13:00 gap, or spans across it
-    if (($startTime >= '12:00:00' && $startTime < '13:00:00') || 
-        ($endTime > '12:00:00' && $endTime <= '13:00:00') || 
-        ($startTime < '12:00:00' && $endTime > '13:00:00')) {
-        echo json_encode(['success' => false, 'message' => '12:00 PM - 01:00 PM is reserved for Recess']);
-        exit;
-    }
+
 
     try {
         // Check for conflicts
@@ -277,13 +270,7 @@ if ($action === 'updateSchedule') {
         exit;
     }
 
-    // Constraint: 12 PM to 1 PM is for Recess
-    if (($startTime >= '12:00:00' && $startTime < '13:00:00') || 
-        ($endTime > '12:00:00' && $endTime <= '13:00:00') || 
-        ($startTime < '12:00:00' && $endTime > '13:00:00')) {
-        echo json_encode(['success' => false, 'message' => '12:00 PM - 01:00 PM is reserved for Recess']);
-        exit;
-    }
+
 
     try {
         // Check for conflicts (excluding current schedule)
