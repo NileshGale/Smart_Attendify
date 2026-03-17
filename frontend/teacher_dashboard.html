@@ -2033,7 +2033,7 @@
                     </div>
                     <div class="code-panel-body">
                         <p style="color:var(--text-muted);font-size:.875rem;margin-bottom:.5rem">Share this code with
-                            students. It expires in <strong>5 minutes</strong>.</p>
+                            students. It expires in <strong>50 seconds</strong>.</p>
 
                         <!-- Location Lock Toggle -->
                         <div id="geoLockSection" style="background:linear-gradient(135deg, rgba(0,188,212,.06), rgba(124,58,237,.06)); border:1px solid rgba(0,188,212,.15); border-radius:12px; padding:.875rem 1rem; margin-bottom:1rem;">
@@ -2046,21 +2046,21 @@
                                     </div>
                                 </div>
                                 <label style="position:relative; display:inline-block; width:44px; height:24px; cursor:pointer;">
-                                    <input type="checkbox" id="geoLockToggle" onchange="toggleGeoLock()" style="opacity:0; width:0; height:0;">
-                                    <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:24px;transition:.3s;"></span>
-                                    <span id="geoLockSlider" style="position:absolute;content:'';height:18px;width:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
+                                    <input type="checkbox" id="geoLockToggle" onchange="toggleGeoLock()" checked style="opacity:0; width:0; height:0;">
+                                    <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--primary-cyan);border-radius:24px;transition:.3s;"></span>
+                                    <span id="geoLockSlider" style="position:absolute;content:'';height:18px;width:18px;left:23px;bottom:3px;background:white;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
                                 </label>
                             </div>
-                            <div id="geoLockOptions" style="display:none; margin-top:.75rem; padding-top:.75rem; border-top:1px solid rgba(0,188,212,.1);">
+                            <div id="geoLockOptions" style="display:block; margin-top:.75rem; padding-top:.75rem; border-top:1px solid rgba(0,188,212,.1);">
                                 <div style="font-size:.75rem; font-weight:600; color:var(--text-muted); margin-bottom:.5rem;">Max Distance:</div>
                                 <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
-                                    <button class="geo-preset-btn" onclick="setGeoDistance(50, this)" style="padding:.35rem .75rem; border:1px solid var(--border); border-radius:8px; background:var(--surface); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--text-dark);">🏫 Classroom (50m)</button>
-                                    <button class="geo-preset-btn active" onclick="setGeoDistance(100, this)" style="padding:.35rem .75rem; border:1px solid var(--primary-cyan); border-radius:8px; background:rgba(0,188,212,.1); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--primary-cyan);">🏢 Building (100m)</button>
+                                    <button class="geo-preset-btn active" onclick="setGeoDistance(50, this)" style="padding:.35rem .75rem; border:1px solid var(--primary-cyan); border-radius:8px; background:rgba(0,188,212,.1); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--primary-cyan);">🏫 Classroom (50m)</button>
+                                    <button class="geo-preset-btn" onclick="setGeoDistance(100, this)" style="padding:.35rem .75rem; border:1px solid var(--border); border-radius:8px; background:var(--surface); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--text-dark);">🏢 Building (100m)</button>
                                     <button class="geo-preset-btn" onclick="setGeoDistance(300, this)" style="padding:.35rem .75rem; border:1px solid var(--border); border-radius:8px; background:var(--surface); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--text-dark);">🏟️ Campus (300m)</button>
                                 </div>
                                 <div style="margin-top:.5rem; display:flex; align-items:center; gap:.5rem;">
-                                    <input type="range" id="geoDistanceSlider" min="10" max="500" value="100" step="10" oninput="updateGeoDistanceLabel()" style="flex:1; accent-color:var(--primary-cyan);">
-                                    <span id="geoDistanceLabel" style="font-size:.8rem; font-weight:700; color:var(--primary-cyan); min-width:50px; text-align:right;">100m</span>
+                                    <input type="range" id="geoDistanceSlider" min="10" max="500" value="50" step="10" oninput="updateGeoDistanceLabel()" style="flex:1; accent-color:var(--primary-cyan);">
+                                    <span id="geoDistanceLabel" style="font-size:.8rem; font-weight:700; color:var(--primary-cyan); min-width:50px; text-align:right;">50m</span>
                                 </div>
                                 <div id="geoStatus" style="font-size:.72rem; color:var(--text-muted); margin-top:.4rem;"></div>
                             </div>
@@ -2076,7 +2076,7 @@
                                     id="codeTeacher"></span></div>
                             <div class="code-info-chip" id="geoLockBadge" style="display:none; background:rgba(0,188,212,.1); color:var(--primary-cyan); border-color:rgba(0,188,212,.3);"><i class="fa-solid fa-location-dot"></i> <span id="geoLockBadgeText">📍 Locked 100m</span></div>
                         </div>
-                        <div class="code-timer" id="codeTimer">00:15</div>
+                        <div class="code-timer" id="codeTimer">00:50</div>
                         <div style="display:flex; align-items:center; gap:10px; justify-content:center; margin-top:0.5rem">
                             <button class="btn-regenerate" id="btnRegenerateCode" onclick="generateUniqueCode()"> Regenerate Code</button>
                             <div id="codeLimitIndicator" style="font-size:0.75rem; color:var(--text-muted); font-weight:600"></div>
@@ -2888,8 +2888,8 @@
         }
 
         // ─── GEO LOCK HELPERS ───
-        let geoLockEnabled = false;
-        let geoMaxDistance = 100; // default meters
+        let geoLockEnabled = true; // Auto-enabled
+        let geoMaxDistance = 50; // default 50m (Classroom)
 
         function toggleGeoLock() {
             const toggle = document.getElementById('geoLockToggle');
@@ -2964,7 +2964,7 @@
 
             // Internal function to actually call the API
             function doGenerate(lat, lng, maxDist) {
-                let bodyStr = `action=generateUniqueCode&subject_name=${encodeURIComponent(currentSubject)}&validity_seconds=300`;
+                let bodyStr = `action=generateUniqueCode&subject_name=${encodeURIComponent(currentSubject)}&validity_seconds=50`;
                 if (lat !== null && lng !== null && maxDist !== null) {
                     bodyStr += `&teacher_lat=${lat}&teacher_lng=${lng}&max_distance_meters=${maxDist}`;
                 }

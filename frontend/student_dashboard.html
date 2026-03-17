@@ -1309,19 +1309,31 @@
                         teacher</h3>
                     <p style="color:var(--text-muted);font-size:.875rem;margin-bottom:1.5rem">Your teacher will display
                         a unique alphanumeric code. Enter it below</p>
-                    <div class="card">
-                        <div class="input-group">
-                            <label>Select Subject</label>
-                            <select id="codeSubjectSelect">
-                                <option value="">-- Loading Subjects --</option>
-                            </select>
+                        <!-- Location Permission Banner -->
+                        <div id="geoBlocker" style="margin-bottom:1.5rem; padding:1.25rem; background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.2); border-radius:12px; display:none;">
+                            <div style="font-size:2rem; color:#ef4444; margin-bottom:.5rem;"><i class="fa-solid fa-location-dot"></i></div>
+                            <h4 style="color:#b91c1c; font-weight:800; margin-bottom:.25rem;">Location Access Required</h4>
+                            <p style="font-size:.825rem; color:#ef4444; line-height:1.4;">Attendance codes are 📍 location-locked. You must grant location permission to mark attendance.</p>
+                            <button onclick="requestGeoPermission()" class="btn-primary" style="margin-top:1rem; padding:.5rem 1rem; font-size:.75rem; background:#ef4444;">Grant Permission</button>
                         </div>
-                        <input type="text" class="code-input" id="attendanceCodeInput" maxlength="8"
-                            placeholder="A1B2C3D" autocomplete="off">
-                        <div id="codeStatus" class="code-status"></div>
-                        <button class="btn-submit-code" onclick="submitAttendanceCode()"><i
-                                class="fa-solid fa-check-circle"></i> Submit Attendance</button>
-                    </div>
+                        <div id="geoSuccess" style="margin-bottom:1.5rem; padding:.75rem; background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.2); border-radius:12px; display:none; align-items:center; gap:.5rem; justify-content:center;">
+                            <i class="fa-solid fa-circle-check" style="color:#22c55e;"></i>
+                            <span style="font-size:.825rem; font-weight:600; color:#166534;">Location access granted</span>
+                        </div>
+
+                        <div class="card" id="codeFormCard">
+                            <div class="input-group">
+                                <label>Select Subject</label>
+                                <select id="codeSubjectSelect">
+                                    <option value="">-- Loading Subjects --</option>
+                                </select>
+                            </div>
+                            <input type="text" class="code-input" id="attendanceCodeInput" maxlength="8"
+                                placeholder="A1B2C3D" autocomplete="off" disabled>
+                            <div id="codeStatus" class="code-status"></div>
+                            <button class="btn-submit-code" id="btnSubmitAttendance" onclick="submitAttendanceCode()" disabled><i
+                                    class="fa-solid fa-check-circle"></i> Submit Attendance</button>
+                        </div>
                 </div>
             </div>
 
@@ -1470,6 +1482,29 @@
         </div>
     </div>
 
+    <!-- LOCATION PERMISSION MODAL -->
+    <div class="modal" id="geoPermissionModal">
+        <div class="modal-content" style="text-align:center; max-width:400px;">
+            <div style="font-size:3.5rem; color:var(--primary-cyan); margin-bottom:1rem;">
+                <i class="fa-solid fa-location-crosshairs fa-beat-low" style="--fa-animation-duration: 3s;"></i>
+            </div>
+            <h2 style="margin-bottom:1rem;">Location Access Required</h2>
+            <p style="color:var(--text-muted); font-size:.9rem; line-height:1.6; margin-bottom:1.5rem;">
+                To prevent attendance fraud, this system uses 📍 <strong>Geo-Fencing</strong>. You must share your live location to mark attendance for this lecture.
+            </p>
+            <div style="background:var(--bg-light); padding:1rem; border-radius:12px; margin-bottom:1.5rem; text-align:left; border:1px solid var(--border);">
+                <div style="font-size:.75rem; color:var(--text-muted); display:flex; gap:8px; align-items:flex-start;">
+                    <i class="fa-solid fa-shield-halved" style="margin-top:3px; color:var(--success);"></i>
+                    <span>Your location is only captured at the moment of submission to verify you are in the classroom.</span>
+                </div>
+            </div>
+            <button onclick="requestGeoPermission(true)" class="btn-primary" style="width:100%; padding:.875rem; font-size:1rem; display:flex; align-items:center; justify-content:center; gap:10px;">
+                <i class="fa-solid fa-location-arrow"></i> Allow Location Access
+            </button>
+            <button onclick="closeGeoModal()" style="background:none; border:none; color:var(--text-muted); font-size:.85rem; margin-top:1rem; cursor:pointer; text-decoration:underline;">I'll do it later</button>
+        </div>
+    </div>
+
     <div id="toast"><span id="toastIcon"><i class="fa-solid fa-check-circle"></i></span><span
             id="toastText">Success</span></div>
 
@@ -1497,6 +1532,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadUserInfo();
             generateQRCode(); // Uses session data first
+            checkGeoPermissionInit();
 
             // Fetch real user profile and analytics from API
             fetch('../backend/user_api.php?action=getMyProfile')
@@ -1664,7 +1700,21 @@
             if (el) el.classList.add('active');
             if (name === 'analytics') setTimeout(renderStudentCharts, 100);
             if (name === 'history') setTimeout(renderHistory, 100);
+            
+            // Auto-popup location modal if permission not yet granted
+            if (name === 'enterCode' && localStorage.getItem('geoGranted') !== 'true') {
+                showGeoModal();
+            }
+            
             closeSidebar();
+        }
+
+        function showGeoModal() {
+            document.getElementById('geoPermissionModal').style.display = 'flex';
+        }
+
+        function closeGeoModal() {
+            document.getElementById('geoPermissionModal').style.display = 'none';
         }
 
         // ── OVERVIEW ─────────────────────────────────────────────────────────────────
@@ -1768,16 +1818,141 @@
                     .catch(() => showStatus('Network error — please try again', false));
             }
             
-            // Try to get GPS (timeout 8s), fallback to no-GPS submission
+            // Try to get GPS (timeout 8s), strict enforcement
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (pos) => doSubmitCode(pos.coords.latitude, pos.coords.longitude),
-                    () => doSubmitCode(null, null), // GPS denied — submit without coordinates
+                    (err) => {
+                        showStatus('<i class="fa-solid fa-triangle-exclamation"></i> GPS Required: ' + err.message, false);
+                        checkGeoPermissionInit(); // Re-check and block if needed
+                    },
                     { enableHighAccuracy: true, timeout: 8000 }
                 );
             } else {
-                doSubmitCode(null, null);
+                showStatus('Geolocation is not supported by your browser', false);
             }
+        }
+
+        // ── GEO PERMISSION HELPERS ──
+        function checkGeoPermissionInit() {
+            if (!navigator.geolocation) {
+                handlePermissionStatus('unsupported');
+                return;
+            }
+            
+            // SECURITY CHECK: Geolocation requires HTTPS or localhost
+            if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                handlePermissionStatus('insecure');
+                return;
+            }
+            
+            if (navigator.permissions && navigator.permissions.query) {
+                navigator.permissions.query({name:'geolocation'})
+                    .then(status => {
+                        handlePermissionStatus(status.state);
+                        status.onchange = () => handlePermissionStatus(status.state);
+                    })
+                    .catch(() => {
+                        // Fallback if query fails
+                        navigator.geolocation.getCurrentPosition(
+                            () => handlePermissionStatus('granted'),
+                            () => handlePermissionStatus('prompt'),
+                            { timeout: 2000, enableHighAccuracy: false }
+                        );
+                    });
+            } else {
+                navigator.geolocation.getCurrentPosition(
+                    () => handlePermissionStatus('granted'),
+                    () => handlePermissionStatus('prompt'),
+                    { timeout: 2000, enableHighAccuracy: false }
+                );
+            }
+        }
+
+        function handlePermissionStatus(state) {
+            const blocker = document.getElementById('geoBlocker');
+            const success = document.getElementById('geoSuccess');
+            const input = document.getElementById('attendanceCodeInput');
+            const btn = document.getElementById('btnSubmitAttendance');
+            const card = document.getElementById('codeFormCard');
+            
+            // Update blocker UI based on specific states
+            if (state === 'granted') {
+                localStorage.setItem('geoGranted', 'true');
+                closeGeoModal();
+                blocker.style.display = 'none';
+                success.style.display = 'flex';
+                input.disabled = false;
+                btn.disabled = false;
+                card.style.opacity = '1';
+                card.style.pointerEvents = 'auto';
+            } else {
+                localStorage.removeItem('geoGranted');
+                blocker.style.display = 'block';
+                success.style.display = 'none';
+                input.disabled = true;
+                btn.disabled = true;
+                card.style.opacity = '0.5';
+                card.style.pointerEvents = 'none';
+                
+                const blockerTitle = blocker.querySelector('h4');
+                const blockerText = blocker.querySelector('p');
+                const blockerBtn = blocker.querySelector('button');
+
+                if (state === 'denied') {
+                    blockerTitle.textContent = 'Location Blocked';
+                    blockerText.innerHTML = 'You have blocked location access. Please click the 🔒 <strong>Lock Icon</strong> in your browser address bar and <strong>Allow</strong> location.';
+                    blockerBtn.style.display = 'none';
+                } else if (state === 'insecure') {
+                    blockerTitle.textContent = 'Insecure Connection';
+                    blockerText.innerHTML = 'Browser blocks location on HTTP. Please use <strong>HTTPS://</strong> to access the dashboard.';
+                    blockerBtn.style.display = 'none';
+                } else if (state === 'unsupported') {
+                    blockerTitle.textContent = 'Not Supported';
+                    blockerText.textContent = 'Your browser does not support geolocation.';
+                    blockerBtn.style.display = 'none';
+                } else {
+                    blockerTitle.textContent = 'Location Access Required';
+                    blockerText.textContent = 'Attendance codes are 📍 location-locked. You must grant location permission to mark attendance.';
+                    blockerBtn.style.display = 'inline-block';
+                }
+            }
+        }
+
+        function requestGeoPermission(isFromModal = false) {
+            // Check protocol first
+            if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                showStatus('<i class="fa-solid fa-lock"></i> HTTPS Required for Location', false);
+                handlePermissionStatus('insecure');
+                return;
+            }
+
+            showStatus('<i class="fa-solid fa-compass fa-spin"></i> Requesting GPS access…', true);
+            
+            const options = { 
+                enableHighAccuracy: true, 
+                timeout: 10000, // 10s for laptops
+                maximumAge: 0 
+            };
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    handlePermissionStatus('granted');
+                    showStatus('<i class="fa-solid fa-circle-check"></i> Permission granted', true);
+                    if (isFromModal) closeGeoModal();
+                },
+                (err) => {
+                    let msg = 'Error: ' + err.message;
+                    if (err.code === 1) {
+                        msg = 'Permission Denied. Please check browser settings.';
+                        handlePermissionStatus('denied');
+                    } else if (err.code === 3) {
+                        msg = 'Location Timeout. Try again near a window.';
+                    }
+                    showStatus('<i class="fa-solid fa-triangle-exclamation"></i> ' + msg, false);
+                },
+                options
+            );
         }
         function showStatus(msg, ok) {
             const el = document.getElementById('codeStatus');
