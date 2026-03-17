@@ -1904,9 +1904,9 @@
                 return;
             }
 
-            // Constraint: 12 PM to 12:59 PM is for Recess
+            // Constraint: 12 PM to 1 PM is for Recess
             if (h === 12) {
-                showToast('12:00 PM - 12:59 PM is reserved for Recess', true);
+                showToast('12:00 PM - 01:00 PM is reserved for Recess', true);
                 startInput.value = '';
                 endInput.value = '';
                 return;
@@ -1940,8 +1940,8 @@
                 showToast('Schedule must be within 8 AM - 5 PM', true);
                 return;
             }
-            if ((sh === 12 && sm === 0) || (sh < 12 && eh > 12)) {
-                showToast('12:00 PM - 12:59 PM is reserved for Recess', true);
+            if ((sh === 12 && sm === 0) || (eh === 13 && em === 0) || (sh < 12 && eh > 12)) {
+                showToast('12:00 PM - 1:00 PM is reserved for Recess', true);
                 return;
             }
 
@@ -1981,11 +1981,10 @@
 
                 for (const sub of checkedSubjects) {
                     // Calculate 1 hour block for this subject
-                    let [h, m] = currentTime.split(':').map(Number);
+                    const [h, m] = currentTime.split(':').map(Number);
                     
                     // Skip Recess if it would hit it
                     if (h === 12) {
-                        h = 13;
                         currentTime = "13:00"; // Bump to after recess
                     }
                     
@@ -1993,7 +1992,8 @@
                     const nextTime = String(endH).padStart(2, '0') + ':' + String(m).padStart(2, '0');
 
                     // If after recess bump, re-check
-                    if (h >= 17) break; // Out of bounds
+                    const [currH] = currentTime.split(':').map(Number);
+                    if (currH >= 17) break; // Out of bounds
 
                     const formData = new FormData();
                     formData.append('action', 'addSchedule');
