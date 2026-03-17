@@ -1736,20 +1736,48 @@
             }
 
             // For all subjects (including when none selected), use attendance_api
-            fetch('../backend/attendance_api.php', {
-                method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `action=markByUniqueCode&unique_code=${encodeURIComponent(code)}`
-            })
-                .then(r => r.json())
-                .then(d => {
-                    if (d.success) {
-                        showStatus('<i class="fa-solid fa-check-circle"></i> ' + d.message, true);
-                        document.getElementById('attendanceCodeInput').value = '';
-                    } else {
-                        showStatus(d.message || 'Invalid or expired code', false);
-                    }
+            // First attempt to get student's GPS for geo-locked codes
+            showStatus('<i class="fa-solid fa-spinner fa-spin"></i> Verifying location & submitting…', true);
+            
+            function doSubmitCode(lat, lng) {
+                let bodyStr = `action=markByUniqueCode&unique_code=${encodeURIComponent(code)}`;
+                if (lat !== null && lng !== null) {
+                    bodyStr += `&student_lat=${lat}&student_lng=${lng}`;
+                }
+                
+                fetch('../backend/attendance_api.php', {
+                    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: bodyStr
                 })
-                .catch(() => showStatus('Network error — please try again', false));
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d.success) {
+                            showStatus('<i class="fa-solid fa-check-circle"></i> ' + d.message, true);
+                            document.getElementById('attendanceCodeInput').value = '';
+                        } else {
+                            // Show geo-specific error icons
+                            if (d.geo_rejected) {
+                                showStatus('<i class="fa-solid fa-location-dot"></i> ' + d.message, false);
+                            } else if (d.geo_required) {
+                                showStatus('<i class="fa-solid fa-location-crosshairs"></i> ' + d.message, false);
+                            } else {
+                                showStatus(d.message || 'Invalid or expired code', false);
+                            }
+                        }
+                    })
+                    .catch(() => showStatus('Network error — please try again', false));
+            }
+            
+            // Try to get GPS (timeout 8s), fallback to no-GPS submission
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => doSubmitCode(pos.coords.latitude, pos.coords.longitude),
+                    () => doSubmitCode(null, null), // GPS denied — submit without coordinates
+                    { enableHighAccuracy: true, timeout: 8000 }
+                );
+            } else {
+                doSubmitCode(null, null);
+            }
         }
         function showStatus(msg, ok) {
             const el = document.getElementById('codeStatus');

@@ -21,12 +21,37 @@ try {
             subject_name VARCHAR(255) NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             expires_at DATETIME NOT NULL,
+            teacher_lat DECIMAL(10,7) DEFAULT NULL,
+            teacher_lng DECIMAL(10,7) DEFAULT NULL,
+            max_distance_meters INT DEFAULT NULL,
             INDEX idx_code (code),
             INDEX idx_teacher (teacher_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     ");
+    // Add geo columns if table already exists without them
+    try {
+        $pdo->exec("ALTER TABLE attendance_codes ADD COLUMN teacher_lat DECIMAL(10,7) DEFAULT NULL");
+        $pdo->exec("ALTER TABLE attendance_codes ADD COLUMN teacher_lng DECIMAL(10,7) DEFAULT NULL");
+        $pdo->exec("ALTER TABLE attendance_codes ADD COLUMN max_distance_meters INT DEFAULT NULL");
+    } catch (PDOException $ignore) {
+        // Columns already exist
+    }
 } catch (PDOException $e) {
     // Table likely already exists, continue
+}
+
+// ============================================================================
+// HAVERSINE DISTANCE HELPER (returns distance in meters)
+// ============================================================================
+function haversineDistance($lat1, $lng1, $lat2, $lng2) {
+    $earthRadius = 6371000; // meters
+    $dLat = deg2rad($lat2 - $lat1);
+    $dLng = deg2rad($lng2 - $lng1);
+    $a = sin($dLat / 2) * sin($dLat / 2) +
+         cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+         sin($dLng / 2) * sin($dLng / 2);
+    $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+    return $earthRadius * $c;
 }
 
 // ============================================================================
@@ -38,6 +63,11 @@ if ($action === 'generateUniqueCode') {
     $teacherId = $_SESSION['user_id'];
     $subjectName = sanitize($_POST['subject_name'] ?? '');
     $validitySeconds = intval($_POST['validity_seconds'] ?? 15);
+    
+    // Geolocation params (optional)
+    $teacherLat = isset($_POST['teacher_lat']) && $_POST['teacher_lat'] !== '' ? floatval($_POST['teacher_lat']) : null;
+    $teacherLng = isset($_POST['teacher_lng']) && $_POST['teacher_lng'] !== '' ? floatval($_POST['teacher_lng']) : null;
+    $maxDistance = isset($_POST['max_distance_meters']) && $_POST['max_distance_meters'] !== '' ? intval($_POST['max_distance_meters']) : null;
     
     if (!$subjectName) {
         echo json_encode(['success' => false, 'message' => 'Subject name required']);
@@ -72,10 +102,10 @@ if ($action === 'generateUniqueCode') {
         
         // Calculate expiry entirely in DB to avoid PHP/MySQL timezone mismatches
         $stmt = $pdo->prepare("
-            INSERT INTO attendance_codes (code, teacher_id, subject_name, expires_at)
-            VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND))
+            INSERT INTO attendance_codes (code, teacher_id, subject_name, expires_at, teacher_lat, teacher_lng, max_distance_meters)
+            VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND), ?, ?, ?)
         ");
-        $stmt->execute([$code, $teacherId, $subjectName, $validitySeconds]);
+        $stmt->execute([$code, $teacherId, $subjectName, $validitySeconds, $teacherLat, $teacherLng, $maxDistance]);
         
         // Fetch the exact DB-assigned expiration time back
         $stmt = $pdo->prepare("SELECT expires_at FROM attendance_codes WHERE code = ? ORDER BY id DESC LIMIT 1");
@@ -87,7 +117,9 @@ if ($action === 'generateUniqueCode') {
             'unique_code' => $code,
             'expires_at' => $expiresAt,
             'validity_seconds' => $validitySeconds,
-            'codes_generated_today' => $countToday + 1
+            'codes_generated_today' => $countToday + 1,
+            'geo_locked' => ($teacherLat !== null && $maxDistance !== null),
+            'max_distance_meters' => $maxDistance
         ]);
         
     } catch (PDOException $e) {
@@ -120,10 +152,14 @@ if ($action === 'markByUniqueCode') {
         exit;
     }
     
+    // Student geolocation (optional)
+    $studentLat = isset($_POST['student_lat']) && $_POST['student_lat'] !== '' ? floatval($_POST['student_lat']) : null;
+    $studentLng = isset($_POST['student_lng']) && $_POST['student_lng'] !== '' ? floatval($_POST['student_lng']) : null;
+    
     try {
         // Find the code and check if it's still valid
         $stmt = $pdo->prepare("
-            SELECT id, code, teacher_id, subject_name, expires_at
+            SELECT id, code, teacher_id, subject_name, expires_at, teacher_lat, teacher_lng, max_distance_meters
             FROM attendance_codes
             WHERE code = ? AND expires_at > NOW()
             ORDER BY created_at DESC
@@ -135,6 +171,36 @@ if ($action === 'markByUniqueCode') {
         if (!$codeRecord) {
             echo json_encode(['success' => false, 'message' => 'Invalid or expired code']);
             exit;
+        }
+        
+        // Geolocation proximity check
+        if ($codeRecord['teacher_lat'] !== null && $codeRecord['max_distance_meters'] !== null) {
+            if ($studentLat === null || $studentLng === null) {
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'This code requires location access. Please enable GPS/location in your browser and try again.',
+                    'geo_required' => true
+                ]);
+                exit;
+            }
+            
+            $distance = haversineDistance(
+                $codeRecord['teacher_lat'], $codeRecord['teacher_lng'],
+                $studentLat, $studentLng
+            );
+            $maxDist = intval($codeRecord['max_distance_meters']);
+            
+            if ($distance > $maxDist) {
+                $distRounded = round($distance);
+                echo json_encode([
+                    'success' => false, 
+                    'message' => "You are {$distRounded}m away from the classroom. Maximum allowed distance: {$maxDist}m. Please move closer and try again.",
+                    'geo_rejected' => true,
+                    'distance' => $distRounded,
+                    'max_distance' => $maxDist
+                ]);
+                exit;
+            }
         }
         
         // Check if student already marked attendance for this subject today (any method)

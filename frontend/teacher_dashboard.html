@@ -2027,6 +2027,38 @@
                     <div class="code-panel-body">
                         <p style="color:var(--text-muted);font-size:.875rem;margin-bottom:.5rem">Share this code with
                             students. It expires in <strong>5 minutes</strong>.</p>
+
+                        <!-- Location Lock Toggle -->
+                        <div id="geoLockSection" style="background:linear-gradient(135deg, rgba(0,188,212,.06), rgba(124,58,237,.06)); border:1px solid rgba(0,188,212,.15); border-radius:12px; padding:.875rem 1rem; margin-bottom:1rem;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:.75rem; flex-wrap:wrap;">
+                                <div style="display:flex; align-items:center; gap:.5rem;">
+                                    <i class="fa-solid fa-location-dot" style="color:var(--primary-cyan); font-size:1rem;"></i>
+                                    <div>
+                                        <div style="font-weight:700; font-size:.85rem; color:var(--navy-dark);">Location Lock</div>
+                                        <div style="font-size:.7rem; color:var(--text-muted);">Restrict to nearby students only</div>
+                                    </div>
+                                </div>
+                                <label style="position:relative; display:inline-block; width:44px; height:24px; cursor:pointer;">
+                                    <input type="checkbox" id="geoLockToggle" onchange="toggleGeoLock()" style="opacity:0; width:0; height:0;">
+                                    <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:24px;transition:.3s;"></span>
+                                    <span id="geoLockSlider" style="position:absolute;content:'';height:18px;width:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
+                                </label>
+                            </div>
+                            <div id="geoLockOptions" style="display:none; margin-top:.75rem; padding-top:.75rem; border-top:1px solid rgba(0,188,212,.1);">
+                                <div style="font-size:.75rem; font-weight:600; color:var(--text-muted); margin-bottom:.5rem;">Max Distance:</div>
+                                <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+                                    <button class="geo-preset-btn" onclick="setGeoDistance(50, this)" style="padding:.35rem .75rem; border:1px solid var(--border); border-radius:8px; background:var(--surface); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--text-dark);">🏫 Classroom (50m)</button>
+                                    <button class="geo-preset-btn active" onclick="setGeoDistance(100, this)" style="padding:.35rem .75rem; border:1px solid var(--primary-cyan); border-radius:8px; background:rgba(0,188,212,.1); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--primary-cyan);">🏢 Building (100m)</button>
+                                    <button class="geo-preset-btn" onclick="setGeoDistance(300, this)" style="padding:.35rem .75rem; border:1px solid var(--border); border-radius:8px; background:var(--surface); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--text-dark);">🏟️ Campus (300m)</button>
+                                </div>
+                                <div style="margin-top:.5rem; display:flex; align-items:center; gap:.5rem;">
+                                    <input type="range" id="geoDistanceSlider" min="10" max="500" value="100" step="10" oninput="updateGeoDistanceLabel()" style="flex:1; accent-color:var(--primary-cyan);">
+                                    <span id="geoDistanceLabel" style="font-size:.8rem; font-weight:700; color:var(--primary-cyan); min-width:50px; text-align:right;">100m</span>
+                                </div>
+                                <div id="geoStatus" style="font-size:.72rem; color:var(--text-muted); margin-top:.4rem;"></div>
+                            </div>
+                        </div>
+
                         <div class="generated-code" id="generatedCode">------</div>
                         <div class="code-info">
                             <div class="code-info-chip"><i class="fa-regular fa-calendar-days"></i> <span
@@ -2035,6 +2067,7 @@
                             </div>
                             <div class="code-info-chip"><i class="fa-solid fa-user"></i> Teacher: <span
                                     id="codeTeacher"></span></div>
+                            <div class="code-info-chip" id="geoLockBadge" style="display:none; background:rgba(0,188,212,.1); color:var(--primary-cyan); border-color:rgba(0,188,212,.3);"><i class="fa-solid fa-location-dot"></i> <span id="geoLockBadgeText">📍 Locked 100m</span></div>
                         </div>
                         <div class="code-timer" id="codeTimer">00:15</div>
                         <div style="display:flex; align-items:center; gap:10px; justify-content:center; margin-top:0.5rem">
@@ -2847,6 +2880,68 @@
             }
         }
 
+        // ─── GEO LOCK HELPERS ───
+        let geoLockEnabled = false;
+        let geoMaxDistance = 100; // default meters
+
+        function toggleGeoLock() {
+            const toggle = document.getElementById('geoLockToggle');
+            const options = document.getElementById('geoLockOptions');
+            const slider = document.getElementById('geoLockSlider');
+            const toggleBg = toggle.previousElementSibling;
+            geoLockEnabled = toggle.checked;
+            options.style.display = geoLockEnabled ? 'block' : 'none';
+            toggleBg.style.background = geoLockEnabled ? 'var(--primary-cyan)' : '#ccc';
+            slider.style.left = geoLockEnabled ? '23px' : '3px';
+
+            if (geoLockEnabled) {
+                document.getElementById('geoStatus').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking GPS access…';
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        document.getElementById('geoStatus').innerHTML = '<i class="fa-solid fa-circle-check" style="color:var(--success)"></i> GPS ready — your location will be captured when you generate the code';
+                    },
+                    (err) => {
+                        document.getElementById('geoStatus').innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:var(--warning)"></i> GPS not available: ' + err.message + '. Location lock will NOT be applied.';
+                        geoLockEnabled = false;
+                        toggle.checked = false;
+                        toggleBg.style.background = '#ccc';
+                        slider.style.left = '3px';
+                        options.style.display = 'none';
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            }
+        }
+
+        function setGeoDistance(meters, btn) {
+            geoMaxDistance = meters;
+            document.getElementById('geoDistanceSlider').value = meters;
+            document.getElementById('geoDistanceLabel').textContent = meters + 'm';
+            // Update active preset button styling
+            document.querySelectorAll('.geo-preset-btn').forEach(b => {
+                b.style.border = '1px solid var(--border)';
+                b.style.background = 'var(--surface)';
+                b.style.color = 'var(--text-dark)';
+            });
+            if (btn) {
+                btn.style.border = '1px solid var(--primary-cyan)';
+                btn.style.background = 'rgba(0,188,212,.1)';
+                btn.style.color = 'var(--primary-cyan)';
+            }
+        }
+
+        function updateGeoDistanceLabel() {
+            const val = document.getElementById('geoDistanceSlider').value;
+            geoMaxDistance = parseInt(val);
+            document.getElementById('geoDistanceLabel').textContent = val + 'm';
+            // Deselect preset buttons
+            document.querySelectorAll('.geo-preset-btn').forEach(b => {
+                b.style.border = '1px solid var(--border)';
+                b.style.background = 'var(--surface)';
+                b.style.color = 'var(--text-dark)';
+            });
+        }
+
         // ─── UNIQUE CODE ───
         let activeCode = '', codeTimerInterval = null, codeExpiry = null;
         let codePollInterval = null;
@@ -2858,75 +2953,107 @@
 
             document.getElementById('generatedCode').textContent = '···';
             document.getElementById('submissionList').innerHTML = '';
+            document.getElementById('geoLockBadge').style.display = 'none';
 
-            // Call backend to generate and store the code (5 minute validity)
-            fetch('../backend/attendance_api.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `action=generateUniqueCode&subject_name=${encodeURIComponent(currentSubject)}&validity_seconds=300`
-            })
-                .then(r => r.json())
-                .then(data => {
-                    if (!data.success) { 
-                        showToast(data.message || 'Failed to generate code', true); 
-                        if (data.message && data.message.includes('Daily limit reached')) {
-                            const limitInd = document.getElementById('codeLimitIndicator');
-                            const regenBtn = document.getElementById('btnRegenerateCode');
+            // Internal function to actually call the API
+            function doGenerate(lat, lng, maxDist) {
+                let bodyStr = `action=generateUniqueCode&subject_name=${encodeURIComponent(currentSubject)}&validity_seconds=300`;
+                if (lat !== null && lng !== null && maxDist !== null) {
+                    bodyStr += `&teacher_lat=${lat}&teacher_lng=${lng}&max_distance_meters=${maxDist}`;
+                }
+
+                fetch('../backend/attendance_api.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: bodyStr
+                })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.success) { 
+                            showToast(data.message || 'Failed to generate code', true); 
+                            if (data.message && data.message.includes('Daily limit reached')) {
+                                const limitInd = document.getElementById('codeLimitIndicator');
+                                const regenBtn = document.getElementById('btnRegenerateCode');
+                                limitInd.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Limit reached. Back to tomorrow's lecture.`;
+                                limitInd.style.color = 'var(--error)';
+                                regenBtn.disabled = true;
+                                regenBtn.style.opacity = '0.5';
+                            }
+                            return; 
+                        }
+
+                        activeCode = data.unique_code;
+                        pollCode = data.unique_code;
+                        document.getElementById('generatedCode').textContent = activeCode;
+                        document.getElementById('codeTime').textContent = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+                        document.getElementById('codeTimer').classList.remove('expired');
+
+                        // Show geo-lock badge
+                        if (data.geo_locked) {
+                            document.getElementById('geoLockBadge').style.display = 'inline-flex';
+                            document.getElementById('geoLockBadgeText').textContent = '📍 Locked ' + data.max_distance_meters + 'm';
+                            showToast('<i class="fa-solid fa-key"></i> Code generated with 📍 location lock (' + data.max_distance_meters + 'm): ' + activeCode);
+                        } else {
+                            showToast('<i class="fa-solid fa-key"></i> New code generated: ' + activeCode);
+                        }
+
+                        // Update limit indicator
+                        const limitInd = document.getElementById('codeLimitIndicator');
+                        const regenBtn = document.getElementById('btnRegenerateCode');
+                        const countToday = data.codes_generated_today || 1;
+                        const left = 3 - countToday;
+                        
+                        if (left > 0) {
+                            limitInd.innerHTML = `<span style="color:var(--primary-cyan)">${left}</span> refreshes left today`;
+                            limitInd.style.color = 'var(--text-muted)';
+                            regenBtn.disabled = false;
+                            regenBtn.style.opacity = '1';
+                        } else {
                             limitInd.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Limit reached. Back to tomorrow's lecture.`;
                             limitInd.style.color = 'var(--error)';
                             regenBtn.disabled = true;
                             regenBtn.style.opacity = '0.5';
+                            regenBtn.title = "Daily limit reached for this subject";
                         }
-                        return; 
-                    }
 
-                    activeCode = data.unique_code;
-                    pollCode = data.unique_code; // Keep for polling even after expiry
-                    document.getElementById('generatedCode').textContent = activeCode;
-                    document.getElementById('codeTime').textContent = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-                    document.getElementById('codeTimer').classList.remove('expired');
-                    showToast('<i class="fa-solid fa-key"></i> New code generated: ' + activeCode);
+                        // Start countdown
+                        let seconds = data.validity_seconds || 300;
+                        updateCodeTimer(seconds);
+                        codeTimerInterval = setInterval(() => {
+                            seconds--;
+                            if (seconds <= 0) {
+                                clearInterval(codeTimerInterval);
+                                document.getElementById('codeTimer').textContent = 'EXPIRED';
+                                document.getElementById('codeTimer').classList.add('expired');
+                                activeCode = '';
+                            } else {
+                                updateCodeTimer(seconds);
+                            }
+                        }, 1000);
 
-                    // Update limit indicator
-                    const limitInd = document.getElementById('codeLimitIndicator');
-                    const regenBtn = document.getElementById('btnRegenerateCode');
-                    const countToday = data.codes_generated_today || 1;
-                    const left = 3 - countToday;
-                    
-                    if (left > 0) {
-                        limitInd.innerHTML = `<span style="color:var(--primary-cyan)">${left}</span> refreshes left today`;
-                        limitInd.style.color = 'var(--text-muted)';
-                        regenBtn.disabled = false;
-                        regenBtn.style.opacity = '1';
-                    } else {
-                        limitInd.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Limit reached. Back to tomorrow's lecture.`;
-                        limitInd.style.color = 'var(--error)';
-                        regenBtn.disabled = true;
-                        regenBtn.style.opacity = '0.5';
-                        regenBtn.title = "Daily limit reached for this subject";
-                    }
+                        // Start polling for student submissions every 3 seconds
+                        pollCodeSubmissions();
+                        codePollInterval = setInterval(pollCodeSubmissions, 3000);
+                    })
+                    .catch(() => showToast('Network error generating code', true));
+            }
 
-                    // Start countdown
-                    let seconds = data.validity_seconds || 300;
-                    updateCodeTimer(seconds);
-                    codeTimerInterval = setInterval(() => {
-                        seconds--;
-                        if (seconds <= 0) {
-                            clearInterval(codeTimerInterval);
-                            document.getElementById('codeTimer').textContent = 'EXPIRED';
-                            document.getElementById('codeTimer').classList.add('expired');
-                            activeCode = '';
-                            // NOTE: polling continues — don't clear codePollInterval here
-                        } else {
-                            updateCodeTimer(seconds);
-                        }
-                    }, 1000);
-
-                    // Start polling for student submissions every 3 seconds
-                    pollCodeSubmissions();
-                    codePollInterval = setInterval(pollCodeSubmissions, 3000);
-                })
-                .catch(() => showToast('Network error generating code', true));
+            // If geo-lock is enabled, get teacher's GPS first
+            if (geoLockEnabled) {
+                document.getElementById('generatedCode').textContent = '📍 Getting GPS…';
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        doGenerate(pos.coords.latitude, pos.coords.longitude, geoMaxDistance);
+                    },
+                    (err) => {
+                        showToast('GPS failed: ' + err.message + '. Generating code without location lock.', true);
+                        doGenerate(null, null, null);
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            } else {
+                doGenerate(null, null, null);
+            }
         }
 
         function updateCodeTimer(s) {
