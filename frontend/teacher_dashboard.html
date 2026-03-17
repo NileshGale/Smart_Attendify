@@ -1952,7 +1952,7 @@
                 </div>
                 <div class="card" style="text-align:center;padding:2rem" id="methodPickCard">
                     <p style="color:var(--text-muted);font-size:.9rem">Select a subject from <strong>My
-                            Schedule</strong> to start marking attendance, or choose here:</p>
+                            Schedule</strong> or choose from <strong>today's allocated subjects</strong>:</p>
                     <div style="margin-top:1rem">
                         <select id="manualSubjectSelect"
                             style="padding:.625rem 1rem;border:1px solid var(--border);border-radius:8px;font-size:.875rem;margin-right:.5rem">
@@ -2527,28 +2527,6 @@
                         applyTeacherInfo();
                         renderSchedule(); // Re-render with db_id
 
-                        // Populate Subject Dropdowns
-                        if (data.user.subjects && data.user.subjects.length > 0) {
-                            const subjects = data.user.subjects;
-                            const manualSelect = document.getElementById('manualSubjectSelect');
-                            const graphFilter = document.getElementById('graphSubjectFilter');
-                            
-                            // Clear existing options except first
-                            manualSelect.innerHTML = '<option value="">-- Select Subject --</option>';
-                            graphFilter.innerHTML = '<option value="all">All Subjects</option>';
-
-                            subjects.forEach(s => {
-                                const optText = `${s.subject_name} (${s.subject_code})`;
-                                const optVal = `${s.subject_name}|${s.subject_code}`;
-                                
-                                const mOpt = new Option(optText, optVal);
-                                manualSelect.add(mOpt);
-                                
-                                const gOpt = new Option(s.subject_name, s.subject_name);
-                                graphFilter.add(gOpt);
-                            });
-                        }
-
                         // Profile Overview Card
                         document.getElementById('overviewFullName').textContent = TEACHER.name;
                         document.getElementById('overviewRegId').textContent = TEACHER.id;
@@ -2560,7 +2538,7 @@
                         const photoOverview = document.getElementById('profilePhoto');
                         const initials = TEACHER.name.charAt(0).toUpperCase();
                         if (TEACHER.photo) {
-                            photoOverview.innerHTML = `<img src="../${TEACHER.photo}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.4)" onerror="this.outerHTML='${initials}'">`;
+                            photoOverview.innerHTML = `<img src="../${TEACHER.photo}" alt="Teacher Profile" onerror="this.outerHTML='${initials}'">`;
                         } else {
                             photoOverview.textContent = initials;
                         }
@@ -2657,6 +2635,36 @@
                     </div>`;
                     container.appendChild(div);
                 });
+
+                // --- NEW: Populate "Mark Attendance" Dropdown with TODAY'S subjects ---
+                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                const todayName = days[new Date().getDay()];
+                const todaySlots = schedule[todayName] || [];
+                const manualSelect = document.getElementById('manualSubjectSelect');
+                
+                // Clear and add default
+                manualSelect.innerHTML = '<option value="">-- Select Subject --</option>';
+                
+                if (todaySlots.length === 0) {
+                    const opt = new Option(`No subjects scheduled for today (${todayName})`, "");
+                    opt.disabled = true;
+                    manualSelect.add(opt);
+                } else {
+                    // Use a Map to keep unique subjects for the dropdown
+                    const uniqueToday = new Map();
+                    todaySlots.forEach(s => {
+                        const key = `${s.subject}|${s.code}`;
+                        if (!uniqueToday.has(key)) {
+                            uniqueToday.set(key, { name: s.subject, code: s.code, time: s.time });
+                        }
+                    });
+
+                    uniqueToday.forEach((info, key) => {
+                        const optText = `${info.name} (${info.code}) - ${info.time}`;
+                        const mOpt = new Option(optText, key);
+                        manualSelect.add(mOpt);
+                    });
+                }
 
             } catch (err) {
                 console.error('Schedule fetch error:', err);
