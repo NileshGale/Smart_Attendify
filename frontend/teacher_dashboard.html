@@ -2662,14 +2662,21 @@
                     const div = document.createElement('div');
                     div.className = 'day-schedule card';
                     
-                    div.innerHTML = `<h3 data-count="${slots.length} Class${slots.length !== 1 ? 'es' : ''}">${day}</h3><div class="schedule-slots">
+                    const todayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date().getDay()];
+                    const isToday = (day === todayName);
+                    
+                    div.innerHTML = `<h3 data-count="${slots.length} Class${slots.length !== 1 ? 'es' : ''}" style="${isToday ? 'background: linear-gradient(135deg, var(--primary-cyan), var(--navy-dark));' : ''}">${day} ${isToday ? '<span style="font-size:.65rem; background:rgba(255,255,255,.2); padding:2px 8px; border-radius:10px; margin-left:8px;">TODAY</span>' : ''}</h3><div class="schedule-slots">
                         ${slots.length > 0 ? slots.map(s => `
-                            <div class="time-slot">
+                            <div class="time-slot" style="${isToday ? 'border-left: 3px solid var(--primary-cyan);' : ''}">
                                 <div class="time-slot-info">
                                     <span class="time">${s.time}</span>
                                     <span class="subject">${subjectLabel(s.subject)}</span>
                                 </div>
-                                <button class="btn-mark" onclick="markAttendanceForClass('${s.subject.replace(/'/g, "\\'")}','${s.code}','${day}','${s.time}')">Mark Attendance</button>
+                                <button class="btn-mark" 
+                                    style="${!isToday ? 'filter: grayscale(1); opacity: 0.7; cursor: not-allowed; pointer-events: auto;' : ''}"
+                                    onclick="markAttendanceForClass('${s.subject.replace(/'/g, "\\'")}','${s.code}','${day}','${s.time}')">
+                                    ${isToday ? 'Mark Attendance' : 'Restricted'}
+                                </button>
                             </div>
                         `).join('') : '<div style="text-align: center; padding: 2rem; color: var(--text-muted); font-style: italic; font-size: 0.85rem;">No Classes</div>'}
                     </div>`;
@@ -2720,6 +2727,12 @@
         let currentSubjectCode = '';
 
         function markAttendanceForClass(subject, code, day, time) {
+            const todayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date().getDay()];
+            if (day !== todayName) {
+                showToast(`<i class="fa-solid fa-triangle-exclamation"></i> Action Restricted: You can only mark attendance for classes scheduled today (${todayName}).`, true);
+                return;
+            }
+
             currentSubject = subject;
             currentSubjectCode = code;
             document.querySelectorAll('.sidebar-menu li').forEach(i => i.classList.remove('active'));
@@ -3498,98 +3511,95 @@
                 return;
             }
 
-            showToast('Generating premium PDF...');
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
 
             const eventName = document.getElementById('eventName').value || 'College Event';
             const eventDate = document.getElementById('eventDate').value || new Date().toLocaleDateString('en-IN');
             const generatedDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString('en-IN');
 
-            let tableRowsHTML = '';
-            currentEventStudents.forEach((s, idx) => {
-                const bgColor = idx % 2 === 0 ? '#ffffff' : '#f8fbfc';
-                const time = new Date(s.scanned_at || s.marked_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-                tableRowsHTML += `
-                    <tr style="background:${bgColor};">
-                        <td style="padding:10px 8px;border-bottom:1px solid #e5e7eb;color:#475569;text-align:center;font-weight:600;font-size:12px">${idx + 1}</td>
-                        <td style="padding:10px 8px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#1e3a5f;font-size:13px">${s.full_name}</td>
-                        <td style="padding:10px 8px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-family:monospace;font-size:12px">${s.reg_id}</td>
-                        <td style="padding:10px 8px;border-bottom:1px solid #e5e7eb;color:#374151;font-size:12px;text-align:right">${time}</td>
-                    </tr>`;
+            // Header Background
+            doc.setFillColor(30, 58, 95); // #1e3a5f
+            doc.rect(0, 0, 210, 50, 'F');
+
+            // Header Content
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(26);
+            doc.setFont("helvetica", "bold");
+            doc.text("Attendify", 20, 25);
+
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text("EVENT ATTENDANCE RECORD", 20, 33);
+
+            doc.setFontSize(9);
+            doc.text("Generation Time:", 150, 23);
+            doc.setFont("helvetica", "bold");
+            doc.text(generatedDate, 150, 29);
+
+            // Event Details Row
+            doc.setDrawColor(255, 255, 255);
+            doc.setLineWidth(0.1);
+            doc.line(20, 37, 190, 37);
+
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "normal");
+            doc.text("EVENT NAME", 20, 43);
+            doc.text("EVENT DATE", 100, 43);
+            doc.text("ATTENDEES", 160, 43);
+
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.text(eventName.substring(0, 40), 20, 48);
+            doc.text(eventDate, 100, 48);
+            doc.text(currentEventStudents.length.toString(), 160, 48);
+
+            // Table construction
+            const tableData = currentEventStudents.map((s, idx) => [
+                idx + 1,
+                s.full_name,
+                s.reg_id,
+                new Date(s.scanned_at || s.marked_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+            ]);
+
+            doc.autoTable({
+                head: [['Sr No.', 'Student Full Name', 'Registration ID', 'Join Time']],
+                body: tableData,
+                startY: 60,
+                theme: 'striped',
+                headStyles: { 
+                    fillColor: [241, 245, 249], 
+                    textColor: [71, 85, 105], 
+                    fontSize: 9, 
+                    fontStyle: 'bold',
+                    halign: 'center'
+                },
+                bodyStyles: { 
+                    fontSize: 9, 
+                    textColor: [30, 58, 95] 
+                },
+                columnStyles: {
+                    0: { halign: 'center', cellWidth: 20 },
+                    3: { halign: 'right', cellWidth: 30 }
+                },
+                alternateRowStyles: { 
+                    fillColor: [248, 251, 252] 
+                },
+                margin: { left: 20, right: 20 }
             });
 
-            const pdfContainer = document.createElement('div');
-            pdfContainer.style.position = 'fixed';
-            pdfContainer.style.left = '-9999px';
-            pdfContainer.style.top = '0';
-            pdfContainer.innerHTML = `
-                <div style="font-family: 'Segoe UI', Arial, sans-serif; background: #ffffff; padding: 25px; min-height: 1000px; width: 750px;">
-                    <div style="background: linear-gradient(135deg, #1e3a5f 0%, #00bcd4 100%); padding: 30px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <h1 style="color: #ffffff; font-size: 28px; font-weight: 800; margin: 0 0 8px 0; letter-spacing: -0.5px;">Attendify</h1>
-                                <p style="color: rgba(255,255,255,0.9); font-size: 15px; font-weight: 600; margin: 0; text-transform: uppercase; letter-spacing: 1px;">Event Attendance Record</p>
-                            </div>
-                            <div style="text-align: right;">
-                                <p style="color: rgba(255,255,255,0.8); font-size: 11px; margin: 0 0 4px 0;">Generation Time</p>
-                                <p style="color: #ffffff; font-size: 12px; font-weight: 600; margin: 0;">${generatedDate}</p>
-                            </div>
-                        </div>
-                        <div style="margin-top: 20px; display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
-                            <div>
-                                <p style="color: rgba(255,255,255,0.7); font-size: 11px; margin: 0 0 2px 0; text-transform: uppercase;">Event Name</p>
-                                <p style="color: #ffffff; font-size: 14px; font-weight: 700; margin: 0;">${eventName}</p>
-                            </div>
-                            <div>
-                                <p style="color: rgba(255,255,255,0.7); font-size: 11px; margin: 0 0 2px 0; text-transform: uppercase;">Event Date</p>
-                                <p style="color: #ffffff; font-size: 14px; font-weight: 700; margin: 0;">${eventDate}</p>
-                            </div>
-                            <div>
-                                <p style="color: rgba(255,255,255,0.7); font-size: 11px; margin: 0 0 2px 0; text-transform: uppercase;">Attendees</p>
-                                <p style="color: #ffffff; font-size: 14px; font-weight: 700; margin: 0;">${currentEventStudents.length}</p>
-                            </div>
-                        </div>
-                    </div>
+            // Footer - using a loop for multiple pages if any
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(148, 163, 184);
+                doc.text(`© ${new Date().getFullYear()} Attendify - Professional Attendance Management System`, 105, 285, { align: 'center' });
+                doc.text(`Page ${i} of ${pageCount}`, 105, 290, { align: 'center' });
+            }
 
-                    <div style="border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.02); margin-bottom: 25px;">
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <thead>
-                                <tr style="background: #f1f5f9;">
-                                    <th style="padding:12px 8px; text-align:center; color:#475569; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; width:60px;">Sr No.</th>
-                                    <th style="padding:12px 8px; text-align:left; color:#475569; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">Student Full Name</th>
-                                    <th style="padding:12px 8px; text-align:left; color:#475569; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">Registration ID</th>
-                                    <th style="padding:12px 8px; text-align:right; color:#475569; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">Join Time</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${tableRowsHTML}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #e2e8f0;">
-                        <p style="color: #94a3b8; font-size: 11px; margin: 0;">© ${new Date().getFullYear()} Attendify - Professional Attendance Management System</p>
-                        <p style="color: #cbd5e1; font-size: 10px; margin: 5px 0 0 0;">This is a system-generated document.</p>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(pdfContainer);
-
-            const opt = {
-                margin: 0.3,
-                filename: `${eventName.replace(/\s+/g, '_')}_Attendance.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-            };
-
-            html2pdf().set(opt).from(pdfContainer).save().then(() => {
-                document.body.removeChild(pdfContainer);
-                showToast('Premium PDF downloaded successfully');
-            }).catch(err => {
-                console.error('PDF Error:', err);
-                showToast('Error generating PDF', true);
-                document.body.removeChild(pdfContainer);
-            });
+            doc.save(`${eventName.replace(/\s+/g, '_')}_AttendanceRecord.pdf`);
+            showToast('<i class="fa-solid fa-file-pdf"></i> Premium PDF downloaded successfully');
         }
 
         async function generateEventCode() {

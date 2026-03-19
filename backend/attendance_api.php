@@ -33,7 +33,6 @@ try {
     try {
         $pdo->exec("ALTER TABLE attendance_codes ADD COLUMN teacher_lat DECIMAL(10,7) DEFAULT NULL");
         $pdo->exec("ALTER TABLE attendance_codes ADD COLUMN teacher_lng DECIMAL(10,7) DEFAULT NULL");
-        $pdo->exec("ALTER TABLE attendance_codes ADD COLUMN teacher_accuracy DECIMAL(8,2) DEFAULT NULL");
         $pdo->exec("ALTER TABLE attendance_codes ADD COLUMN max_distance_meters INT DEFAULT NULL");
     } catch (PDOException $ignore) {
         // Columns already exist or error, individual column checks are better but this is common in Attendify
@@ -105,10 +104,10 @@ if ($action === 'generateUniqueCode') {
         
         // Calculate expiry entirely in DB to avoid PHP/MySQL timezone mismatches
         $stmt = $pdo->prepare("
-            INSERT INTO attendance_codes (code, teacher_id, subject_name, expires_at, teacher_lat, teacher_lng, teacher_accuracy, max_distance_meters)
-            VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND), ?, ?, ?, ?)
+            INSERT INTO attendance_codes (code, teacher_id, subject_name, expires_at, teacher_lat, teacher_lng, max_distance_meters)
+            VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND), ?, ?, ?)
         ");
-        $stmt->execute([$code, $teacherId, $subjectName, $validitySeconds, $teacherLat, $teacherLng, $teacherAccuracy, $maxDistance]);
+        $stmt->execute([$code, $teacherId, $subjectName, $validitySeconds, $teacherLat, $teacherLng, $maxDistance]);
         
         // Fetch the exact DB-assigned expiration time back
         $stmt = $pdo->prepare("SELECT expires_at FROM attendance_codes WHERE code = ? ORDER BY id DESC LIMIT 1");
@@ -163,7 +162,7 @@ if ($action === 'markByUniqueCode') {
     try {
         // Find the code and check if it's still valid
         $stmt = $pdo->prepare("
-            SELECT id, code, teacher_id, subject_name, expires_at, teacher_lat, teacher_lng, teacher_accuracy, max_distance_meters
+            SELECT id, code, teacher_id, subject_name, expires_at, teacher_lat, teacher_lng, max_distance_meters
             FROM attendance_codes
             WHERE code = ? AND expires_at > NOW()
             ORDER BY created_at DESC
@@ -188,26 +187,22 @@ if ($action === 'markByUniqueCode') {
                 exit;
             }
             
+            // Proximity check with basic buffer
             $distance = haversineDistance(
                 $codeRecord['teacher_lat'], $codeRecord['teacher_lng'],
                 $studentLat, $studentLng
             );
             $maxDist = intval($codeRecord['max_distance_meters']);
-            
-            // Calculate Accuracy Buffer
-            $teacherAcc = floatval($codeRecord['teacher_accuracy'] ?? 10); // default 10m buffer if missing
-            $buffer = $teacherAcc + $studentAccuracy;
-            $allowedDistance = $maxDist + $buffer;
+            $allowedDistance = $maxDist + 30; // 30m default accuracy buffer
             
             if ($distance > $allowedDistance) {
                 $distRounded = round($distance);
                 echo json_encode([
                     'success' => false, 
-                    'message' => "Location match failed. Reported distance: {$distRounded}m. Maximum allowed with device accuracy buffer: " . round($allowedDistance) . "m. Please move closer to the teacher and try again.",
+                    'message' => "Location match failed. Reported distance: {$distRounded}m. Max allowed: {$allowedDistance}m.",
                     'geo_rejected' => true,
                     'distance' => $distRounded,
-                    'max_distance' => $maxDist,
-                    'accuracy_buffer' => round($buffer)
+                    'max_distance' => $maxDist
                 ]);
                 exit;
             }
@@ -917,47 +912,64 @@ if ($action === 'getStudentReport') {
             $startDate = date('Y-m-d', strtotime("-{$days} days"));
         }
 
-        // Get subject-wise attendance stats
+        // Get subject-wise attendance stats with calculated absent counts
         if ($fromTeacher) {
             $teacherId = $_SESSION['user_id'];
             $stmt = $pdo->prepare("
                 SELECT 
-                    COALESCE(s.subject_name, 'Unknown') AS subject_name,
-                    COALESCE(s.subject_code, 'N/A') AS subject_code,
-                    (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id AND teacher_id = ? AND attendance_date >= ?) AS total_classes,
-                    SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
-                    (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id AND teacher_id = ? AND attendance_date >= ?) - SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS absent_count
-                FROM (
-                    SELECT DISTINCT subject_id 
-                    FROM attendance 
-                    WHERE teacher_id = ? AND attendance_date >= ?
-                ) taught
-                JOIN subjects s ON taught.subject_id = s.id
-                LEFT JOIN attendance a ON a.subject_id = s.id AND a.student_id = ? AND a.teacher_id = ? AND a.attendance_date >= ?
+                    s.subject_name,
+                    s.subject_code,
+                    (SELECT COUNT(DISTINCT attendance_date) 
+                     FROM attendance 
+                     WHERE subject_id = s.id AND teacher_id = ? AND attendance_date >= ?) AS total_classes,
+                    COUNT(CASE WHEN a.status = 'present' THEN 1 END) AS present_count,
+                    (SELECT COUNT(DISTINCT attendance_date) 
+                     FROM attendance 
+                     WHERE subject_id = s.id AND teacher_id = ? AND attendance_date >= ?) - COUNT(CASE WHEN a.status = 'present' THEN 1 END) AS absent_count
+                FROM subjects s
+                LEFT JOIN attendance a ON a.subject_id = s.id 
+                    AND a.student_id = ? 
+                    AND a.teacher_id = ? 
+                    AND a.attendance_date >= ?
+                WHERE (s.id IN (SELECT subject_id FROM student_subjects WHERE student_id = ?)
+                    OR NOT EXISTS (SELECT 1 FROM student_subjects WHERE student_id = ?))
                 GROUP BY s.id, s.subject_name, s.subject_code
+                HAVING total_classes > 0
                 ORDER BY s.subject_name
             ");
             $stmt->execute([
                 $teacherId, $startDate, 
-                $teacherId, $startDate, 
-                $teacherId, $startDate, 
-                $student['id'], $teacherId, $startDate
+                $teacherId, $startDate,
+                $student['id'], $teacherId, $startDate, 
+                $student['id'], $student['id']
             ]);
         } else {
             $stmt = $pdo->prepare("
                 SELECT 
-                    COALESCE(s.subject_name, 'Unknown') AS subject_name,
-                    COALESCE(s.subject_code, 'N/A') AS subject_code,
-                    (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id AND attendance_date >= ?) AS total_classes,
-                    SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_count,
-                    (SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = s.id AND attendance_date >= ?) - SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS absent_count
-                FROM attendance a
-                LEFT JOIN subjects s ON a.subject_id = s.id
-                WHERE a.student_id = ? AND a.attendance_date >= ?
+                    s.subject_name,
+                    s.subject_code,
+                    (SELECT COUNT(DISTINCT attendance_date) 
+                     FROM attendance 
+                     WHERE subject_id = s.id AND attendance_date >= ?) AS total_classes,
+                    COUNT(CASE WHEN a.status = 'present' THEN 1 END) AS present_count,
+                    (SELECT COUNT(DISTINCT attendance_date) 
+                     FROM attendance 
+                     WHERE subject_id = s.id AND attendance_date >= ?) - COUNT(CASE WHEN a.status = 'present' THEN 1 END) AS absent_count
+                FROM subjects s
+                LEFT JOIN attendance a ON a.subject_id = s.id 
+                    AND a.student_id = ? 
+                    AND a.attendance_date >= ?
+                WHERE (s.id IN (SELECT subject_id FROM student_subjects WHERE student_id = ?)
+                    OR NOT EXISTS (SELECT 1 FROM student_subjects WHERE student_id = ?))
                 GROUP BY s.id, s.subject_name, s.subject_code
+                HAVING total_classes > 0
                 ORDER BY s.subject_name
             ");
-            $stmt->execute([$startDate, $startDate, $student['id'], $startDate]);
+            $stmt->execute([
+                $startDate, $startDate, 
+                $student['id'], $startDate, 
+                $student['id'], $student['id']
+            ]);
         }
         
         $attendance = $stmt->fetchAll();
