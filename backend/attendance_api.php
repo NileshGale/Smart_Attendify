@@ -23,6 +23,7 @@ try {
             expires_at DATETIME NOT NULL,
             teacher_lat DECIMAL(10,7) DEFAULT NULL,
             teacher_lng DECIMAL(10,7) DEFAULT NULL,
+            teacher_accuracy DECIMAL(8,2) DEFAULT NULL,
             max_distance_meters INT DEFAULT NULL,
             INDEX idx_code (code),
             INDEX idx_teacher (teacher_id)
@@ -32,9 +33,10 @@ try {
     try {
         $pdo->exec("ALTER TABLE attendance_codes ADD COLUMN teacher_lat DECIMAL(10,7) DEFAULT NULL");
         $pdo->exec("ALTER TABLE attendance_codes ADD COLUMN teacher_lng DECIMAL(10,7) DEFAULT NULL");
+        $pdo->exec("ALTER TABLE attendance_codes ADD COLUMN teacher_accuracy DECIMAL(8,2) DEFAULT NULL");
         $pdo->exec("ALTER TABLE attendance_codes ADD COLUMN max_distance_meters INT DEFAULT NULL");
     } catch (PDOException $ignore) {
-        // Columns already exist
+        // Columns already exist or error, individual column checks are better but this is common in Attendify
     }
 } catch (PDOException $e) {
     // Table likely already exists, continue
@@ -67,6 +69,7 @@ if ($action === 'generateUniqueCode') {
     // Geolocation params (optional)
     $teacherLat = isset($_POST['teacher_lat']) && $_POST['teacher_lat'] !== '' ? floatval($_POST['teacher_lat']) : null;
     $teacherLng = isset($_POST['teacher_lng']) && $_POST['teacher_lng'] !== '' ? floatval($_POST['teacher_lng']) : null;
+    $teacherAccuracy = isset($_POST['teacher_accuracy']) && $_POST['teacher_accuracy'] !== '' ? floatval($_POST['teacher_accuracy']) : null;
     $maxDistance = isset($_POST['max_distance_meters']) && $_POST['max_distance_meters'] !== '' ? intval($_POST['max_distance_meters']) : null;
     
     if (!$subjectName) {
@@ -102,10 +105,10 @@ if ($action === 'generateUniqueCode') {
         
         // Calculate expiry entirely in DB to avoid PHP/MySQL timezone mismatches
         $stmt = $pdo->prepare("
-            INSERT INTO attendance_codes (code, teacher_id, subject_name, expires_at, teacher_lat, teacher_lng, max_distance_meters)
-            VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND), ?, ?, ?)
+            INSERT INTO attendance_codes (code, teacher_id, subject_name, expires_at, teacher_lat, teacher_lng, teacher_accuracy, max_distance_meters)
+            VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND), ?, ?, ?, ?)
         ");
-        $stmt->execute([$code, $teacherId, $subjectName, $validitySeconds, $teacherLat, $teacherLng, $maxDistance]);
+        $stmt->execute([$code, $teacherId, $subjectName, $validitySeconds, $teacherLat, $teacherLng, $teacherAccuracy, $maxDistance]);
         
         // Fetch the exact DB-assigned expiration time back
         $stmt = $pdo->prepare("SELECT expires_at FROM attendance_codes WHERE code = ? ORDER BY id DESC LIMIT 1");
@@ -155,11 +158,12 @@ if ($action === 'markByUniqueCode') {
     // Student geolocation (optional)
     $studentLat = isset($_POST['student_lat']) && $_POST['student_lat'] !== '' ? floatval($_POST['student_lat']) : null;
     $studentLng = isset($_POST['student_lng']) && $_POST['student_lng'] !== '' ? floatval($_POST['student_lng']) : null;
+    $studentAccuracy = isset($_POST['student_accuracy']) && $_POST['student_accuracy'] !== '' ? floatval($_POST['student_accuracy']) : 0;
     
     try {
         // Find the code and check if it's still valid
         $stmt = $pdo->prepare("
-            SELECT id, code, teacher_id, subject_name, expires_at, teacher_lat, teacher_lng, max_distance_meters
+            SELECT id, code, teacher_id, subject_name, expires_at, teacher_lat, teacher_lng, teacher_accuracy, max_distance_meters
             FROM attendance_codes
             WHERE code = ? AND expires_at > NOW()
             ORDER BY created_at DESC
@@ -190,14 +194,20 @@ if ($action === 'markByUniqueCode') {
             );
             $maxDist = intval($codeRecord['max_distance_meters']);
             
-            if ($distance > $maxDist) {
+            // Calculate Accuracy Buffer
+            $teacherAcc = floatval($codeRecord['teacher_accuracy'] ?? 10); // default 10m buffer if missing
+            $buffer = $teacherAcc + $studentAccuracy;
+            $allowedDistance = $maxDist + $buffer;
+            
+            if ($distance > $allowedDistance) {
                 $distRounded = round($distance);
                 echo json_encode([
                     'success' => false, 
-                    'message' => "You are {$distRounded}m away from the classroom. Maximum allowed distance: {$maxDist}m. Please move closer and try again.",
+                    'message' => "Location match failed. Reported distance: {$distRounded}m. Maximum allowed with device accuracy buffer: " . round($allowedDistance) . "m. Please move closer to the teacher and try again.",
                     'geo_rejected' => true,
                     'distance' => $distRounded,
-                    'max_distance' => $maxDist
+                    'max_distance' => $maxDist,
+                    'accuracy_buffer' => round($buffer)
                 ]);
                 exit;
             }

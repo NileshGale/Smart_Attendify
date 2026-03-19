@@ -1789,10 +1789,10 @@
             // First attempt to get student's GPS for geo-locked codes
             showStatus('<i class="fa-solid fa-spinner fa-spin"></i> Verifying location & submitting…', true);
             
-            function doSubmitCode(lat, lng) {
+            function doSubmitCode(lat, lng, accuracy) {
                 let bodyStr = `action=markByUniqueCode&unique_code=${encodeURIComponent(code)}`;
                 if (lat !== null && lng !== null) {
-                    bodyStr += `&student_lat=${lat}&student_lng=${lng}`;
+                    bodyStr += `&student_lat=${lat}&student_lng=${lng}&student_accuracy=${accuracy}`;
                 }
                 
                 fetch('../backend/attendance_api.php', {
@@ -1821,12 +1821,12 @@
             // Try to get GPS (timeout 8s), strict enforcement
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    (pos) => doSubmitCode(pos.coords.latitude, pos.coords.longitude),
+                    (pos) => doSubmitCode(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy),
                     (err) => {
                         showStatus('<i class="fa-solid fa-triangle-exclamation"></i> GPS Required: ' + err.message, false);
                         checkGeoPermissionInit(); // Re-check and block if needed
                     },
-                    { enableHighAccuracy: true, timeout: 8000 }
+                    { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
                 );
             } else {
                 showStatus('Geolocation is not supported by your browser', false);
