@@ -1762,36 +1762,46 @@
             const code = document.getElementById('attendanceCodeInput').value.trim().toUpperCase();
             const selectedSubject = document.getElementById('codeSubjectSelect').value;
 
-            if (code.length < 6) { showStatus('Please enter a valid code (6-8 characters)', false); return; }
-
-            // If "College Event" is selected, use event_api directly
-            if (selectedSubject === 'College Event') {
-                const formData = new FormData();
-                formData.append('action', 'markEventAttendance');
-                formData.append('unique_code', code);
-                formData.append('method', 'unique_code');
-
-                fetch('../backend/event_api.php', { method: 'POST', body: formData })
-                    .then(r => r.json())
-                    .then(evData => {
-                        if (evData.success) {
-                            showStatus('<i class="fa-solid fa-check-circle"></i> ' + evData.message, true);
-                            document.getElementById('attendanceCodeInput').value = '';
-                        } else {
-                            showStatus(evData.message || 'Invalid or expired code', false);
-                        }
-                    })
-                    .catch(() => showStatus('Network error — please try again', false));
-                return;
+            if (code.length < 6) { 
+                showStatus('Please enter a valid code (6-8 characters)', false); 
+                return; 
             }
 
-            // For all subjects (including when none selected), use attendance_api
-            // First attempt to get student's GPS for geo-locked codes
             showStatus('<i class="fa-solid fa-spinner fa-spin"></i> Verifying location & submitting…', true);
             
-            function doSubmitCode(lat, lng, accuracy) {
+            function doFinalSubmit(lat = null, lng = null, accuracy = null) {
+                if (selectedSubject === 'College Event') {
+                    const formData = new FormData();
+                    formData.append('action', 'markEventAttendance');
+                    formData.append('unique_code', code);
+                    formData.append('method', 'unique_code');
+                    if (lat !== null) {
+                        formData.append('student_lat', lat);
+                        formData.append('student_lng', lng);
+                        formData.append('student_accuracy', accuracy);
+                    }
+
+                    fetch('../backend/event_api.php', { method: 'POST', body: formData })
+                        .then(r => r.json())
+                        .then(evData => {
+                            if (evData.success) {
+                                showStatus('<i class="fa-solid fa-check-circle"></i> ' + evData.message, true);
+                                document.getElementById('attendanceCodeInput').value = '';
+                            } else {
+                                if (evData.geo_rejected || evData.geo_required) {
+                                    showStatus('<i class="fa-solid fa-location-dot"></i> ' + evData.message, false);
+                                } else {
+                                    showStatus(evData.message || 'Invalid or expired code', false);
+                                }
+                            }
+                        })
+                        .catch(() => showStatus('Network error — please try again', false));
+                    return;
+                }
+
+                // Regular Subject Attendance via attendance_api.php
                 let bodyStr = `action=markByUniqueCode&unique_code=${encodeURIComponent(code)}`;
-                if (lat !== null && lng !== null) {
+                if (lat !== null) {
                     bodyStr += `&student_lat=${lat}&student_lng=${lng}&student_accuracy=${accuracy}`;
                 }
                 
@@ -1809,46 +1819,55 @@
                 }
 
                 fetch('../backend/attendance_api.php', {
-                    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: bodyStr
                 })
-                    .then(r => r.json())
-                    .then(d => {
-                        if (d.success) {
-                            showStatus('<i class="fa-solid fa-check-circle"></i> ' + d.message, true);
-                            document.getElementById('attendanceCodeInput').value = '';
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) {
+                        showStatus('<i class="fa-solid fa-check-circle"></i> ' + d.message, true);
+                        document.getElementById('attendanceCodeInput').value = '';
+                    } else {
+                        if (d.geo_rejected) {
+                            showStatus('<i class="fa-solid fa-location-dot"></i> ' + d.message, false);
+                        } else if (d.geo_required) {
+                            showStatus('<i class="fa-solid fa-location-crosshairs"></i> ' + d.message, false);
                         } else {
-                            // Show geo-specific error icons
-                            if (d.geo_rejected) {
-                                showStatus('<i class="fa-solid fa-location-dot"></i> ' + d.message, false);
-                            } else if (d.geo_required) {
-                                showStatus('<i class="fa-solid fa-location-crosshairs"></i> ' + d.message, false);
-                            } else {
-                                showStatus(d.message || 'Invalid or expired code', false);
-                            }
+                            showStatus(d.message || 'Invalid or expired code', false);
                         }
-                    })
-                    .catch(() => {
-                        // On network failure, also save offline
-                        const offlineData = JSON.parse(localStorage.getItem('offline_attendance') || '[]');
-                        offlineData.push({ url: '../backend/attendance_api.php', body: bodyStr, at: new Date().toLocaleString() });
-                        localStorage.setItem('offline_attendance', JSON.stringify(offlineData));
-                        showStatus('<i class="fa-solid fa-cloud-arrow-up"></i> Connection lost: Saved for later sync.', true);
-                    });
+                    }
+                })
+                .catch(() => showStatus('Network error submitting code', false));
             }
-            
-            // Try to get GPS (timeout 8s), strict enforcement
+
+            // Always attempt to get location for code-based attendance
             if (navigator.geolocation) {
+                showStatus('📍 Capturing GPS location...', true); // Show spinner while waiting
+                
+                const geoOptions = { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 };
+                
                 navigator.geolocation.getCurrentPosition(
-                    (pos) => doSubmitCode(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy),
-                    (err) => {
-                        showStatus('<i class="fa-solid fa-triangle-exclamation"></i> GPS Required: ' + err.message, false);
-                        checkGeoPermissionInit(); // Re-check and block if needed
+                    (pos) => {
+                        doFinalSubmit(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
                     },
-                    { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+                    (err) => {
+                        console.warn("High-Accuracy GPS Fallback (Err " + err.code + "):", err.message);
+                        
+                        // Fallback to standard accuracy if high accuracy times out/fails
+                        navigator.geolocation.getCurrentPosition(
+                            (pos2) => {
+                                doFinalSubmit(pos2.coords.latitude, pos2.coords.longitude, pos2.coords.accuracy);
+                            },
+                            (err2) => {
+                                console.warn("GPS All Failures:", err2.message);
+                                doFinalSubmit(null, null, null);
+                            },
+                            { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+                        );
+                    },
+                    geoOptions
                 );
-            } else {
-                showStatus('Geolocation is not supported by your browser', false);
             }
         }
 

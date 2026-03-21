@@ -6,7 +6,7 @@
 
 // Database credentials
 define('DB_HOST', 'sql308.infinityfree.com');
-define('DB_NAME', 'if0_41396868_XXX');
+define('DB_NAME', 'if0_41396868_attendify_db');
 define('DB_USER', 'if0_41396868');
 define('DB_PASS', 'hope1916dhanno');
 

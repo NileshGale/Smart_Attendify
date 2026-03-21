@@ -3,6 +3,20 @@ require_once 'db_config.php';
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
+// ============================================================================
+// HAVERSINE DISTANCE HELPER (returns distance in meters)
+// ============================================================================
+function haversineDistance($lat1, $lng1, $lat2, $lng2) {
+    $earthRadius = 6371000; // meters
+    $dLat = deg2rad($lat2 - $lat1);
+    $dLng = deg2rad($lng2 - $lng1);
+    $a = sin($dLat / 2) * sin($dLat / 2) +
+         cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+         sin($dLng / 2) * sin($dLng / 2);
+    $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+    return $earthRadius * $c;
+}
+
 if ($action === 'createEvent') {
     requireRole('teacher');
     $eventName = sanitize($_POST['event_name'] ?? '');
@@ -30,6 +44,12 @@ if ($action === 'createEvent') {
         exit;
     }
 
+    // Geolocation parameters
+    $teacherLat = isset($_POST['teacher_lat']) && $_POST['teacher_lat'] !== '' ? floatval($_POST['teacher_lat']) : null;
+    $teacherLng = isset($_POST['teacher_lng']) && $_POST['teacher_lng'] !== '' ? floatval($_POST['teacher_lng']) : null;
+    $maxDist = isset($_POST['max_distance_meters']) ? intval($_POST['max_distance_meters']) : 50;
+    $accuracy = isset($_POST['teacher_accuracy']) ? floatval($_POST['teacher_accuracy']) : null;
+
     try {
         $uniqueCode = null;
         $expiresAt = null;
@@ -39,8 +59,8 @@ if ($action === 'createEvent') {
             $expiresAt = date('Y-m-d H:i:s', strtotime('+3 minutes'));
         }
 
-        $stmt = $pdo->prepare("INSERT INTO events (event_name, event_date, event_time, teacher_id, unique_code, code_expires_at) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$eventName, $eventDate, $eventTime, $teacherId, $uniqueCode, $expiresAt]);
+        $stmt = $pdo->prepare("INSERT INTO events (event_name, event_date, event_time, teacher_id, unique_code, code_expires_at, teacher_lat, teacher_lng, max_distance_meters, teacher_accuracy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$eventName, $eventDate, $eventTime, $teacherId, $uniqueCode, $expiresAt, $teacherLat, $teacherLng, $maxDist, $accuracy]);
         $eventId = $pdo->lastInsertId();
 
         echo json_encode([
@@ -85,7 +105,11 @@ if ($action === 'markEventAttendance') {
             $uniqueCode = strtoupper(sanitize($_POST['unique_code'] ?? ''));
             $studentId = $_SESSION['user_id'];
             
-            $stmt = $pdo->prepare("SELECT id, event_name FROM events WHERE unique_code = ? AND code_expires_at > NOW()");
+            // Get student coordinates if provided
+            $studentLat = isset($_POST['student_lat']) && $_POST['student_lat'] !== '' ? floatval($_POST['student_lat']) : null;
+            $studentLng = isset($_POST['student_lng']) && $_POST['student_lng'] !== '' ? floatval($_POST['student_lng']) : null;
+
+            $stmt = $pdo->prepare("SELECT id, event_name, teacher_lat, teacher_lng, max_distance_meters FROM events WHERE unique_code = ? AND code_expires_at > NOW()");
             $stmt->execute([$uniqueCode]);
             $event = $stmt->fetch();
             
@@ -93,6 +117,37 @@ if ($action === 'markEventAttendance') {
                 echo json_encode(['success' => false, 'message' => 'Invalid or expired code']);
                 exit;
             }
+
+            // Location verification if event is geo-locked
+            if ($event['teacher_lat'] !== null && $event['max_distance_meters'] !== null) {
+                if ($studentLat === null || $studentLng === null) {
+                    echo json_encode([
+                        'success' => false, 
+                        'message' => 'This event requires location access. Please enable GPS and try again.',
+                        'geo_required' => true
+                    ]);
+                    exit;
+                }
+
+                $distance = haversineDistance(
+                    $event['teacher_lat'], $event['teacher_lng'],
+                    $studentLat, $studentLng
+                );
+                $allowedDistance = intval($event['max_distance_meters']) + 30; // 30m accuracy buffer
+
+                if ($distance > $allowedDistance) {
+                    $distRounded = round($distance);
+                    echo json_encode([
+                        'success' => false, 
+                        'message' => "Location match failed. You are {$distRounded}m away from the event location (Max allowed: {$allowedDistance}m).",
+                        'geo_rejected' => true,
+                        'distance' => $distRounded,
+                        'max_distance' => $event['max_distance_meters']
+                    ]);
+                    exit;
+                }
+            }
+
             $eventId = $event['id'];
             
             // Get student info for return
