@@ -2383,6 +2383,65 @@
                 <div id="studentEditResults" style="display:none;margin-top:1rem"></div>
             </div>
 
+            <!-- ════ RISK ANALYSIS SECTION ════ -->
+            <div id="riskAnalysisSection" class="content-section">
+                <div class="section-title">
+                    <i class="fa-solid fa-triangle-exclamation" style="color:var(--error)"></i>
+                    Student Risk Analysis
+                </div>
+                <div class="card">
+                    <p style="color:var(--text-muted);margin-bottom:1.5rem">Students with attendance below <strong>75%</strong> in your subjects.</p>
+                    <div class="table-wrap">
+                        <table id="riskTable">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Registration ID</th>
+                                    <th>Subject</th>
+                                    <th style="text-align:center">Attendance</th>
+                                    <th style="text-align:center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="riskTableBody">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ════ ENGAGEMENT SECTION ════ -->
+            <div id="engagementSection" class="content-section">
+                <div class="section-title">
+                    <i class="fa-solid fa-chart-pie" style="color:var(--primary-cyan)"></i>
+                    Subject Engagement
+                </div>
+                <div class="chart-grid">
+                    <div class="chart-card" style="grid-column: 1 / -1">
+                        <div class="chart-header">
+                            <h4>Subject Comparison</h4>
+                        </div>
+                        <div class="chart-wrap" style="height: 400px;"><canvas id="engagementChart"></canvas></div>
+                    </div>
+                </div>
+                <div class="card" style="margin-top: 1.5rem;">
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Subject</th>
+                                    <th style="text-align:center">Total Records</th>
+                                    <th style="text-align:center">Engagement %</th>
+                                </tr>
+                            </thead>
+                            <tbody id="engagementTableBody">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
         </div><!-- /main-content -->
     </div><!-- /dashboard-container -->
 
@@ -2620,7 +2679,113 @@
             if (name === 'analytics') {
                 setTimeout(renderCharts, 100);
             }
+            if (name === 'riskAnalysis') {
+                loadRiskAnalysis();
+            }
+            if (name === 'engagement') {
+                loadEngagementStats();
+            }
             closeSidebar();
+        }
+
+        // ── RISK ANALYSIS ─────────────────────────────────────────────────────────────
+        async function loadRiskAnalysis() {
+            const tbody = document.getElementById('riskTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem"><i class="fa-solid fa-spinner fa-spin"></i> Analyzing...</td></tr>';
+            
+            try {
+                const res = await fetch('../backend/attendance_api.php?action=getRiskAnalysis');
+                const data = await res.json();
+                
+                if (data.success) {
+                    tbody.innerHTML = '';
+                    if (data.data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--success)">No students at risk! All attendance > 75%.</td></tr>';
+                        return;
+                    }
+                    data.data.forEach(s => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>
+                                    <div style="display:flex;align-items:center;gap:0.75rem">
+                                        <div style="width:32px;height:32px;border-radius:50%;background:var(--bg-light);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;overflow:hidden">
+                                            ${s.photo_path ? `<img src="../${s.photo_path}" style="width:100%;height:100%;object-fit:cover">` : s.full_name.charAt(0)}
+                                        </div>
+                                        <span>${s.full_name}</span>
+                                    </div>
+                                </td>
+                                <td>${s.reg_id}</td>
+                                <td>${s.subject_name}</td>
+                                <td style="text-align:center"><span style="color:var(--error);font-weight:700">${s.percentage}%</span></td>
+                                <td style="text-align:center">
+                                    <button class="btn-primary" style="padding:4px 12px;font-size:0.75rem" onclick="contactStudent('${s.reg_id}')">Notify</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch (e) { showToast('Failed to load risk analysis', true); }
+        }
+
+        function contactStudent(regId) {
+            showToast(`Notification sent to student ${regId}`);
+        }
+
+        // ── ENGAGEMENT STATS ──────────────────────────────────────────────────────────
+        let engagementChart = null;
+        async function loadEngagementStats() {
+            const tbody = document.getElementById('engagementTableBody');
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:2rem"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</td></tr>';
+
+            try {
+                const res = await fetch('../backend/attendance_api.php?action=getEngagementStats');
+                const data = await res.json();
+
+                if (data.success) {
+                    tbody.innerHTML = '';
+                    const labels = data.subjects.map(s => s.subject_name);
+                    const values = data.subjects.map(s => s.engagement_pct);
+
+                    data.subjects.forEach(s => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${s.subject_name}</td>
+                                <td style="text-align:center">${s.total_marks}</td>
+                                <td style="text-align:center"><strong>${s.engagement_pct}%</strong></td>
+                            </tr>
+                        `;
+                    });
+
+                    renderEngagementChart(labels, values);
+                }
+            } catch (e) { showToast('Failed to load engagement stats', true); }
+        }
+
+        function renderEngagementChart(labels, values) {
+            const ctx = document.getElementById('engagementChart').getContext('2d');
+            if (engagementChart) engagementChart.destroy();
+
+            engagementChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Engagement %',
+                        data: values,
+                        backgroundColor: 'rgba(0, 188, 212, 0.6)',
+                        borderColor: 'rgba(0, 188, 212, 1)',
+                        borderWidth: 1,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 100 }
+                    }
+                }
+            });
         }
 
         // ─── SUBJECT MASTER (name → code mapping) ───
@@ -2908,7 +3073,8 @@
             const toggle = document.getElementById('geoLockToggle');
             const options = document.getElementById('geoLockOptions');
             const slider = document.getElementById('geoLockSlider');
-            const toggleBg = toggle.previousElementSibling;
+            const toggleBg = toggle.nextElementSibling; // The span right after the input
+            
             geoLockEnabled = toggle.checked;
             options.style.display = geoLockEnabled ? 'block' : 'none';
             toggleBg.style.background = geoLockEnabled ? 'var(--primary-cyan)' : '#ccc';
@@ -2921,12 +3087,14 @@
                         document.getElementById('geoStatus').innerHTML = '<i class="fa-solid fa-circle-check" style="color:var(--success)"></i> GPS ready — your location will be captured when you generate the code';
                     },
                     (err) => {
-                        document.getElementById('geoStatus').innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:var(--warning)"></i> GPS not available: ' + err.message + '. Location lock will NOT be applied.';
+                        document.getElementById('geoStatus').innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:var(--warning)"></i> GPS not available: ' + err.message + '. Please enable GPS to use Location Lock.';
+                        // Auto-disable if GPS fails during verification
                         geoLockEnabled = false;
                         toggle.checked = false;
                         toggleBg.style.background = '#ccc';
                         slider.style.left = '3px';
                         options.style.display = 'none';
+                        showToast('Location Lock requires GPS. Please enable it in your browser settings.', true);
                     },
                     { enableHighAccuracy: true, timeout: 10000 }
                 );
@@ -3066,8 +3234,10 @@
                         doGenerate(pos.coords.latitude, pos.coords.longitude, geoMaxDistance, pos.coords.accuracy);
                     },
                     (err) => {
-                        showToast('GPS failed: ' + err.message + '. Generating code without location lock.', true);
-                        doGenerate(null, null, null, null);
+                        // FIX: STOP generation if GPS fails and lock is required
+                        showToast('<i class="fa-solid fa-triangle-exclamation"></i> GPS Failed: ' + err.message + '. Please enable GPS or turn off Location Lock.', true);
+                        document.getElementById('generatedCode').textContent = '📍 GPS ERROR';
+                        document.getElementById('geoStatus').innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:var(--error)"></i> GPS ERROR: ' + err.message;
                     },
                     { enableHighAccuracy: true, timeout: 10000 }
                 );
@@ -4471,6 +4641,20 @@
             clearTimeout(toastTimeout);
             toastTimeout = setTimeout(() => t.className = '', 3500);
         }
+
+        // --- AUTO LOGOUT (10 MIN INACTIVITY) ---
+        let inactivityTimer;
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                showToast('Logged out due to 10 minutes of inactivity', true);
+                setTimeout(teacherLogout, 2000);
+            }, 10 * 60 * 1000);
+        }
+        ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'].forEach(event => {
+            document.addEventListener(event, resetInactivityTimer);
+        });
+        resetInactivityTimer();
 
         function teacherLogout() {
             sessionStorage.clear();

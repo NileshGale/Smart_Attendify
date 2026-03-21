@@ -1795,6 +1795,19 @@
                     bodyStr += `&student_lat=${lat}&student_lng=${lng}&student_accuracy=${accuracy}`;
                 }
                 
+                if (!navigator.onLine) {
+                    const offlineData = JSON.parse(localStorage.getItem('offline_attendance') || '[]');
+                    offlineData.push({
+                        url: '../backend/attendance_api.php',
+                        body: bodyStr,
+                        at: new Date().toLocaleString()
+                    });
+                    localStorage.setItem('offline_attendance', JSON.stringify(offlineData));
+                    showStatus('<i class="fa-solid fa-cloud-arrow-up"></i> Offline: Saved locally. Will sync when online.', true);
+                    document.getElementById('attendanceCodeInput').value = '';
+                    return;
+                }
+
                 fetch('../backend/attendance_api.php', {
                     method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: bodyStr
@@ -1815,7 +1828,13 @@
                             }
                         }
                     })
-                    .catch(() => showStatus('Network error — please try again', false));
+                    .catch(() => {
+                        // On network failure, also save offline
+                        const offlineData = JSON.parse(localStorage.getItem('offline_attendance') || '[]');
+                        offlineData.push({ url: '../backend/attendance_api.php', body: bodyStr, at: new Date().toLocaleString() });
+                        localStorage.setItem('offline_attendance', JSON.stringify(offlineData));
+                        showStatus('<i class="fa-solid fa-cloud-arrow-up"></i> Connection lost: Saved for later sync.', true);
+                    });
             }
             
             // Try to get GPS (timeout 8s), strict enforcement
@@ -2450,6 +2469,58 @@
             clearTimeout(toastTimeout);
             toastTimeout = setTimeout(() => t.className = '', 3500);
         }
+
+        // ── INACTIVITY LOGOUT (10 MIN) ────────────────────────────────────────────────
+        let inactivityTimer;
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                showToast('Logged out due to 10 minutes of inactivity', true);
+                setTimeout(confirmLogout, 2000);
+            }, 10 * 60 * 1000);
+        }
+        ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'].forEach(e => {
+            document.addEventListener(e, resetInactivityTimer);
+        });
+        resetInactivityTimer();
+
+        // ── LOW ATTENDANCE ALERT ─────────────────────────────────────────────────────
+        function checkLowAttendance() {
+            if (!STUDENT.attendance || STUDENT.attendance.length === 0) return;
+            const lowSubjects = STUDENT.attendance.filter(a => parseFloat(a.percentage) < 75);
+            if (lowSubjects.length > 0) {
+                const subNames = lowSubjects.map(s => s.subject_name).join(', ');
+                setTimeout(() => {
+                    showToast(`<strong>Warning:</strong> Your attendance is below 75% in: ${subNames}`, true);
+                }, 2000);
+            }
+        }
+        // ── OFFLINE SYNC ─────────────────────────────────────────────────────────────
+        function syncOfflineAttendance() {
+            if (!navigator.onLine) return;
+            const offlineData = JSON.parse(localStorage.getItem('offline_attendance') || '[]');
+            if (offlineData.length === 0) return;
+
+            showToast(`Syncing ${offlineData.length} offline record(s)...`);
+            const remaining = [];
+            const promises = offlineData.map(data => {
+                return fetch(data.url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: data.body
+                })
+                .then(r => r.json())
+                .then(d => { if (!d.success) remaining.push(data); })
+                .catch(() => remaining.push(data));
+            });
+
+            Promise.all(promises).then(() => {
+                localStorage.setItem('offline_attendance', JSON.stringify(remaining));
+                if (remaining.length === 0) showToast('Sync complete!');
+            });
+        }
+        window.addEventListener('online', syncOfflineAttendance);
+        setTimeout(syncOfflineAttendance, 3000);
     </script>
 </body>
 

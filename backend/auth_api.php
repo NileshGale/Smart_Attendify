@@ -22,8 +22,10 @@ if ($action === 'login') {
     }
     
     try {
+        // Fetch user plus rate limit columns
         $stmt = $pdo->prepare("
-            SELECT id, reg_id, username, email, full_name, role, password, is_active
+            SELECT id, reg_id, username, email, full_name, role, password, is_active, 
+                   failed_attempts, lockout_until
             FROM users
             WHERE reg_id = ?
         ");
@@ -34,6 +36,13 @@ if ($action === 'login') {
             echo json_encode(['success' => false, 'message' => 'Invalid credentials']);
             exit;
         }
+
+        // Check for lockout
+        if ($user['lockout_until'] && strtotime($user['lockout_until']) > time()) {
+            $remaining = ceil((strtotime($user['lockout_until']) - time()) / 60);
+            echo json_encode(['success' => false, 'message' => "Too many failed attempts. Try again in $remaining minutes."]);
+            exit;
+        }
         
         if (!$user['is_active']) {
             echo json_encode(['success' => false, 'message' => 'Your account has been deactivated']);
@@ -41,8 +50,30 @@ if ($action === 'login') {
         }
         
         if (!password_verify($password, $user['password'])) {
-            echo json_encode(['success' => false, 'message' => 'Invalid credentials']);
+            // Increment failed attempts
+            $attempts = ($user['failed_attempts'] ?? 0) + 1;
+            $newLockout = null;
+            
+            if ($attempts >= 5) {
+                // Lockout for 15 minutes
+                $newLockout = date('Y-m-d H:i:s', time() + (15 * 60));
+                $msg = "Invalid credentials. Account locked for 15 minutes due to 5 failures.";
+            } else {
+                $rem = 5 - $attempts;
+                $msg = "Invalid credentials. $rem attempts remaining before lockout.";
+            }
+            
+            $update = $pdo->prepare("UPDATE users SET failed_attempts = ?, lockout_until = ? WHERE id = ?");
+            $update->execute([$attempts, $newLockout, $user['id']]);
+            
+            echo json_encode(['success' => false, 'message' => $msg]);
             exit;
+        }
+        
+        // Successful login: Reset failed attempts and lockout
+        if (($user['failed_attempts'] ?? 0) > 0 || $user['lockout_until']) {
+            $reset = $pdo->prepare("UPDATE users SET failed_attempts = 0, lockout_until = NULL WHERE id = ?");
+            $reset->execute([$user['id']]);
         }
         
         // Set session

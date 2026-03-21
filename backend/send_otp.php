@@ -88,7 +88,7 @@ function sendRegistrationEmail(string $toEmail, string $toName, string $regId, s
         $mail->isHTML(true);
         $mail->Subject = 'Welcome to Attendify - Registration Successful';
         $mail->Body    = generateRegistrationEmailHTML($toName, $regId, $role, $toEmail, $password);
-        $mail->AltBody = "Welcome $toName!\n\nYour Registration ID: $regId\nRole: $role\nEmail: $toEmail\nPassword: $password\n\nPlease keep these credentials safe.\nLogin at your Attendify portal.";
+        $mail->AltBody = "Welcome $toName!\n\nYour Registration ID: $regId\nRole: $role\nEmail: $toEmail\nPassword: $password\n\nPlease keep these credentials safe.\n\nThank you for using Attendify";
         $mail->send();
         return true;
     } catch (Exception $e) {
@@ -281,41 +281,34 @@ HTML;
 
 function generateRegistrationEmailHTML(string $name, string $regId, string $role, string $email, string $password = ''): string {
     $roleLabel = ucfirst($role);
-    $passwordRow = $password ? "<p>Password: <strong style=\"font-family:'Courier New',monospace;font-size:15px;color:#4f46e5\">{$password}</strong></p>" : '';
+    $passwordRow = $password ? "<p>Password: <strong style=\"color:#4f46e5\">{$password}</strong></p>" : '';
     return <<<HTML
 <!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><style>
-    body{font-family:'Segoe UI',sans-serif;background:#f1f5f9;margin:0;padding:20px}
-    .wrap{max-width:540px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.1)}
-    .header{background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:32px;text-align:center;color:#fff}
-    .body{padding:32px}
-    .id-box{background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:12px;text-align:center;padding:20px;margin:20px 0;color:#fff}
-    .reg-id{font-size:28px;font-weight:900;letter-spacing:.2em;font-family:'Courier New',monospace}
-    .details{background:#f8f9fa;border-radius:10px;padding:16px;margin:16px 0}
-    .details p{margin:6px 0;font-size:14px;color:#374151}
-    .footer{background:#f8f9fa;padding:20px;text-align:center;color:#64748b;font-size:13px;border-top:1px solid #e2e8f0}
+    body{font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px;}
+    .container{max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; padding: 20px;}
+    .header{font-size: 20px; font-weight: bold; margin-bottom: 20px; color: #4f46e5;}
+    .box{background: #f4f4f4; padding: 15px; border-radius: 5px; margin: 20px 0;}
+    .reg-id{font-size: 24px; font-weight: bold; color: #333;}
+    .footer{font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;}
 </style></head>
 <body>
-<div class="wrap">
-    <div class="header"><h1>Welcome to Attendify!</h1></div>
-    <div class="body">
-        <p>Dear <strong>{$name}</strong>,</p>
-        <p>Your registration was successful. Here are your credentials:</p>
-        <div class="id-box">
-            <div style="font-size:13px;opacity:.8;margin-bottom:4px">Your Registration ID</div>
-            <div class="reg-id">{$regId}</div>
-        </div>
-        <div class="details">
-            <p>Role: <strong>{$roleLabel}</strong></p>
-            <p>Email: <strong>{$email}</strong></p>
-            <p>Registration ID: <strong>{$regId}</strong></p>
-            {$passwordRow}
-        </div>
-        <p><strong style="color:#ef4444">Important:</strong> Keep your credentials safe &mdash; you'll need your Registration ID and password to log in.</p>
-        <p style="font-size:13px;color:#64748b">For security, we recommend changing your password after your first login.</p>
+<div class="container">
+    <div class="header">Registration Successful - Attendify</div>
+    <p>Dear <strong>{$name}</strong>,</p>
+    <p>Your account has been created. Here are your credentials:</p>
+    <div class="box">
+        <strong>Registration ID:</strong> <span class="reg-id">{$regId}</span><br>
+        <strong>Role:</strong> {$roleLabel}<br>
+        <strong>Email:</strong> {$email}<br>
+        {$passwordRow}
     </div>
-    <div class="footer"><p>&copy; Attendify &mdash; Attendance Management System</p></div>
+    <p><strong>Important:</strong> Please keep these credentials safe.</p>
+    <div class="footer">
+        Thank you for using <strong>Attendify</strong><br>
+        &copy; Attendance Management System
+    </div>
 </div>
 </body></html>
 HTML;

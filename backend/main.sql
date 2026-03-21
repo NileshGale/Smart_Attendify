@@ -273,6 +273,10 @@ VALUES
 ('Digital Marketing',   'DM201',  'Commerce',         3);
 
 
+
+ALTER TABLE users ADD COLUMN failed_attempts INT DEFAULT 0;
+ALTER TABLE users ADD COLUMN lockout_until DATETIME DEFAULT NULL;
+
 -- ============================================================================
 -- COMPLETION MESSAGE
 -- ============================================================================

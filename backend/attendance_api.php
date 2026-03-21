@@ -1410,6 +1410,70 @@ if ($action === 'getTeacherAnalytics') {
     exit;
 }
 
-// Invalid action
-echo json_encode(['success' => false, 'message' => 'Invalid action']);
-?>
+// ============================================================================
+// GET RISK ANALYSIS (For Teachers)
+// ============================================================================
+if ($action === 'getRiskAnalysis') {
+    requireRole('teacher');
+    $teacherId = $_SESSION['user_id'];
+    
+    try {
+        // Students with < 75% attendance in teacher's subjects
+        $stmt = $pdo->prepare("
+            SELECT 
+                u.id, u.full_name, u.reg_id, u.photo_path,
+                s.subject_name,
+                COUNT(a.id) as total_days,
+                SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) as present_days,
+                ROUND((SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) / COUNT(a.id)) * 100, 1) as percentage
+            FROM users u
+            JOIN student_subjects ss ON u.id = ss.student_id
+            JOIN subjects s ON ss.subject_id = s.id
+            JOIN teacher_subjects ts ON s.id = ts.subject_id
+            LEFT JOIN attendance a ON u.id = a.student_id AND s.id = a.subject_id AND a.teacher_id = ts.teacher_id
+            WHERE ts.teacher_id = ? AND u.role = 'student'
+            GROUP BY u.id, s.id
+            HAVING total_days > 0 AND percentage < 75
+            ORDER BY percentage ASC
+        ");
+        $stmt->execute([$teacherId]);
+        $atRisk = $stmt->fetchAll();
+        
+        echo json_encode(['success' => true, 'data' => $atRisk]);
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+    exit;
+}
+
+// ============================================================================
+// GET ENGAGEMENT STATS (For Teachers)
+// ============================================================================
+if ($action === 'getEngagementStats') {
+    requireRole('teacher');
+    $teacherId = $_SESSION['user_id'];
+    
+    try {
+        $stmt = $pdo->prepare("
+            SELECT 
+                s.subject_name,
+                COUNT(a.id) as total_marks,
+                SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) as present_marks,
+                ROUND((SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) / COUNT(a.id)) * 100, 1) as engagement_pct
+            FROM subjects s
+            JOIN teacher_subjects ts ON s.id = ts.subject_id
+            LEFT JOIN attendance a ON s.id = a.subject_id AND a.teacher_id = ts.teacher_id
+            WHERE ts.teacher_id = ?
+            GROUP BY s.id
+            HAVING total_marks > 0
+            ORDER BY engagement_pct DESC
+        ");
+        $stmt->execute([$teacherId]);
+        $stats = $stmt->fetchAll();
+        
+        echo json_encode(['success' => true, 'subjects' => $stats]);
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+    exit;
+}

@@ -2647,6 +2647,20 @@
                     showToast('Network error', true);
                 });
         }
+
+        // --- AUTO LOGOUT (10 MIN INACTIVITY) ---
+        let inactivityTimer;
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                showToast('Logged out due to 10 minutes of inactivity', true);
+                setTimeout(logout, 2000);
+            }, 10 * 60 * 1000);
+        }
+        ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'].forEach(event => {
+            document.addEventListener(event, resetInactivityTimer);
+        });
+        resetInactivityTimer();
     </script>
 </body>
 
