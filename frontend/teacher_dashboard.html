@@ -2675,7 +2675,60 @@
                     }
                 })
                 .catch(() => { }); // Keep fallback values on error
+
+            restoreTeacherState();
         });
+
+        function restoreTeacherState() {
+            // 1. Restore Section
+            const savedSection = localStorage.getItem('teacher_activeSection');
+            if (savedSection && savedSection !== 'overview') {
+                const sidebarItem = Array.from(document.querySelectorAll('.sidebar-menu li')).find(li => {
+                    const onclick = li.getAttribute('onclick');
+                    return onclick && onclick.includes(`'${savedSection}'`);
+                });
+                showSection(savedSection, sidebarItem);
+            }
+
+            // 2. Restore Unique Code if valid
+            const savedCode = localStorage.getItem('teacher_activeCode');
+            const expiry = localStorage.getItem('teacher_codeExpiry');
+            
+            if (savedCode && expiry && Date.now() < parseInt(expiry)) {
+                activeCode = savedCode;
+                pollCode = localStorage.getItem('teacher_pollCode');
+                currentSubject = localStorage.getItem('teacher_subject') || '';
+                currentSubjectCode = localStorage.getItem('teacher_subjectCode') || '';
+
+                document.getElementById('codeSubjectLabel').textContent = `${currentSubject} [${currentSubjectCode}]`;
+                document.getElementById('generatedCode').textContent = activeCode;
+                document.getElementById('uniqueCodePanel').classList.add('show');
+                
+                const remaining = Math.floor((parseInt(expiry) - Date.now()) / 1000);
+                updateCodeTimer(remaining);
+                
+                clearInterval(codeTimerInterval);
+                codeTimerInterval = setInterval(() => {
+                    const sec = Math.floor((parseInt(expiry) - Date.now()) / 1000);
+                    if (sec <= 0) {
+                        clearInterval(codeTimerInterval);
+                        document.getElementById('codeTimer').textContent = 'EXPIRED';
+                        document.getElementById('codeTimer').classList.add('expired');
+                        activeCode = '';
+                        localStorage.removeItem('teacher_activeCode');
+                    } else {
+                        updateCodeTimer(sec);
+                    }
+                }, 1000);
+
+                pollCodeSubmissions();
+                clearInterval(codePollInterval);
+                codePollInterval = setInterval(pollCodeSubmissions, 3000);
+                
+                // Switch to Mark Attendance section if code is active
+                showSection('markAttendance', document.querySelector('.sidebar-menu li:nth-child(2)'));
+            }
+        }
 
         // ─── NAV ───
         function toggleProfileMenu() {
@@ -2701,6 +2754,7 @@
         }
 
         function showSection(name, el) {
+            if (name) localStorage.setItem('teacher_activeSection', name);
             document.getElementById('profileMenu').classList.remove('show');
             document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.sidebar-menu li').forEach(i => i.classList.remove('active'));
@@ -2975,6 +3029,9 @@
             clearInterval(codePollInterval);
             pollCode = '';
             activeCode = '';
+            localStorage.removeItem('teacher_activeCode');
+            localStorage.removeItem('teacher_pollCode');
+            localStorage.removeItem('teacher_codeExpiry');
             document.getElementById('uniqueCodePanel').classList.remove('show');
         }
 
@@ -3273,6 +3330,14 @@
 
                         activeCode = data.unique_code;
                         pollCode = data.unique_code;
+                        
+                        // Save State
+                        localStorage.setItem('teacher_activeCode', activeCode);
+                        localStorage.setItem('teacher_pollCode', pollCode);
+                        localStorage.setItem('teacher_subject', currentSubject);
+                        localStorage.setItem('teacher_subjectCode', currentSubjectCode);
+                        localStorage.setItem('teacher_codeExpiry', Date.now() + (data.validity_seconds * 1000));
+
                         document.getElementById('generatedCode').textContent = activeCode;
                         document.getElementById('codeTime').textContent = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
                         document.getElementById('codeTimer').classList.remove('expired');

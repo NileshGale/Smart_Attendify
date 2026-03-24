@@ -1534,6 +1534,9 @@
             generateQRCode(); // Uses session data first
             checkGeoPermissionInit();
 
+            // Restore active section
+            restoreStudentState();
+
             // Fetch real user profile and analytics from API
             fetch('../backend/user_api.php?action=getMyProfile')
                 .then(r => r.json())
@@ -1611,6 +1614,18 @@
                     renderOverview();
                 });
         });
+
+        function restoreStudentState() {
+            const activeSection = localStorage.getItem('student_activeSection');
+            if (activeSection) {
+                // Find corresponding sidebar item
+                const sidebarItem = [...document.querySelectorAll('.sidebar-menu li')].find(li => {
+                    const onclickStr = li.getAttribute('onclick') || '';
+                    return onclickStr.includes(`'${activeSection}'`);
+                });
+                showSection(activeSection, sidebarItem);
+            }
+        }
 
         function loadUserInfo() {
             const initials = STUDENT.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -1693,6 +1708,7 @@
 
         // ── SECTION NAV ──────────────────────────────────────────────────────────────────────────────
         function showSection(name, el) {
+            if (name) localStorage.setItem('student_activeSection', name);
             document.getElementById('profileMenu').classList.remove('show');
             document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.sidebar-menu li').forEach(i => i.classList.remove('active'));
