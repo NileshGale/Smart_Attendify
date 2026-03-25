@@ -1218,7 +1218,7 @@
                 <div class="card">
                     <div class="search-row">
                         <div style="position:relative;flex:1">
-                            <input type="text" id="studentSearch" placeholder="Enter Registration ID or Roll Number"
+                            <input type="text" id="studentSearch" placeholder="Enter Registration ID or Name"
                                 style="width: 100%; box-sizing: border-box; padding-right: 32px;">
                             <button type="button"
                                 onclick="document.getElementById('studentSearch').value='';this.style.display='none';document.getElementById('studentResults').style.display='none';"
@@ -2329,7 +2329,7 @@
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
                 jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+                pagebreak: { mode: ['css', 'legacy'] }
             };
 
             html2pdf().set(opt).from(pdfContainer).save().then(() => {
@@ -2366,7 +2366,7 @@
                     else if (r.role === 'admin') { roleColor = '#b100cd'; roleBg = 'rgba(177,0,205,0.12)'; }
 
                     tableRowsHTML += `
-                        <tr style="background:${bgColor};">
+                        <tr style="background:${bgColor}; page-break-inside: avoid;">
                             <td style="padding:8px 6px;border-bottom:1px solid #e5e7eb;color:#475569;text-align:center;font-weight:600;font-size:12px">${idx + 1}</td>
                             <td style="padding:8px 6px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#1e3a5f;font-size:12px">${r.full_name}</td>
                             <td style="padding:8px 6px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-family:monospace;font-size:12px">${r.reg_id || '-'}</td>
@@ -2404,7 +2404,7 @@
                         <div style="border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.03); margin-bottom: 15px;">
                             <table style="width: 100%; border-collapse: collapse;">
                                 <thead>
-                                    <tr style="background: #f1f5f9;">
+                                    <tr style="background: #f1f5f9; page-break-inside: avoid;">
                                         <th style="padding:10px 6px; text-align:center; color:#475569; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; width:50px;">Sr No.</th>
                                         <th style="padding:10px 6px; text-align:left; color:#475569; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">Full Name</th>
                                         <th style="padding:10px 6px; text-align:left; color:#475569; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">Reg ID</th>
@@ -2432,7 +2432,7 @@
                     image: { type: 'jpeg', quality: 0.98 },
                     html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
                     jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
-                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+                    pagebreak: { mode: ['css', 'legacy'] }
                 };
 
                 html2pdf().set(opt).from(pdfContainer).save().then(() => {
