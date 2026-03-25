@@ -1960,9 +1960,9 @@
                 <div class="card" style="text-align:center;padding:2rem" id="methodPickCard">
                     <p style="color:var(--text-muted);font-size:.9rem">Select a subject from <strong>My
                             Schedule</strong> or choose from <strong>today's allocated subjects</strong>:</p>
-                    <div style="margin-top:1rem">
+                    <div style="margin-top:1rem; display:flex; flex-wrap:wrap; justify-content:center; gap:0.5rem; align-items:center;">
                         <select id="manualSubjectSelect"
-                            style="padding:.625rem 1rem;border:1px solid var(--border);border-radius:8px;font-size:.875rem;margin-right:.5rem">
+                            style="padding:.625rem 1rem;border:1px solid var(--border);border-radius:8px;font-size:.875rem;max-width:100%;box-sizing:border-box;">
                             <option value="">-- Select Subject --</option>
                             <option value="C Programming|CP101">C Programming (CP101)</option>
                             <option value="Core Java|CJ201">Core Java (CJ201)</option>
@@ -2114,7 +2114,12 @@
                 <div class="card">
                     <div class="input-group">
                         <label>Event Name</label>
-                        <input type="text" id="eventName" placeholder="e.g. Annual Tech Fest 2025">
+                        <div style="position:relative">
+                            <input type="text" id="eventName" placeholder="e.g. Annual Tech Fest 2025" style="width: 100%; box-sizing: border-box; padding-right: 32px;" oninput="document.getElementById('clearEventNameBtn').style.display = this.value ? 'block' : 'none'">
+                            <button type="button" onclick="document.getElementById('eventName').value='';this.style.display='none';" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;padding:4px;display:none" id="clearEventNameBtn">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
                         <div class="input-group">
@@ -2126,6 +2131,15 @@
                             <input type="time" id="eventTime">
                         </div>
                     </div>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', () => {
+                            const now = new Date();
+                            // Format local date to YYYY-MM-DD
+                            const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+                            document.getElementById('eventDate').value = localDate;
+                            document.getElementById('eventTime').value = now.toTimeString().slice(0,5);
+                        });
+                    </script>
 
                     <!-- Event Location Lock Toggle -->
                     <div id="eventGeoLockSection" style="background:linear-gradient(135deg, rgba(124,58,237,.06), rgba(0,188,212,.06)); border:1px solid rgba(124,58,237,.15); border-radius:12px; padding:.875rem 1rem; margin-bottom:1rem;">
@@ -3914,8 +3928,7 @@
                     fillColor: [241, 245, 249], 
                     textColor: [71, 85, 105], 
                     fontSize: 9, 
-                    fontStyle: 'bold',
-                    halign: 'center'
+                    fontStyle: 'bold'
                 },
                 bodyStyles: { 
                     fontSize: 9, 
@@ -3923,7 +3936,9 @@
                 },
                 columnStyles: {
                     0: { halign: 'center', cellWidth: 20 },
-                    3: { halign: 'right', cellWidth: 30 }
+                    1: { halign: 'left' },
+                    2: { halign: 'left' },
+                    3: { halign: 'center', cellWidth: 30 }
                 },
                 alternateRowStyles: { 
                     fillColor: [248, 251, 252] 
