@@ -44,7 +44,8 @@
             font-family: 'Segoe UI', system-ui, sans-serif;
             background: var(--bg);
             color: var(--text);
-            height: 100vh;
+            height: 100vh;      /* fallback */
+            height: 100dvh;     /* dynamic viewport height to prevent browser bar overlap */
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -254,6 +255,7 @@
         .main-content {
             flex: 1;
             padding: 1.5rem;
+            padding-bottom: 5rem;
             overflow-y: auto;
             position: relative;
         }
@@ -1652,6 +1654,7 @@
 
             .main-content {
                 padding: .75rem;
+                padding-bottom: 6rem;
             }
 
             .stats-row {
