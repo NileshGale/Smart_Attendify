@@ -2557,6 +2557,21 @@
         window.addEventListener('online', syncOfflineAttendance);
         setTimeout(syncOfflineAttendance, 3000);
     </script>
+<script>
+    // ============================================================================
+    // AUTO SESSION POLLING (Single Device Login Enforcement)
+    // ============================================================================
+    setInterval(async () => {
+        try {
+            const result = await fetch('../backend/auth_api.php?action=checkSession').then(r => r.json());
+            if (result && !result.logged_in) {
+                window.location.href = 'Attendify.html';
+            }
+        } catch (e) {
+            // ignore network errors silently
+        }
+    }, 5000); // 5 seconds check
+</script>
 </body>
 
 </html>

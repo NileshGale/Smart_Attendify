@@ -46,7 +46,29 @@ if (session_status() === PHP_SESSION_NONE) {
  * Check if user is logged in
  */
 function isLoggedIn() {
-    return isset($_SESSION['user_id']) && isset($_SESSION['role']);
+    global $pdo;
+    if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
+        return false;
+    }
+    
+    // Single-device login check
+    if (isset($_SESSION['session_token']) && $pdo) {
+        try {
+            $stmt = $pdo->prepare("SELECT session_token FROM users WHERE id = ?");
+            $stmt->execute([$_SESSION['user_id']]);
+            $dbToken = $stmt->fetchColumn();
+            
+            if ($dbToken && $dbToken !== $_SESSION['session_token']) {
+                // Token mismatch means user logged in from another device
+                session_destroy();
+                return false;
+            }
+        } catch (PDOException $e) {
+            // DB error, allow current session if valid otherwise
+        }
+    }
+    
+    return true;
 }
 
 /**

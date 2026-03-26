@@ -103,3 +103,4 @@ Attendify/
 
 ---
 *Developed with ❤️ for Smart Attendance Management.*
+thankyou

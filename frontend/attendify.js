@@ -41,7 +41,35 @@ async function apiRequest(endpoint, action, data = {}, method = 'POST') {
         : endpoint;
     
     const response = await fetch(url, options);
-    return await response.json();
+    const json = await response.json();
+    
+    // Auto-redirect if session is invalidated (e.g., logged in from another device)
+    if (json && json.message === 'Session expired. Please login again.') {
+        window.location.href = 'Attendify.html';
+    }
+    
+    return json;
+}
+
+// ============================================================================
+// AUTO SESSION POLLING (Single Device Login Enforcement)
+// ============================================================================
+// Continuously checks if the session was invalidated by another device
+if (!window.location.pathname.endsWith('Attendify.html') && 
+    !window.location.pathname.endsWith('index.html') && 
+    !window.location.pathname.endsWith('register.html')) {
+    
+    setInterval(async () => {
+        try {
+            // Quietly checking session status without triggering alerts
+            const result = await fetch(`${ENDPOINTS.auth}?action=checkSession`).then(r => r.json());
+            if (result && !result.logged_in) {
+                window.location.href = 'Attendify.html';
+            }
+        } catch (e) {
+            // Ignore network errors silently
+        }
+    }, 30000); // Check every 30 seconds
 }
 
 /**

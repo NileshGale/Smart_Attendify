@@ -76,6 +76,11 @@ if ($action === 'login') {
             $reset->execute([$user['id']]);
         }
         
+        // Generate new session token for single-device login
+        $sessionToken = bin2hex(random_bytes(32));
+        $updateToken = $pdo->prepare("UPDATE users SET session_token = ? WHERE id = ?");
+        $updateToken->execute([$sessionToken, $user['id']]);
+        
         // Set session
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['reg_id'] = $user['reg_id'];
@@ -83,6 +88,7 @@ if ($action === 'login') {
         $_SESSION['full_name'] = $user['full_name'];
         $_SESSION['role'] = $user['role'];
         $_SESSION['email'] = $user['email'];
+        $_SESSION['session_token'] = $sessionToken;
         
         // Determine redirect URL
         $redirectUrl = '';
@@ -120,6 +126,12 @@ if ($action === 'login') {
 // LOGOUT
 // ============================================================================
 if ($action === 'logout') {
+    if (isset($_SESSION['user_id'])) {
+        try {
+            $stmt = $pdo->prepare("UPDATE users SET session_token = NULL WHERE id = ?");
+            $stmt->execute([$_SESSION['user_id']]);
+        } catch (PDOException $e) {}
+    }
     session_destroy();
     echo json_encode(['success' => true, 'message' => 'Logged out successfully']);
     exit;

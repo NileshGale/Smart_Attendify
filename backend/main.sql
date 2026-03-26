@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
     phone        VARCHAR(20)  DEFAULT NULL,
     photo_path   VARCHAR(255) DEFAULT NULL,
     dob          DATE         DEFAULT NULL,
+    session_token VARCHAR(255) DEFAULT NULL,
     created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     is_active    BOOLEAN      DEFAULT TRUE,
