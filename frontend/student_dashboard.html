@@ -1777,10 +1777,10 @@
                 document.getElementById('attendanceCards').innerHTML = '';
                 return;
             }
-            const avgPct = Math.round(combinedData.reduce((s, d) => s + (d.total > 0 ? d.present / d.total : 0), 0) / Math.max(1, combinedData.length) * 100);
             const totalPresent = combinedData.reduce((s, d) => s + d.present, 0);
             const totalAbsent = combinedData.reduce((s, d) => s + d.absent, 0);
             const totalLectures = combinedData.reduce((s, d) => s + d.total, 0);
+            const avgPct = totalLectures > 0 ? Math.round((totalPresent / totalLectures) * 100) : 0;
             const low = combinedData.filter(d => d.total > 0 && (d.present / d.total < .75)).length;
 
             document.getElementById('overviewStats').innerHTML = `

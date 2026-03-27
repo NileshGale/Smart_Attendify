@@ -120,3 +120,4 @@ thankyou
 ## 📝 Changelog
 
 *   **[2026-03-27]**: Fixed mobile layout issue where the bottom of the dashboard content was cut off on smaller screens. Added `padding-bottom` to the `.main-content` container in `@media (max-width: 768px)` and `@media (max-width: 480px)` breakpoints across `student_dashboard.html`, `teacher_dashboard.html`, and `admin_dashboard.html`.
+*   **[2026-03-27]**: Fixed 'Overall Attendance' calculation in the student dashboard. It now accurately calculates the percentage based on `(Total Present / Total Lectures) * 100` across all subjects, instead of incorrectly averaging the individual subject percentages.
