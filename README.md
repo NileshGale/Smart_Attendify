@@ -101,6 +101,18 @@ Attendify/
 └── README.md           # Project documentation
 ```
 
+## 🔐 Security Enhancements (Added)
+
+Attendify now includes robust security measures to prevent multi-device login and attendance fraud:
+
+1.  **Single-Device Login (SDL)**:
+    *   **Concurrent Login Prevention**: If a user logs into a new device, their session on any previous device is automatically terminated.
+    *   **Live Session Polling**: The dashboards perform a background check every 5 seconds to ensure the current session is still valid.
+2.  **Anti-Proxy & Anti-Cheat Measures**:
+    *   **30-Second Unique Code Window**: The validity of attendance codes has been reduced to **30 seconds**. This prevents students from effectively sharing codes via messaging apps.
+    *   **Tab-Switching Detection**: The student dashboard instantly clears the attendance code input field if the student minimizes the browser or switches to another tab.
+    *   **Security Alerts**: Students receive an immediate warning if a security reset (like tab switching) occurs.
+
 ---
 *Developed with ❤️ for Smart Attendance Management.*
 thankyou

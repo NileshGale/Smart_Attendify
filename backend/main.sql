@@ -264,14 +264,14 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 -- ── Subjects ───────────────────────────────────────────────────────────────
 INSERT IGNORE INTO subjects (subject_name, subject_code, department, credits)
 VALUES
-('C Programming',       'CP101',  'Computer Science', 4),
-('Core Java',           'CJ201',  'Computer Science', 4),
-('Python Programming',  'PP301',  'Computer Science', 4),
-('PHP',                 'PHP101', 'Computer Science', 4),
-('SQL with Oracle',     'SQL201', 'Computer Science', 4),
-('E Commerce',          'EC301',  'Commerce',         3),
-('Cloud Computing',     'CC401',  'Computer Science', 3),
-('Digital Marketing',   'DM201',  'Commerce',         3);
+('C Programming',       'CP101',  'Commerce and Management', 4),
+('Core Java',           'CJ201',  'Commerce and Management', 4),
+('Python Programming',  'PP301',  'Commerce and Management', 4),
+('PHP',                 'PHP101', 'Commerce and Management', 4),
+('SQL with Oracle',     'SQL201', 'Commerce and Management', 4),
+('E Commerce',          'EC301',  'Commerce and Management',         3),
+('Cloud Computing',     'CC401',  'Commerce and Management', 3),
+('Digital Marketing',   'DM201',  'Commerce and Management',         3);
 
 
 
@@ -288,3 +288,6 @@ SELECT 'Table teacher_schedules is ready for admin schedule mgmt'    AS info;
 
 
 
+-- UPDATE users SET department = 'Commerce and Management' WHERE department IN ('Computer Science', 'Information Technology', 'Electronics', 'Electrical');
+--UPDATE users SET branch = 'BCCA' WHERE branch IN ('B.Tech', 'MCA');
+--UPDATE subjects SET department = 'Commerce and Management' WHERE department IN ('Computer Science', 'Commerce');
