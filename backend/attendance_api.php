@@ -63,7 +63,7 @@ if ($action === 'generateUniqueCode') {
     
     $teacherId = $_SESSION['user_id'];
     $subjectName = sanitize($_POST['subject_name'] ?? '');
-    $validitySeconds = intval($_POST['validity_seconds'] ?? 15);
+    $validitySeconds = intval($_POST['validity_seconds'] ?? 30);
     
     // Geolocation params (optional)
     $teacherLat = isset($_POST['teacher_lat']) && $_POST['teacher_lat'] !== '' ? floatval($_POST['teacher_lat']) : null;

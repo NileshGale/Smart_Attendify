@@ -1309,31 +1309,37 @@
                         teacher</h3>
                     <p style="color:var(--text-muted);font-size:.875rem;margin-bottom:1.5rem">Your teacher will display
                         a unique alphanumeric code. Enter it below</p>
-                        <!-- Location Permission Banner -->
-                        <div id="geoBlocker" style="margin-bottom:1.5rem; padding:1.25rem; background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.2); border-radius:12px; display:none;">
-                            <div style="font-size:2rem; color:#ef4444; margin-bottom:.5rem;"><i class="fa-solid fa-location-dot"></i></div>
-                            <h4 style="color:#b91c1c; font-weight:800; margin-bottom:.25rem;">Location Access Required</h4>
-                            <p style="font-size:.825rem; color:#ef4444; line-height:1.4;">Attendance codes are 📍 location-locked. You must grant location permission to mark attendance.</p>
-                            <button onclick="requestGeoPermission()" class="btn-primary" style="margin-top:1rem; padding:.5rem 1rem; font-size:.75rem; background:#ef4444;">Grant Permission</button>
-                        </div>
-                        <div id="geoSuccess" style="margin-bottom:1.5rem; padding:.75rem; background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.2); border-radius:12px; display:none; align-items:center; gap:.5rem; justify-content:center;">
-                            <i class="fa-solid fa-circle-check" style="color:#22c55e;"></i>
-                            <span style="font-size:.825rem; font-weight:600; color:#166534;">Location access granted</span>
-                        </div>
+                    <!-- Location Permission Banner -->
+                    <div id="geoBlocker"
+                        style="margin-bottom:1.5rem; padding:1.25rem; background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.2); border-radius:12px; display:none;">
+                        <div style="font-size:2rem; color:#ef4444; margin-bottom:.5rem;"><i
+                                class="fa-solid fa-location-dot"></i></div>
+                        <h4 style="color:#b91c1c; font-weight:800; margin-bottom:.25rem;">Location Access Required</h4>
+                        <p style="font-size:.825rem; color:#ef4444; line-height:1.4;">Attendance codes are 📍
+                            location-locked. You must grant location permission to mark attendance.</p>
+                        <button onclick="requestGeoPermission()" class="btn-primary"
+                            style="margin-top:1rem; padding:.5rem 1rem; font-size:.75rem; background:#ef4444;">Grant
+                            Permission</button>
+                    </div>
+                    <div id="geoSuccess"
+                        style="margin-bottom:1.5rem; padding:.75rem; background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.2); border-radius:12px; display:none; align-items:center; gap:.5rem; justify-content:center;">
+                        <i class="fa-solid fa-circle-check" style="color:#22c55e;"></i>
+                        <span style="font-size:.825rem; font-weight:600; color:#166534;">Location access granted</span>
+                    </div>
 
-                        <div class="card" id="codeFormCard">
-                            <div class="input-group">
-                                <label>Select Subject</label>
-                                <select id="codeSubjectSelect">
-                                    <option value="">-- Loading Subjects --</option>
-                                </select>
-                            </div>
-                            <input type="text" class="code-input" id="attendanceCodeInput" maxlength="8"
-                                placeholder="A1B2C3D" autocomplete="off" disabled>
-                            <div id="codeStatus" class="code-status"></div>
-                            <button class="btn-submit-code" id="btnSubmitAttendance" onclick="submitAttendanceCode()" disabled><i
-                                    class="fa-solid fa-check-circle"></i> Submit Attendance</button>
+                    <div class="card" id="codeFormCard">
+                        <div class="input-group">
+                            <label>Select Subject</label>
+                            <select id="codeSubjectSelect">
+                                <option value="">-- Loading Subjects --</option>
+                            </select>
                         </div>
+                        <input type="text" class="code-input" id="attendanceCodeInput" maxlength="8"
+                            placeholder="A1B2C3D" autocomplete="off" disabled>
+                        <div id="codeStatus" class="code-status"></div>
+                        <button class="btn-submit-code" id="btnSubmitAttendance" onclick="submitAttendanceCode()"
+                            disabled><i class="fa-solid fa-check-circle"></i> Submit Attendance</button>
+                    </div>
                 </div>
             </div>
 
@@ -1490,18 +1496,24 @@
             </div>
             <h2 style="margin-bottom:1rem;">Location Access Required</h2>
             <p style="color:var(--text-muted); font-size:.9rem; line-height:1.6; margin-bottom:1.5rem;">
-                To prevent attendance fraud, this system uses 📍 <strong>Geo-Fencing</strong>. You must share your live location to mark attendance for this lecture.
+                To prevent attendance fraud, this system uses 📍 <strong>Geo-Fencing</strong>. You must share your live
+                location to mark attendance for this lecture.
             </p>
-            <div style="background:var(--bg-light); padding:1rem; border-radius:12px; margin-bottom:1.5rem; text-align:left; border:1px solid var(--border);">
+            <div
+                style="background:var(--bg-light); padding:1rem; border-radius:12px; margin-bottom:1.5rem; text-align:left; border:1px solid var(--border);">
                 <div style="font-size:.75rem; color:var(--text-muted); display:flex; gap:8px; align-items:flex-start;">
                     <i class="fa-solid fa-shield-halved" style="margin-top:3px; color:var(--success);"></i>
-                    <span>Your location is only captured at the moment of submission to verify you are in the classroom.</span>
+                    <span>Your location is only captured at the moment of submission to verify you are in the
+                        classroom.</span>
                 </div>
             </div>
-            <button onclick="requestGeoPermission(true)" class="btn-primary" style="width:100%; padding:.875rem; font-size:1rem; display:flex; align-items:center; justify-content:center; gap:10px;">
+            <button onclick="requestGeoPermission(true)" class="btn-primary"
+                style="width:100%; padding:.875rem; font-size:1rem; display:flex; align-items:center; justify-content:center; gap:10px;">
                 <i class="fa-solid fa-location-arrow"></i> Allow Location Access
             </button>
-            <button onclick="closeGeoModal()" style="background:none; border:none; color:var(--text-muted); font-size:.85rem; margin-top:1rem; cursor:pointer; text-decoration:underline;">I'll do it later</button>
+            <button onclick="closeGeoModal()"
+                style="background:none; border:none; color:var(--text-muted); font-size:.85rem; margin-top:1rem; cursor:pointer; text-decoration:underline;">I'll
+                do it later</button>
         </div>
     </div>
 
@@ -1615,6 +1627,22 @@
                 });
         });
 
+        // ============================================================================
+        // ANTI-PROXY: TAB SWITCHING DETECTION
+        // ============================================================================
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                const activeSection = localStorage.getItem('student_activeSection');
+                const codeInput = document.getElementById('attendanceCodeInput');
+
+                // If student leaves the tab while on the "Enter Code" screen
+                if (activeSection === 'enterCode' && codeInput && codeInput.value.length > 0) {
+                    codeInput.value = ''; // Clear the code immediately
+                    showStatus('<i class="fa-solid fa-triangle-exclamation"></i> Security: Tab switching detected. Code cleared.', false);
+                }
+            }
+        });
+
         function restoreStudentState() {
             const activeSection = localStorage.getItem('student_activeSection');
             if (activeSection) {
@@ -1716,12 +1744,12 @@
             if (el) el.classList.add('active');
             if (name === 'analytics') setTimeout(renderStudentCharts, 100);
             if (name === 'history') setTimeout(renderHistory, 100);
-            
+
             // Auto-popup location modal if permission not yet granted
             if (name === 'enterCode' && localStorage.getItem('geoGranted') !== 'true') {
                 showGeoModal();
             }
-            
+
             closeSidebar();
         }
 
@@ -1778,13 +1806,13 @@
             const code = document.getElementById('attendanceCodeInput').value.trim().toUpperCase();
             const selectedSubject = document.getElementById('codeSubjectSelect').value;
 
-            if (code.length < 6) { 
-                showStatus('Please enter a valid code (6-8 characters)', false); 
-                return; 
+            if (code.length < 6) {
+                showStatus('Please enter a valid code (6-8 characters)', false);
+                return;
             }
 
             showStatus('<i class="fa-solid fa-spinner fa-spin"></i> Verifying location & submitting…', true);
-            
+
             function doFinalSubmit(lat = null, lng = null, accuracy = null) {
                 if (selectedSubject === 'College Event') {
                     const formData = new FormData();
@@ -1820,7 +1848,7 @@
                 if (lat !== null) {
                     bodyStr += `&student_lat=${lat}&student_lng=${lng}&student_accuracy=${accuracy}`;
                 }
-                
+
                 if (!navigator.onLine) {
                     const offlineData = JSON.parse(localStorage.getItem('offline_attendance') || '[]');
                     offlineData.push({
@@ -1835,41 +1863,41 @@
                 }
 
                 fetch('../backend/attendance_api.php', {
-                    method: 'POST', 
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: bodyStr
                 })
-                .then(r => r.json())
-                .then(d => {
-                    if (d.success) {
-                        showStatus('<i class="fa-solid fa-check-circle"></i> ' + d.message, true);
-                        document.getElementById('attendanceCodeInput').value = '';
-                    } else {
-                        if (d.geo_rejected) {
-                            showStatus('<i class="fa-solid fa-location-dot"></i> ' + d.message, false);
-                        } else if (d.geo_required) {
-                            showStatus('<i class="fa-solid fa-location-crosshairs"></i> ' + d.message, false);
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d.success) {
+                            showStatus('<i class="fa-solid fa-check-circle"></i> ' + d.message, true);
+                            document.getElementById('attendanceCodeInput').value = '';
                         } else {
-                            showStatus(d.message || 'Invalid or expired code', false);
+                            if (d.geo_rejected) {
+                                showStatus('<i class="fa-solid fa-location-dot"></i> ' + d.message, false);
+                            } else if (d.geo_required) {
+                                showStatus('<i class="fa-solid fa-location-crosshairs"></i> ' + d.message, false);
+                            } else {
+                                showStatus(d.message || 'Invalid or expired code', false);
+                            }
                         }
-                    }
-                })
-                .catch(() => showStatus('Network error submitting code', false));
+                    })
+                    .catch(() => showStatus('Network error submitting code', false));
             }
 
             // Always attempt to get location for code-based attendance
             if (navigator.geolocation) {
                 showStatus('📍 Capturing GPS location...', true); // Show spinner while waiting
-                
+
                 const geoOptions = { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 };
-                
+
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
                         doFinalSubmit(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
                     },
                     (err) => {
                         console.warn("High-Accuracy GPS Fallback (Err " + err.code + "):", err.message);
-                        
+
                         // Fallback to standard accuracy if high accuracy times out/fails
                         navigator.geolocation.getCurrentPosition(
                             (pos2) => {
@@ -1893,15 +1921,15 @@
                 handlePermissionStatus('unsupported');
                 return;
             }
-            
+
             // SECURITY CHECK: Geolocation requires HTTPS or localhost
             if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
                 handlePermissionStatus('insecure');
                 return;
             }
-            
+
             if (navigator.permissions && navigator.permissions.query) {
-                navigator.permissions.query({name:'geolocation'})
+                navigator.permissions.query({ name: 'geolocation' })
                     .then(status => {
                         handlePermissionStatus(status.state);
                         status.onchange = () => handlePermissionStatus(status.state);
@@ -1929,7 +1957,7 @@
             const input = document.getElementById('attendanceCodeInput');
             const btn = document.getElementById('btnSubmitAttendance');
             const card = document.getElementById('codeFormCard');
-            
+
             // Update blocker UI based on specific states
             if (state === 'granted') {
                 localStorage.setItem('geoGranted', 'true');
@@ -1948,7 +1976,7 @@
                 btn.disabled = true;
                 card.style.opacity = '0.5';
                 card.style.pointerEvents = 'none';
-                
+
                 const blockerTitle = blocker.querySelector('h4');
                 const blockerText = blocker.querySelector('p');
                 const blockerBtn = blocker.querySelector('button');
@@ -1982,11 +2010,11 @@
             }
 
             showStatus('<i class="fa-solid fa-compass fa-spin"></i> Requesting GPS access…', true);
-            
-            const options = { 
-                enableHighAccuracy: true, 
+
+            const options = {
+                enableHighAccuracy: true,
                 timeout: 10000, // 10s for laptops
-                maximumAge: 0 
+                maximumAge: 0
             };
 
             navigator.geolocation.getCurrentPosition(
@@ -2343,7 +2371,7 @@
         // ── DOWNLOAD HISTORY EXCEL — Styled HTML Table ───────────────────────────────
         function downloadHistoryCSV() {
             if (!historyRows.length) { showToast('No data to download', true); return; }
-            
+
             // Build an HTML table with inline CSS that Excel will render
             let html = `
             <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
@@ -2366,7 +2394,7 @@
                         <td colspan="3" class="header-info">Registration ID:- ${STUDENT.regId}</td>
                     </tr>
                     <tr>
-                        <td colspan="3" class="header-info">Generated: - ${new Date().toLocaleDateString('en-IN', {day: '2-digit', month: '2-digit', year: 'numeric'}).replace(/\//g, '-')}</td>
+                        <td colspan="3" class="header-info">Generated: - ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')}</td>
                     </tr>
                     <tr><td colspan="3" style="border:none;"></td></tr> <!-- Empty row for spacing -->
                     
@@ -2389,7 +2417,7 @@
             </body>
             </html>
             `;
-            
+
             const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -2544,9 +2572,9 @@
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: data.body
                 })
-                .then(r => r.json())
-                .then(d => { if (!d.success) remaining.push(data); })
-                .catch(() => remaining.push(data));
+                    .then(r => r.json())
+                    .then(d => { if (!d.success) remaining.push(data); })
+                    .catch(() => remaining.push(data));
             });
 
             Promise.all(promises).then(() => {
@@ -2557,21 +2585,21 @@
         window.addEventListener('online', syncOfflineAttendance);
         setTimeout(syncOfflineAttendance, 3000);
     </script>
-<script>
-    // ============================================================================
-    // AUTO SESSION POLLING (Single Device Login Enforcement)
-    // ============================================================================
-    setInterval(async () => {
-        try {
-            const result = await fetch('../backend/auth_api.php?action=checkSession').then(r => r.json());
-            if (result && !result.logged_in) {
-                window.location.href = 'Attendify.html';
+    <script>
+        // ============================================================================
+        // AUTO SESSION POLLING (Single Device Login Enforcement)
+        // ============================================================================
+        setInterval(async () => {
+            try {
+                const result = await fetch('../backend/auth_api.php?action=checkSession').then(r => r.json());
+                if (result && !result.logged_in) {
+                    window.location.href = 'Attendify.html';
+                }
+            } catch (e) {
+                // ignore network errors silently
             }
-        } catch (e) {
-            // ignore network errors silently
-        }
-    }, 5000); // 5 seconds check
-</script>
+        }, 5000); // 5 seconds check
+    </script>
 </body>
 
 </html>

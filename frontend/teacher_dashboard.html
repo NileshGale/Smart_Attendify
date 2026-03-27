@@ -2079,7 +2079,7 @@
                                     id="codeTeacher"></span></div>
                             <div class="code-info-chip" id="geoLockBadge" style="display:none; background:rgba(0,188,212,.1); color:var(--primary-cyan); border-color:rgba(0,188,212,.3);"><i class="fa-solid fa-location-dot"></i> <span id="geoLockBadgeText">📍 Locked 100m</span></div>
                         </div>
-                        <div class="code-timer" id="codeTimer">00:50</div>
+                        <div class="code-timer" id="codeTimer">00:30</div>
                         <div style="display:flex; align-items:center; gap:10px; justify-content:center; margin-top:0.5rem">
                             <button class="btn-regenerate" id="btnRegenerateCode" onclick="generateUniqueCode()"> Regenerate Code</button>
                             <div id="codeLimitIndicator" style="font-size:0.75rem; color:var(--text-muted); font-weight:600"></div>
@@ -3320,7 +3320,7 @@
 
             // Internal function to actually call the API
             function doGenerate(lat, lng, maxDist, accuracy) {
-                let bodyStr = `action=generateUniqueCode&subject_name=${encodeURIComponent(currentSubject)}&validity_seconds=50`;
+                let bodyStr = `action=generateUniqueCode&subject_name=${encodeURIComponent(currentSubject)}&validity_seconds=30`;
                 if (lat !== null && lng !== null && maxDist !== null) {
                     bodyStr += `&teacher_lat=${lat}&teacher_lng=${lng}&max_distance_meters=${maxDist}&teacher_accuracy=${accuracy}`;
                 }
