@@ -29,8 +29,8 @@ Attendify is a modern, web-based attendance management system designed for educa
     *   Students have unique QR codes.
     *   Teachers can scan student QR codes to mark attendance instantly.
 2.  **Unique Code Attendance**:
-    *   Teachers generate a unique 6-digit code for a session.
-    *   Codes have a configurable validity timer (e.g., 15 minutes).
+    *   Teachers generate a unique 7-character code for a session.
+    *   Codes have a configurable validity timer (default: 30 seconds for anti-proxy security).
     *   Students enter the code in their dashboard to mark attendance.
 3.  **Geolocation Verification**:
     *   Ensures students are physically present in the classroom.
@@ -53,7 +53,7 @@ Attendify is a modern, web-based attendance management system designed for educa
 4.  **Monitoring**: View overall attendance statistics and system health.
 
 ### For Teachers
-1.  **Login**: Use your Teacher ID (e.g., TEA2024001).
+1.  **Login**: Use your Teacher ID (e.g., TEA2024001). Department: Commerce and Management.
 2.  **Dashboard**: View your schedule and assigned subjects.
 3.  **Mark Attendance**:
     *   **QR Scanner**: Open the scanner and scan student codes.
@@ -62,7 +62,7 @@ Attendify is a modern, web-based attendance management system designed for educa
 4.  **Reports**: Download attendance logs for any date or subject.
 
 ### For Students
-1.  **Login**: Use your Student ID (e.g., SEE2004001).
+1.  **Login**: Use your Student ID (e.g., SEE2004001). Branch: BCCA | Department: Commerce and Management.
 2.  **Dashboard**: Check your current attendance percentage for all subjects.
 3.  **Mark Presence**:
     *   Enter the unique code provided by the teacher.
@@ -107,7 +107,7 @@ Attendify now includes robust security measures to prevent multi-device login an
 
 1.  **Single-Device Login (SDL)**:
     *   **Concurrent Login Prevention**: If a user logs into a new device, their session on any previous device is automatically terminated.
-    *   **Live Session Polling**: The dashboards perform a background check every 5 seconds to ensure the current session is still valid.
+    *   **Live Session Polling**: The dashboards perform a background check every 30 seconds to ensure the current session is still valid.
 2.  **Anti-Proxy & Anti-Cheat Measures**:
     *   **30-Second Unique Code Window**: The validity of attendance codes has been reduced to **30 seconds**. This prevents students from effectively sharing codes via messaging apps.
     *   **Tab-Switching Detection**: The student dashboard instantly clears the attendance code input field if the student minimizes the browser or switches to another tab.
@@ -116,3 +116,7 @@ Attendify now includes robust security measures to prevent multi-device login an
 ---
 *Developed with ❤️ for Smart Attendance Management.*
 thankyou
+
+## 📝 Changelog
+
+*   **[2026-03-27]**: Fixed mobile layout issue where the bottom of the dashboard content was cut off on smaller screens. Added `padding-bottom` to the `.main-content` container in `@media (max-width: 768px)` and `@media (max-width: 480px)` breakpoints across `student_dashboard.html`, `teacher_dashboard.html`, and `admin_dashboard.html`.
