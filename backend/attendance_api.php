@@ -1542,6 +1542,23 @@ if ($action === 'getClassAttendanceByDate') {
     }
     
     try {
+        // Step 1: Check if there is at least one attendance record (Present or Manual Absent) for this date and subject.
+        // This prevents showing a full list of "Absent" students on days when no lecture was held.
+        $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM attendance WHERE subject_id = ? AND attendance_date = ?");
+        $checkStmt->execute([$subjectId, $date]);
+        $hasAttendance = (int)$checkStmt->fetchColumn() > 0;
+
+        if (!$hasAttendance) {
+            echo json_encode([
+                'success' => true,
+                'records' => [],
+                'count' => 0,
+                'message' => 'No attendance session found for this subject on the selected date.'
+            ]);
+            exit;
+        }
+
+        // Step 2: Fetch the full list if attendance exists
         $stmt = $pdo->prepare("
             SELECT 
                 u.full_name, 

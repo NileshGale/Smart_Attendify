@@ -5065,8 +5065,11 @@
                         applyAttendanceFilters(); // Initial render with current filters
                         showToast('Record generated successfully');
                     } else {
+                        // Display the descriptive message if no attendance session was found
                         emptyState.style.display = 'block';
-                        showToast('No enrollment found for this subject', true);
+                        const emptyMsg = data.message || 'No student enrollment found for this subject.';
+                        emptyState.querySelector('p').textContent = emptyMsg;
+                        showToast(emptyMsg, true);
                     }
                 } else {
                     showToast(data.message || 'Failed to fetch record', true);
