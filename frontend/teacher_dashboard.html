@@ -2462,6 +2462,29 @@
 
                     <!-- Record Display Area -->
                     <div id="classRecordDisplay" style="display:none; margin-top: 2.5rem; border-top: 1px dashed var(--border); padding-top: 2rem; position: relative; z-index: 1;">
+                        
+                        <!-- Filtering Toolbar -->
+                        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; background: var(--surface); padding: 0.75rem 1.25rem; border-radius: 10px; border: 1px solid var(--border); flex-wrap: wrap; box-shadow: var(--shadow-sm);">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <i class="fa-solid fa-filter" style="color: var(--primary-cyan); font-size: 0.9rem;"></i>
+                                <label style="font-size: 0.75rem; font-weight: 800; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;">Show Rows</label>
+                                <select id="recordLimitFilter" onchange="applyAttendanceFilters()" style="padding: 0.4rem 0.8rem; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.825rem; font-weight: 700; color: var(--navy-dark); background: var(--bg); cursor: pointer; outline: none; transition: border-color 0.2s;">
+                                    <option value="all">All Rows</option>
+                                    <option value="10">First 10</option>
+                                    <option value="20">First 20</option>
+                                </select>
+                            </div>
+                            <div style="width: 1px; height: 20px; background: var(--border); margin: 0 0.25rem;"></div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <label style="font-size: 0.75rem; font-weight: 800; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;">Status</label>
+                                <select id="recordStatusFilter" onchange="applyAttendanceFilters()" style="padding: 0.4rem 0.8rem; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.825rem; font-weight: 700; color: var(--navy-dark); background: var(--bg); cursor: pointer; outline: none; transition: border-color 0.2s;">
+                                    <option value="all">All Statuses</option>
+                                    <option value="present">Present Only</option>
+                                    <option value="absent">Absent Only</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; background: rgba(0,188,212,0.03); padding: 1rem; border-radius: 12px; border-left: 4px solid var(--primary-cyan);">
                             <div>
                                 <h5 id="classRecordTitle" style="font-weight: 800; color: var(--navy-dark); margin: 0; font-size: 1.1rem;">Attendance Record</h5>
@@ -4970,6 +4993,9 @@
             }
         }
 
+        // ─── CLASS ATTENDANCE LOGIC ───
+        let currentClassRecords = [];
+
         async function generateClassAttendanceRecord() {
             const subjectId = document.getElementById('classRecordSubject').value;
             const date = document.getElementById('classRecordDate').value;
@@ -5006,41 +5032,8 @@
                             return 0;
                         });
 
-                        let absentHeaderAdded = false;
-                        
-                        data.records.forEach((r, index) => {
-                            const isPresent = r.status.toLowerCase() === 'present';
-                            
-                            // If we hit the first absent student, add a sub-header
-                            if (!isPresent && !absentHeaderAdded) {
-                                const headerTr = document.createElement('tr');
-                                headerTr.innerHTML = `
-                                    <td colspan="4" style="background: rgba(239, 68, 68, 0.05); padding: 0.75rem 1rem; font-weight: 800; color: #ef4444; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border);">
-                                        <i class="fa-solid fa-user-xmark" style="margin-right: 8px;"></i> Absent Students
-                                    </td>
-                                `;
-                                tableBody.appendChild(headerTr);
-                                absentHeaderAdded = true;
-                            }
-
-                            const tr = document.createElement('tr');
-                            const statusColor = isPresent ? '#10b981' : '#ef4444';
-                            const bgColor = isPresent ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)';
-                            const borderColor = isPresent ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)';
-                            const statusIcon = isPresent ? 'fa-check-circle' : 'fa-times-circle';
-                            
-                            tr.innerHTML = `
-                                <td style="text-align: center; padding: 1rem; font-weight: 700; color: var(--text-light); border-bottom: 1px solid var(--border);">${index + 1}</td>
-                                <td style="padding: 1rem; font-weight: 600; color: var(--navy-dark); border-bottom: 1px solid var(--border); font-size: 0.95rem;">${r.full_name}</td>
-                                <td style="padding: 1rem; font-family: 'Courier New', monospace; font-weight: 700; border-bottom: 1px solid var(--border); font-size: 1rem; color: var(--navy-dark);">${r.reg_id}</td>
-                                <td style="text-align: center; padding: 1rem; border-bottom: 1px solid var(--border);">
-                                    <span style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; background: ${bgColor}; color: ${statusColor}; border: 1px solid ${borderColor}; letter-spacing: 0.5px;">
-                                        <i class="fa-solid ${statusIcon}"></i> ${r.status}
-                                    </span>
-                                </td>
-                            `;
-                            tableBody.appendChild(tr);
-                        });
+                        currentClassRecords = data.records; // Store globally for filtering
+                        applyAttendanceFilters(); // Initial render with current filters
                         showToast('Record generated successfully');
                     } else {
                         emptyState.style.display = 'block';
@@ -5053,6 +5046,67 @@
                 console.error('Error:', e);
                 showToast('Connection error', true);
             }
+        }
+
+        function applyAttendanceFilters() {
+            const limit = document.getElementById('recordLimitFilter').value;
+            const status = document.getElementById('recordStatusFilter').value;
+            
+            let filtered = [...currentClassRecords];
+            
+            // Apply status filter
+            if (status !== 'all') {
+                filtered = filtered.filter(r => r.status.toLowerCase() === status.toLowerCase());
+            }
+            
+            // Apply limit filter
+            if (limit !== 'all') {
+                const n = parseInt(limit);
+                filtered = filtered.slice(0, n);
+            }
+            
+            renderRecordTable(filtered);
+        }
+
+        function renderRecordTable(filtered) {
+            const tableBody = document.getElementById('classRecordTableBody');
+            tableBody.innerHTML = '';
+            
+            let absentHeaderAdded = false;
+            
+            filtered.forEach((r, index) => {
+                const isPresent = r.status.toLowerCase() === 'present';
+                
+                // If we hit the first absent student, add a sub-header
+                if (!isPresent && !absentHeaderAdded) {
+                    const headerTr = document.createElement('tr');
+                    headerTr.innerHTML = `
+                        <td colspan="4" style="background: rgba(239, 68, 68, 0.05); padding: 0.75rem 1rem; font-weight: 800; color: #ef4444; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border);">
+                            <i class="fa-solid fa-user-xmark" style="margin-right: 8px;"></i> Absent Students
+                        </td>
+                    `;
+                    tableBody.appendChild(headerTr);
+                    absentHeaderAdded = true;
+                }
+
+                const tr = document.createElement('tr');
+                const statusColor = isPresent ? '#10b981' : '#ef4444';
+                const bgColor = isPresent ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)';
+                const borderColor = isPresent ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)';
+                const statusIcon = isPresent ? 'fa-check-circle' : 'fa-times-circle';
+                
+                tr.innerHTML = `
+                    <td style="text-align: center; padding: 1rem; font-weight: 700; color: var(--text-light); border-bottom: 1px solid var(--border);">${index + 1}</td>
+                    <td style="padding: 1rem; font-weight: 600; color: var(--navy-dark); border-bottom: 1px solid var(--border); font-size: 0.95rem;">${r.full_name}</td>
+                    <td style="padding: 1rem; font-family: 'Courier New', monospace; font-weight: 700; border-bottom: 1px solid var(--border); font-size: 1rem; color: var(--navy-dark);">${r.reg_id}</td>
+                    <td style="text-align: center; padding: 1rem; border-bottom: 1px solid var(--border);">
+                        <span style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; background: ${bgColor}; color: ${statusColor}; border: 1px solid ${borderColor}; letter-spacing: 0.5px;">
+                            <i class="fa-solid ${statusIcon}"></i> ${r.status}
+                        </span>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
         }
 
         async function downloadClassAttendancePDF() {
@@ -5108,11 +5162,12 @@
 
             // Table Data Preparation
             const tableBody = [];
-            document.querySelectorAll('#classRecordTableBody tr').forEach((row, index) => {
+            let serialNo = 1;
+            document.querySelectorAll('#classRecordTableBody tr').forEach((row) => {
                 const cols = row.querySelectorAll('td');
                 if(cols.length >= 4) {
                     tableBody.push([
-                        index + 1,
+                        serialNo++,
                         cols[1].textContent.trim(),
                         cols[2].textContent.trim(),
                         cols[3].textContent.trim().toUpperCase()
