@@ -2522,10 +2522,11 @@
                             <table style="width: 100%; border-collapse: collapse;">
                                 <thead>
                                     <tr style="background: var(--navy-dark);">
-                                        <th style="width: 80px; text-align: center; padding: 1rem; border-top-left-radius: 10px; color: white;">SR. NO.</th>
+                                        <th style="width: 60px; text-align: center; padding: 1rem; border-top-left-radius: 10px; color: white;">SR.</th>
                                         <th style="text-align: left; padding: 1rem; color: white;">STUDENT NAME</th>
                                         <th style="text-align: left; padding: 1rem; color: white;">REGISTRATION ID</th>
-                                        <th style="text-align: center; padding: 1rem; border-top-right-radius: 10px; color: white;">ATTENDANCE STATUS</th>
+                                        <th style="text-align: center; padding: 1rem; color: white;">MARKED TIME</th>
+                                        <th style="text-align: center; padding: 1rem; border-top-right-radius: 10px; color: white;">STATUS</th>
                                     </tr>
                                 </thead>
                                 <tbody id="classRecordTableBody">
@@ -5109,7 +5110,7 @@
                 if (!isPresent && !absentHeaderAdded) {
                     const headerTr = document.createElement('tr');
                     headerTr.innerHTML = `
-                        <td colspan="4" style="background: rgba(239, 68, 68, 0.05); padding: 0.75rem 1rem; font-weight: 800; color: #ef4444; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border);">
+                        <td colspan="5" style="background: rgba(239, 68, 68, 0.05); padding: 0.75rem 1rem; font-weight: 800; color: #ef4444; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border);">
                             <i class="fa-solid fa-user-xmark" style="margin-right: 8px;"></i> Absent Students
                         </td>
                     `;
@@ -5123,10 +5124,15 @@
                 const borderColor = isPresent ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)';
                 const statusIcon = isPresent ? 'fa-check-circle' : 'fa-times-circle';
                 
+                const markedTime = r.marked_at 
+                    ? new Date(r.marked_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
+                    : '-';
+
                 tr.innerHTML = `
                     <td style="text-align: center; padding: 1rem; font-weight: 700; color: var(--text-light); border-bottom: 1px solid var(--border);">${index + 1}</td>
                     <td style="padding: 1rem; font-weight: 600; color: var(--navy-dark); border-bottom: 1px solid var(--border); font-size: 0.95rem;">${r.full_name}</td>
                     <td style="padding: 1rem; font-family: 'Courier New', monospace; font-weight: 700; border-bottom: 1px solid var(--border); font-size: 1rem; color: var(--navy-dark);">${r.reg_id}</td>
+                    <td style="text-align: center; padding: 1rem; font-weight: 600; color: var(--text-muted); border-bottom: 1px solid var(--border); font-size: 0.85rem;">${markedTime}</td>
                     <td style="text-align: center; padding: 1rem; border-bottom: 1px solid var(--border);">
                         <span style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; background: ${bgColor}; color: ${statusColor}; border: 1px solid ${borderColor}; letter-spacing: 0.5px;">
                             <i class="fa-solid ${statusIcon}"></i> ${r.status}
@@ -5193,12 +5199,13 @@
             let serialNo = 1;
             document.querySelectorAll('#classRecordTableBody tr').forEach((row) => {
                 const cols = row.querySelectorAll('td');
-                if(cols.length >= 4) {
+                if(cols.length >= 5) {
                     tableBody.push([
-                        serialNo++,
+                        cols[0].textContent.trim(),
                         cols[1].textContent.trim(),
                         cols[2].textContent.trim(),
-                        cols[3].textContent.trim().toUpperCase()
+                        cols[3].textContent.trim(),
+                        cols[4].textContent.trim().toUpperCase()
                     ]);
                 }
             });
@@ -5211,7 +5218,7 @@
             // Table using autoTable with colorful headers
             doc.autoTable({
                 startY: 85,
-                head: [['SR.', 'STUDENT NAME', 'REGISTRATION ID', 'STATUS']],
+                head: [['SR.', 'STUDENT NAME', 'REGISTRATION ID', 'TIME', 'STATUS']],
                 body: tableBody,
                 theme: 'grid',
                 headStyles: { 
@@ -5226,17 +5233,18 @@
                     cellPadding: 2
                 },
                 columnStyles: {
-                    0: { halign: 'center', cellWidth: 12 },
+                    0: { halign: 'center', cellWidth: 10 },
                     1: { halign: 'left' },
-                    2: { halign: 'left', cellWidth: 40, font: 'courier' },
-                    3: { halign: 'center', fontStyle: 'bold', cellWidth: 30 }
+                    2: { halign: 'left', cellWidth: 35, font: 'courier' },
+                    3: { halign: 'center', cellWidth: 30 },
+                    4: { halign: 'center', fontStyle: 'bold', cellWidth: 25 }
                 },
                 styles: {
                     lineColor: [226, 232, 240],
                     lineWidth: 0.1
                 },
                 didParseCell: function(data) {
-                    if (data.section === 'body' && data.column.index === 3) {
+                    if (data.section === 'body' && data.column.index === 4) {
                         if (data.cell.raw === 'PRESENT') {
                             data.cell.styles.textColor = [16, 185, 129];
                         } else {
