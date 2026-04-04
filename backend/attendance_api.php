@@ -1549,14 +1549,18 @@ if ($action === 'getClassAttendanceByDate') {
                 COALESCE(a.status, 'absent') AS status,
                 a.marked_at
             FROM users u
-            LEFT JOIN student_subjects ss ON u.id = ss.student_id AND ss.subject_id = ?
+            JOIN subjects s ON s.id = ?
             LEFT JOIN attendance a ON u.id = a.student_id 
-                AND a.subject_id = ? 
+                AND a.subject_id = s.id 
                 AND a.attendance_date = ?
-            WHERE ss.id IS NOT NULL OR a.id IS NOT NULL
+            WHERE u.role = 'student' 
+              AND (u.department = s.department OR EXISTS (
+                  SELECT 1 FROM student_subjects ss 
+                  WHERE ss.student_id = u.id AND ss.subject_id = s.id
+              ))
             ORDER BY (CASE WHEN COALESCE(a.status, 'absent') = 'present' THEN 1 ELSE 2 END), u.full_name ASC
         ");
-        $stmt->execute([$subjectId, $subjectId, $date]);
+        $stmt->execute([$subjectId, $date]);
         $records = $stmt->fetchAll();
         
         echo json_encode([
