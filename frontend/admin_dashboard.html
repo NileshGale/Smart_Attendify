@@ -343,6 +343,29 @@
             border-color: var(--primary-cyan);
         }
 
+        /* Surgical fix for student search icon edge positioning */
+        .student-search-wrapper {
+            position: relative !important;
+            width: 100% !important;
+            display: block !important;
+            flex: 1 !important;
+        }
+
+        #searchClearBtn {
+            position: absolute !important;
+            right: 12px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            background: none !important;
+            border: none !important;
+            cursor: pointer !important;
+            color: #9ca3af !important;
+            font-size: 20px !important;
+            padding: 10px !important;
+            display: none;
+            z-index: 10 !important;
+        }
+
         .btn-primary {
             background: linear-gradient(135deg, var(--primary-cyan), var(--primary-dark));
             color: white;
@@ -998,12 +1021,19 @@
             }
 
             .search-row {
-                flex-direction: column;
+                flex-direction: column !important;
+            }
+
+            .search-row > div {
+                width: 100% !important;
+                flex: none !important;
+                position: relative !important;
+                margin-bottom: 0.5rem;
             }
 
             .search-row input,
             .search-row button {
-                width: 100%;
+                width: 100% !important;
             }
 
             .add-user-cards {
@@ -1220,12 +1250,11 @@
                 <div class="section-title">👥 Student Attendance</div>
                 <div class="card">
                     <div class="search-row">
-                        <div style="position:relative;flex:1">
+                        <div class="student-search-wrapper">
                             <input type="text" id="studentSearch" placeholder="Enter Registration ID or Name"
-                                style="width: 100%; box-sizing: border-box; padding-right: 42px;">
+                                style="width: 100%; box-sizing: border-box; padding-right: 50px;">
                             <button type="button"
                                 onclick="document.getElementById('studentSearch').value='';this.style.display='none';document.getElementById('studentResults').style.display='none';"
-                                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;font-size:18px;padding:8px;display:none;z-index:5"
                                 id="searchClearBtn" title="Clear Search">
                                 <i class="fa-solid fa-xmark"></i>
                             </button>
