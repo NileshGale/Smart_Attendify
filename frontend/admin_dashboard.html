@@ -1011,9 +1011,10 @@
             }
 
             #toast {
+                top: 20px;
                 left: 1rem;
                 right: 1rem;
-                bottom: 1rem;
+                bottom: auto;
                 min-width: auto;
             }
 
@@ -1221,11 +1222,11 @@
                     <div class="search-row">
                         <div style="position:relative;flex:1">
                             <input type="text" id="studentSearch" placeholder="Enter Registration ID or Name"
-                                style="width: 100%; box-sizing: border-box; padding-right: 32px;">
+                                style="width: 100%; box-sizing: border-box; padding-right: 42px;">
                             <button type="button"
                                 onclick="document.getElementById('studentSearch').value='';this.style.display='none';document.getElementById('studentResults').style.display='none';"
-                                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;padding:4px;display:none"
-                                id="searchClearBtn">
+                                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;font-size:18px;padding:8px;display:none;z-index:5"
+                                id="searchClearBtn" title="Clear Search">
                                 <i class="fa-solid fa-xmark"></i>
                             </button>
                         </div>
@@ -1305,8 +1306,10 @@
                 <div class="card">
                     <div class="search-row">
                         <div style="position: relative; flex: 1; display: flex; align-items: center;">
-                            <input type="text" id="teacherSearch" placeholder="Search teacher by name or ID" style="width: 100%; padding-right: 35px;" oninput="document.getElementById('clearTeacherSearch').style.display = this.value ? 'block' : 'none'" onkeypress="if(event.key === 'Enter') searchTeacher()">
-                            <i class="fa-solid fa-times" id="clearTeacherSearch" style="position: absolute; right: 12px; cursor: pointer; color: var(--text-muted); display: none; font-size: 14px;" onclick="clearTeacherSearch()" title="Clear Search"></i>
+                            <input type="text" id="teacherSearch" placeholder="Search teacher by name or ID" style="width: 100%; padding-right: 42px;" oninput="document.getElementById('clearTeacherSearch').style.display = this.value ? 'block' : 'none'" onkeypress="if(event.key === 'Enter') searchTeacher()">
+                            <button type="button" id="clearTeacherSearch" onclick="clearTeacherSearch()" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); display: none; font-size: 18px; padding: 8px; z-index: 5;" title="Clear Search">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
                         </div>
                         <button class="btn-primary" onclick="searchTeacher()"><i
                                 class="fa-solid fa-magnifying-glass"></i>

@@ -121,3 +121,9 @@ thankyou
 
 *   **[2026-03-27]**: Fixed mobile layout issue where the bottom of the dashboard content was cut off on smaller screens. Added `padding-bottom` to the `.main-content` container in `@media (max-width: 768px)` and `@media (max-width: 480px)` breakpoints across `student_dashboard.html`, `teacher_dashboard.html`, and `admin_dashboard.html`.
 *   **[2026-03-27]**: Fixed 'Overall Attendance' calculation in the student dashboard. It now accurately calculates the percentage based on `(Total Present / Total Lectures) * 100` across all subjects, instead of incorrectly averaging the individual subject percentages.
+*   **[2026-04-04]**: **Modernized Attendance Reporting & Dashboard UI Improvements**:
+    *   **Advanced Filtering**: Integrated dynamic "Show Rows" (All/10/20) and "Status" (All/Present/Absent) filters for attendance records.
+    *   **Premium Visuals**: Refreshed the Teacher Dashboard with a high-contrast Navy & Cyan-Teal theme. Added "Absent Students" section dividers for better clarity.
+    *   **Smart PDF Exports**: PDFs now support filtered views and maintain perfectly sequential serial numbers regardless of active filters.
+    *   **Data Integrity Fix**: Optimized backend SQL to identify absent students via department matching, ensuring complete class lists in reports even for students not explicitly enrolled in a subject.
+    *   **UX Refinement**: Added interactive "Close (X)" icons to attendance record sheets, live attendee panels, and student search result cards for a cleaner, faster workflow.

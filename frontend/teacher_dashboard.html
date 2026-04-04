@@ -1604,9 +1604,10 @@
             }
 
             #toast {
+                top: 20px;
                 left: 1rem;
                 right: 1rem;
-                bottom: 1rem;
+                bottom: auto;
                 min-width: auto;
             }
 
@@ -2422,11 +2423,11 @@
                     <div class="search-row">
                         <div style="position:relative;flex:2">
                             <input type="text" id="studentSearchEdit" placeholder="Enter Registration ID or Name"
-                                style="width: 100%; box-sizing: border-box; padding-right: 32px;">
+                                style="width: 100%; box-sizing: border-box; padding-right: 42px;">
                             <button type="button"
                                 onclick="document.getElementById('studentSearchEdit').value='';this.style.display='none';document.getElementById('studentEditResults').style.display='none';"
-                                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;padding:4px;display:none"
-                                id="searchClearBtnEdit">
+                                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;font-size:18px;padding:8px;display:none;z-index:5"
+                                id="searchClearBtnEdit" title="Clear Search">
                                 <i class="fa-solid fa-xmark"></i>
                             </button>
                         </div>
