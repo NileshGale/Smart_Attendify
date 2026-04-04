@@ -2234,6 +2234,11 @@
                                 style="display:none; background:var(--success); color:white; border:none; border-radius:6px; padding:0.4rem 1rem; font-size:0.85rem; font-weight:600; cursor:pointer;">
                                 <i class="fa-solid fa-file-pdf"></i> Download record
                             </button>
+                            <!-- close (X) button -->
+                            <button onclick="document.getElementById('eventLiveAttendeesPanel').style.display='none'" title="Close"
+                                style="background:rgba(0,0,0,0.05); border:none; color:var(--text-light); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s;">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
                         </div>
                     </div>
                     <div id="liveAttendeeList"
@@ -2462,19 +2467,26 @@
                                 <h5 id="classRecordTitle" style="font-weight: 800; color: var(--navy-dark); margin: 0; font-size: 1.1rem;">Attendance Record</h5>
                                 <div id="classRecordSubtitle" style="font-size: 0.85rem; color: var(--text-light); margin-top: 2px;">Subject: - | Date: -</div>
                             </div>
-                            <button class="btn-download-record" onclick="downloadClassAttendancePDF()" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 0.6rem 1.25rem; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25); transition: all 0.3s ease;">
-                                <i class="fa-solid fa-file-pdf"></i> DOWNLOAD PDF
-                            </button>
+                            <div style="display: flex; gap: 0.75rem; align-items: center;">
+                                <!-- Close (X) button -->
+                                <button onclick="document.getElementById('classRecordDisplay').style.display='none'" title="Close Record" 
+                                    style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1.5px solid rgba(239, 68, 68, 0.2); width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease;">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                                <button class="btn-download-record" onclick="downloadClassAttendancePDF()" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 0.6rem 1.25rem; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25); transition: all 0.3s ease;">
+                                    <i class="fa-solid fa-file-pdf"></i> DOWNLOAD PDF
+                                </button>
+                            </div>
                         </div>
                         
                         <div class="table-wrap" style="box-shadow: var(--shadow-sm); border-radius: 10px; border: 1px solid var(--border);">
                             <table style="width: 100%; border-collapse: collapse;">
                                 <thead>
-                                    <tr style="background: var(--navy-dark); color: white;">
-                                        <th style="width: 80px; text-align: center; padding: 1rem; border-top-left-radius: 10px;">SR. NO.</th>
-                                        <th style="text-align: left; padding: 1rem;">STUDENT NAME</th>
-                                        <th style="text-align: left; padding: 1rem;">REGISTRATION ID</th>
-                                        <th style="text-align: center; padding: 1rem; border-top-right-radius: 10px;">ATTENDANCE STATUS</th>
+                                    <tr style="background: var(--navy-dark);">
+                                        <th style="width: 80px; text-align: center; padding: 1rem; border-top-left-radius: 10px; color: white;">SR. NO.</th>
+                                        <th style="text-align: left; padding: 1rem; color: white;">STUDENT NAME</th>
+                                        <th style="text-align: left; padding: 1rem; color: white;">REGISTRATION ID</th>
+                                        <th style="text-align: center; padding: 1rem; border-top-right-radius: 10px; color: white;">ATTENDANCE STATUS</th>
                                     </tr>
                                 </thead>
                                 <tbody id="classRecordTableBody">
