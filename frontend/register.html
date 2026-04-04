@@ -547,12 +547,17 @@
                 padding: 30px 20px;
             }
 
-            #toast {
-                top: 20px;
+            .toast {
+                bottom: 1rem;
                 left: 1rem;
                 right: 1rem;
-                bottom: auto;
+                top: auto;
                 min-width: auto;
+            }
+
+            .toast.top-toast {
+                top: 20px;
+                bottom: auto;
             }
 
             .credential-value {
@@ -783,7 +788,14 @@
             if (existingToast) existingToast.remove();
 
             const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
+            
+            // Position successful registration at the top on mobile, others at bottom
+            let topClass = '';
+            if (message.toLowerCase().includes('successful') || message.toLowerCase().includes('successfully')) {
+                topClass = 'top-toast';
+            }
+            
+            toast.className = `toast ${type} ${topClass}`;
             toast.innerHTML = `
                 <span class="toast-icon">${type === 'success' ? '✓' : '⚠'}</span>
                 <span style="flex: 1; font-size: 15px; color: var(--text);">${message}</span>

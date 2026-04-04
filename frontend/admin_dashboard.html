@@ -343,29 +343,6 @@
             border-color: var(--primary-cyan);
         }
 
-        /* Surgical fix for student search icon edge positioning */
-        .student-search-wrapper {
-            position: relative !important;
-            width: 100% !important;
-            display: block !important;
-            flex: 1 !important;
-        }
-
-        #searchClearBtn {
-            position: absolute !important;
-            right: 12px !important;
-            top: 50% !important;
-            transform: translateY(-50%) !important;
-            background: none !important;
-            border: none !important;
-            cursor: pointer !important;
-            color: #9ca3af !important;
-            font-size: 20px !important;
-            padding: 10px !important;
-            display: none;
-            z-index: 10 !important;
-        }
-
         .btn-primary {
             background: linear-gradient(135deg, var(--primary-cyan), var(--primary-dark));
             color: white;
@@ -1041,11 +1018,16 @@
             }
 
             #toast {
-                top: 20px;
+                bottom: 1rem;
                 left: 1rem;
                 right: 1rem;
-                bottom: auto;
+                top: auto;
                 min-width: auto;
+            }
+
+            #toast.top-toast {
+                top: 20px;
+                bottom: auto;
             }
 
             .nav-brand h1 {
@@ -1249,18 +1231,19 @@
             <div id="studentAttendanceSection" class="content-section">
                 <div class="section-title">👥 Student Attendance</div>
                 <div class="card">
-                    <div class="search-row">
-                        <div class="student-search-wrapper">
+                    <div class="search-row" style="display: block;">
+                        <div style="position:relative; width:100%; display:block; margin-bottom:12px;">
                             <input type="text" id="studentSearch" placeholder="Enter Registration ID or Name"
-                                style="width: 100%; box-sizing: border-box; padding-right: 50px;">
-                            <button type="button"
-                                onclick="document.getElementById('studentSearch').value='';this.style.display='none';document.getElementById('studentResults').style.display='none';"
-                                id="searchClearBtn" title="Clear Search">
+                                style="width: 100%; box-sizing: border-box; padding: 12px 50px 12px 15px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px;">
+                            <span id="searchClearBtn" 
+                                onclick="document.getElementById('studentSearch').value=''; this.style.display='none'; document.getElementById('studentResults').style.display='none';"
+                                style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #9ca3af; font-size: 22px; display: none; z-index: 100; padding: 5px;">
                                 <i class="fa-solid fa-xmark"></i>
-                            </button>
+                            </span>
                         </div>
-                        <button class="btn-primary" onclick="searchStudent()"><i
-                                class="fa-solid fa-magnifying-glass"></i> Search</button>
+                        <button class="btn-primary" onclick="searchStudent()" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px;">
+                            <i class="fa-solid fa-magnifying-glass"></i> Search
+                        </button>
                     </div>
                 </div>
                 <div id="studentResults" style="display:none;margin-top:1rem">
@@ -2629,7 +2612,15 @@
             const t = document.getElementById('toast');
             document.getElementById('toastText').innerHTML = msg;
             document.getElementById('toastIcon').innerHTML = isError ? '<i class="fa-solid fa-circle-exclamation"></i>' : '<i class="fa-solid fa-check-circle"></i>';
-            t.className = 'show' + (isError ? ' error' : '');
+            
+            // Position "Login successful" at the top on mobile, others at bottom
+            if (msg.toLowerCase().includes('login successful')) {
+                t.classList.add('top-toast');
+            } else {
+                t.classList.remove('top-toast');
+            }
+            
+            t.className = 'show ' + (isError ? 'error ' : '') + (t.classList.contains('top-toast') ? 'top-toast' : '');
             clearTimeout(toastTimeout);
             toastTimeout = setTimeout(() => t.className = t.className.replace('show', ''), 3000);
         }

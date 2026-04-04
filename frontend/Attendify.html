@@ -366,11 +366,16 @@
             }
 
             #toast {
-                top: 20px;
+                bottom: 1.5rem;
                 left: 1rem;
                 right: 1rem;
-                bottom: auto;
+                top: auto;
                 min-width: auto;
+            }
+
+            #toast.top-toast {
+                top: 20px;
+                bottom: auto;
             }
         }
     </style>
@@ -518,7 +523,15 @@
         function showToast(message, type = 'success') {
             toast.textContent = message;
             toast.className = `toast ${type}`;
-            toast.classList.remove('hidden');
+            
+            // Position successful login/reset at the top on mobile, others at bottom
+            if (message.toLowerCase().includes('successful') || message.toLowerCase().includes('successfully')) {
+                toast.classList.add('top-toast');
+                toast.classList.remove('hidden');
+            } else {
+                toast.classList.remove('top-toast');
+                toast.classList.remove('hidden');
+            }
 
             setTimeout(() => {
                 toast.classList.add('hidden');

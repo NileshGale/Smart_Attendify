@@ -1057,11 +1057,16 @@
             }
 
             #toast {
-                top: 20px;
+                bottom: 1rem;
                 left: 1rem;
                 right: 1rem;
-                bottom: auto;
+                top: auto;
                 min-width: auto;
+            }
+
+            #toast.top-toast {
+                top: 20px;
+                bottom: auto;
             }
 
             .nav-brand h1 {
@@ -2531,7 +2536,15 @@
             const t = document.getElementById('toast');
             document.getElementById('toastText').innerHTML = msg;
             document.getElementById('toastIcon').innerHTML = isError ? '<i class="fa-solid fa-xmark"></i>' : '<i class="fa-solid fa-check-circle"></i>';
-            t.className = 'show' + (isError ? ' error' : '');
+            
+            // Position "Login successful" at the top on mobile, others at bottom
+            if (msg.toLowerCase().includes('successfully') || msg.toLowerCase().includes('successful')) {
+                t.classList.add('top-toast');
+            } else {
+                t.classList.remove('top-toast');
+            }
+            
+            t.className = 'show ' + (isError ? 'error ' : '') + (t.classList.contains('top-toast') ? 'top-toast ' : '');
             clearTimeout(toastTimeout);
             toastTimeout = setTimeout(() => t.className = '', 3500);
         }
