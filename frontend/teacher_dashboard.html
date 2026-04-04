@@ -3942,47 +3942,41 @@
             const eventDate = document.getElementById('eventDate').value || new Date().toLocaleDateString('en-IN');
             const generatedDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString('en-IN');
 
-            // --- PAGE BACKGROUND ---
-            doc.setFillColor(249, 250, 251); // Off-white: #f9fafb
-            doc.rect(0, 0, 210, 297, 'F');
+            // --- COLORFUL WEB-STYLE HEADER (Navy Block) ---
+            doc.setFillColor(30, 58, 95); // Navy: #1e3a5f
+            doc.rect(0, 0, 210, 80, 'F');
 
-            // --- PREMIUM HEADER (White Style) ---
-            doc.setTextColor(30, 58, 95); // Navy: #1e3a5f
+            // Header Content (White)
+            doc.setTextColor(255, 255, 255);
             doc.setFontSize(26);
             doc.setFont("helvetica", "bold");
-            doc.text("Attendify - Event Attendance", 20, 25);
+            doc.text("Attendify — Event Attendance", 20, 25);
 
-            doc.setTextColor(148, 163, 184); // Slate grey: #94a3b8
+            doc.setTextColor(165, 243, 252); // Cyan-100 for ID
             doc.setFontSize(8);
             doc.setFont("helvetica", "normal");
             doc.text(`Report ID: EVT-${Date.now()}`, 20, 31);
-            doc.text(`Generated on: ${generatedDate}`, 20, 36);
+            
+            doc.setTextColor(255, 255, 255);
+            doc.text(`Generated: ${generatedDate}`, 150, 68);
 
-            // Horizontal Divider (Stronger line for structure)
-            doc.setDrawColor(30, 58, 95);
-            doc.setLineWidth(1.2);
+            // Metadata Row - White on Navy
+            doc.setDrawColor(255, 255, 255);
+            doc.setLineWidth(0.2);
             doc.line(20, 42, 190, 42);
 
-            // Metadata Info Box (Light tint)
-            doc.setFillColor(248, 251, 254);
-            doc.setDrawColor(226, 232, 240);
-            doc.setLineWidth(0.1);
-            doc.roundedRect(20, 48, 170, 26, 3, 3, 'FD');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(7);
+            doc.setFont("helvetica", "normal");
+            doc.text("EVENT NAME:", 20, 50);
+            doc.text("EVENT DATE:", 20, 57);
+            doc.text("ATTENDEES:", 20, 64);
 
-            // Metadata Content - COMPACT STRUCTURE
-            doc.setTextColor(71, 85, 105);
-            doc.setFontSize(6.5);
+            doc.setFontSize(10);
             doc.setFont("helvetica", "bold");
-            doc.text("EVENT NAME:", 25, 56);
-            doc.text("EVENT DATE:", 25, 63);
-            doc.text("ATTENDEES:", 25, 70);
-
-            doc.setTextColor(30, 58, 95);
-            doc.setFontSize(8);
-            doc.setFont("helvetica", "bold");
-            doc.text(eventName.toUpperCase().substring(0, 50), 60, 56);
-            doc.text(eventDate, 60, 63);
-            doc.text(currentEventStudents.length.toString(), 60, 70);
+            doc.text(eventName.toUpperCase().substring(0, 50), 60, 50);
+            doc.text(eventDate, 60, 57);
+            doc.text(currentEventStudents.length.toString(), 60, 64);
 
             // Table Data Preparation
             const tableData = currentEventStudents.map((s, idx) => [
@@ -3998,7 +3992,7 @@
                 startY: 85,
                 theme: 'grid',
                 headStyles: { 
-                    fillColor: [30, 58, 95], // Navy: #1e3a5f
+                    fillColor: [8, 145, 178], // Cyan-Teal: #0891b2
                     textColor: [255, 255, 255], 
                     fontSize: 8, 
                     fontStyle: 'bold'
@@ -4016,9 +4010,6 @@
                 styles: {
                     lineColor: [226, 232, 240],
                     lineWidth: 0.1
-                },
-                alternateRowStyles: { 
-                    fillColor: [250, 252, 254] 
                 },
                 margin: { left: 20, right: 20 }
             });
@@ -5042,47 +5033,41 @@
             const doc = new jsPDF();
             const generatedDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString('en-IN');
 
-            // --- PAGE BACKGROUND ---
-            doc.setFillColor(249, 250, 251); // Off-white: #f9fafb
-            doc.rect(0, 0, 210, 297, 'F');
+            // --- COLORFUL WEB-STYLE HEADER (Navy Block) ---
+            doc.setFillColor(30, 58, 95); // Navy: #1e3a5f
+            doc.rect(0, 0, 210, 80, 'F');
 
-            // --- PREMIUM HEADER (White Style) ---
-            doc.setTextColor(30, 58, 95); // Navy: #1e3a5f
+            // Header Content (White)
+            doc.setTextColor(255, 255, 255);
             doc.setFontSize(26);
             doc.setFont("helvetica", "bold");
-            doc.text("Attendify - Official Attendance", 20, 25);
+            doc.text("Attendify — Official Attendance", 20, 25);
 
-            doc.setTextColor(148, 163, 184); // Slate grey: #94a3b8
+            doc.setTextColor(165, 243, 252); // Cyan-100 for ID
             doc.setFontSize(8);
             doc.setFont("helvetica", "normal");
             doc.text(`Report ID: ATT-${Date.now()}`, 20, 31);
-            doc.text(`Generated on: ${generatedDate}`, 20, 36);
+            
+            doc.setTextColor(255, 255, 255);
+            doc.text(`Generated: ${generatedDate}`, 150, 68);
 
-            // Horizontal Divider (Stronger line for structure)
-            doc.setDrawColor(30, 58, 95);
-            doc.setLineWidth(1.2);
+            // Metadata Row - White on Navy
+            doc.setDrawColor(255, 255, 255);
+            doc.setLineWidth(0.2);
             doc.line(20, 42, 190, 42);
 
-            // Metadata Info Box (Light tint)
-            doc.setFillColor(248, 251, 254);
-            doc.setDrawColor(226, 232, 240);
-            doc.setLineWidth(0.1);
-            doc.roundedRect(20, 48, 170, 26, 3, 3, 'FD');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(7);
+            doc.setFont("helvetica", "normal");
+            doc.text("SUBJECT:", 20, 50);
+            doc.text("LECTURE DATE:", 20, 57);
+            doc.text("INSTRUCTOR:", 20, 64);
 
-            // Metadata Content - COMPACT STRUCTURE
-            doc.setTextColor(71, 85, 105);
-            doc.setFontSize(6.5);
+            doc.setFontSize(10);
             doc.setFont("helvetica", "bold");
-            doc.text("SUBJECT:", 25, 56);
-            doc.text("LECTURE DATE:", 25, 63);
-            doc.text("INSTRUCTOR:", 25, 70);
-
-            doc.setTextColor(30, 58, 95);
-            doc.setFontSize(8);
-            doc.setFont("helvetica", "bold");
-            doc.text(subjectName.toUpperCase().substring(0, 50), 60, 56);
-            doc.text(date, 60, 63);
-            doc.text(TEACHER.name.toUpperCase(), 60, 70);
+            doc.text(subjectName.toUpperCase().substring(0, 50), 60, 50);
+            doc.text(date, 60, 57);
+            doc.text(TEACHER.name.toUpperCase(), 60, 64);
 
             // Table Data Preparation
             const tableBody = [];
@@ -5103,14 +5088,14 @@
                 return;
             }
 
-            // Table using autoTable with decreased font size and structure
+            // Table using autoTable with colorful headers
             doc.autoTable({
                 startY: 85,
                 head: [['SR.', 'STUDENT NAME', 'REGISTRATION ID', 'STATUS']],
                 body: tableBody,
                 theme: 'grid',
                 headStyles: { 
-                    fillColor: [30, 58, 95], // Navy: #1e3a5f
+                    fillColor: [8, 145, 178], // Cyan-Teal: #0891b2
                     textColor: [255, 255, 255], 
                     fontSize: 8, 
                     fontStyle: 'bold'
@@ -5138,9 +5123,6 @@
                             data.cell.styles.textColor = [239, 68, 68];
                         }
                     }
-                },
-                alternateRowStyles: {
-                    fillColor: [250, 252, 254]
                 },
                 margin: { left: 20, right: 20 }
             });
