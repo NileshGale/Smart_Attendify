@@ -5184,15 +5184,21 @@
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(7);
             doc.setFont("helvetica", "normal");
-            doc.text("SUBJECT:", 20, 50);
-            doc.text("LECTURE DATE:", 20, 57);
-            doc.text("INSTRUCTOR:", 20, 64);
+            
+            // Labels (Line-by-line)
+            doc.text("SUBJECT:", 20, 48);
+            doc.text("LECTURE DATE:", 20, 54);
+            doc.text("INSTRUCTOR:", 20, 60);
+            doc.text("TEACHER ID:", 20, 66);
 
             doc.setFontSize(10);
             doc.setFont("helvetica", "bold");
-            doc.text(subjectName.toUpperCase().substring(0, 50), 60, 50);
-            doc.text(date, 60, 57);
-            doc.text(TEACHER.name.toUpperCase(), 60, 64);
+            
+            // Values (Aligned)
+            doc.text(subjectName.toUpperCase().substring(0, 50), 55, 48);
+            doc.text(date, 55, 54);
+            doc.text(TEACHER.name.toUpperCase(), 55, 60);
+            doc.text(TEACHER.id.toUpperCase(), 55, 66);
 
             // Table Data Preparation
             const tableBody = [];
