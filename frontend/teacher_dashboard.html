@@ -2430,6 +2430,66 @@
                     </div>
                 </div>
                 <div id="studentEditResults" style="display:none;margin-top:1rem"></div>
+
+                <!-- ════ WHOLE CLASS ATTENDANCE RECORD ════ -->
+                <div class="card" style="margin-top: 2.5rem; border-top: 4px solid var(--primary-cyan); position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; background: rgba(0,188,212,0.05); border-radius: 50%; z-index: 0;"></div>
+                    <h4 style="font-weight: 800; margin-bottom: 1.5rem; color: var(--navy-dark); display: flex; align-items: center; gap: 0.75rem; position: relative; z-index: 1;">
+                        <i class="fa-solid fa-file-invoice" style="color: var(--primary-cyan); background: rgba(0,188,212,0.1); padding: 8px; border-radius: 8px;"></i> 
+                        Generate Whole Class Attendance Record
+                    </h4>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; align-items: flex-end; position: relative; z-index: 1;">
+                        <div class="input-group" style="margin-bottom: 0;">
+                            <label style="font-weight: 700; color: var(--text-light); margin-bottom: 0.5rem; display: block; font-size: 0.85rem;">SELECT SUBJECT</label>
+                            <select id="classRecordSubject" style="width: 100%; padding: 0.75rem 1rem; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); font-weight: 600; color: var(--navy-dark); transition: all 0.3s ease;">
+                                <option value="">-- Click to Load Subjects --</option>
+                            </select>
+                        </div>
+                        <div class="input-group" style="margin-bottom: 0;">
+                            <label style="font-weight: 700; color: var(--text-light); margin-bottom: 0.5rem; display: block; font-size: 0.85rem;">SELECT DATE</label>
+                            <input type="date" id="classRecordDate" style="width: 100%; padding: 0.75rem 1rem; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); font-weight: 600; color: var(--navy-dark); transition: all 0.3s ease;">
+                        </div>
+                        <button class="btn-primary" onclick="generateClassAttendanceRecord()" style="height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 0.75rem; font-weight: 700; box-shadow: 0 4px 12px rgba(0, 188, 212, 0.2);">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> GENERATE RECORD
+                        </button>
+                    </div>
+
+                    <!-- Record Display Area -->
+                    <div id="classRecordDisplay" style="display:none; margin-top: 2.5rem; border-top: 1px dashed var(--border); padding-top: 2rem; position: relative; z-index: 1;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; background: rgba(0,188,212,0.03); padding: 1rem; border-radius: 12px; border-left: 4px solid var(--primary-cyan);">
+                            <div>
+                                <h5 id="classRecordTitle" style="font-weight: 800; color: var(--navy-dark); margin: 0; font-size: 1.1rem;">Attendance Record</h5>
+                                <div id="classRecordSubtitle" style="font-size: 0.85rem; color: var(--text-light); margin-top: 2px;">Subject: - | Date: -</div>
+                            </div>
+                            <button class="btn-download-record" onclick="downloadClassAttendancePDF()" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 0.6rem 1.25rem; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25); transition: all 0.3s ease;">
+                                <i class="fa-solid fa-file-pdf"></i> DOWNLOAD PDF
+                            </button>
+                        </div>
+                        
+                        <div class="table-wrap" style="box-shadow: var(--shadow-sm); border-radius: 10px; border: 1px solid var(--border);">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="background: var(--navy-dark); color: white;">
+                                        <th style="width: 80px; text-align: center; padding: 1rem; border-top-left-radius: 10px;">SR. NO.</th>
+                                        <th style="text-align: left; padding: 1rem;">STUDENT NAME</th>
+                                        <th style="text-align: left; padding: 1rem;">REGISTRATION ID</th>
+                                        <th style="text-align: center; padding: 1rem; border-top-right-radius: 10px;">ATTENDANCE STATUS</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="classRecordTableBody">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Empty State for Table -->
+                        <div id="classRecordEmptyState" style="display: none; padding: 3rem 1rem; text-align: center; color: var(--text-light);">
+                            <i class="fa-solid fa-user-slash" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem; display: block;"></i>
+                            <p style="font-weight: 600;">No student enrollment found for this subject.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- ════ RISK ANALYSIS SECTION ════ -->
@@ -2787,6 +2847,9 @@
             }
             if (name === 'engagement') {
                 loadEngagementStats();
+            }
+            if (name === 'viewEdit') {
+                loadTeacherSubjectsForRecord();
             }
             closeSidebar();
         }
@@ -3879,43 +3942,49 @@
             const eventDate = document.getElementById('eventDate').value || new Date().toLocaleDateString('en-IN');
             const generatedDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString('en-IN');
 
-            // Header Background
-            doc.setFillColor(30, 58, 95); // #1e3a5f
-            doc.rect(0, 0, 210, 50, 'F');
+            // --- PAGE BACKGROUND ---
+            doc.setFillColor(249, 250, 251); // Off-white: #f9fafb
+            doc.rect(0, 0, 210, 297, 'F');
 
-            // Header Content
-            doc.setTextColor(255, 255, 255);
+            // --- PREMIUM HEADER (White Style) ---
+            doc.setTextColor(30, 58, 95); // Navy: #1e3a5f
             doc.setFontSize(26);
             doc.setFont("helvetica", "bold");
-            doc.text("Attendify", 20, 25);
+            doc.text("Attendify - Event Attendance", 20, 25);
 
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "normal");
-            doc.text("EVENT ATTENDANCE RECORD", 20, 33);
-
-            doc.setFontSize(9);
-            doc.text("Generation Time:", 150, 23);
-            doc.setFont("helvetica", "bold");
-            doc.text(generatedDate, 150, 29);
-
-            // Event Details Row
-            doc.setDrawColor(255, 255, 255);
-            doc.setLineWidth(0.1);
-            doc.line(20, 37, 190, 37);
-
+            doc.setTextColor(148, 163, 184); // Slate grey: #94a3b8
             doc.setFontSize(8);
             doc.setFont("helvetica", "normal");
-            doc.text("EVENT NAME", 20, 43);
-            doc.text("EVENT DATE", 100, 43);
-            doc.text("ATTENDEES", 160, 43);
+            doc.text(`Report ID: EVT-${Date.now()}`, 20, 31);
+            doc.text(`Generated on: ${generatedDate}`, 20, 36);
 
-            doc.setFontSize(10);
+            // Horizontal Divider (Stronger line for structure)
+            doc.setDrawColor(30, 58, 95);
+            doc.setLineWidth(1.2);
+            doc.line(20, 42, 190, 42);
+
+            // Metadata Info Box (Light tint)
+            doc.setFillColor(248, 251, 254);
+            doc.setDrawColor(226, 232, 240);
+            doc.setLineWidth(0.1);
+            doc.roundedRect(20, 48, 170, 26, 3, 3, 'FD');
+
+            // Metadata Content - COMPACT STRUCTURE
+            doc.setTextColor(71, 85, 105);
+            doc.setFontSize(6.5);
             doc.setFont("helvetica", "bold");
-            doc.text(eventName.substring(0, 40), 20, 48);
-            doc.text(eventDate, 100, 48);
-            doc.text(currentEventStudents.length.toString(), 160, 48);
+            doc.text("EVENT NAME:", 25, 56);
+            doc.text("EVENT DATE:", 25, 63);
+            doc.text("ATTENDEES:", 25, 70);
 
-            // Table construction
+            doc.setTextColor(30, 58, 95);
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "bold");
+            doc.text(eventName.toUpperCase().substring(0, 50), 60, 56);
+            doc.text(eventDate, 60, 63);
+            doc.text(currentEventStudents.length.toString(), 60, 70);
+
+            // Table Data Preparation
             const tableData = currentEventStudents.map((s, idx) => [
                 idx + 1,
                 s.full_name,
@@ -3926,26 +3995,30 @@
             doc.autoTable({
                 head: [['Sr No.', 'Student Full Name', 'Registration ID', 'Join Time']],
                 body: tableData,
-                startY: 60,
-                theme: 'striped',
+                startY: 85,
+                theme: 'grid',
                 headStyles: { 
-                    fillColor: [241, 245, 249], 
-                    textColor: [71, 85, 105], 
-                    fontSize: 9, 
+                    fillColor: [30, 58, 95], // Navy: #1e3a5f
+                    textColor: [255, 255, 255], 
+                    fontSize: 8, 
                     fontStyle: 'bold'
                 },
                 bodyStyles: { 
-                    fontSize: 9, 
+                    fontSize: 8, 
                     textColor: [30, 58, 95] 
                 },
                 columnStyles: {
-                    0: { halign: 'center', cellWidth: 20 },
+                    0: { halign: 'center', cellWidth: 15 },
                     1: { halign: 'left' },
-                    2: { halign: 'left' },
+                    2: { halign: 'left', cellWidth: 40 },
                     3: { halign: 'center', cellWidth: 30 }
                 },
+                styles: {
+                    lineColor: [226, 232, 240],
+                    lineWidth: 0.1
+                },
                 alternateRowStyles: { 
-                    fillColor: [248, 251, 252] 
+                    fillColor: [250, 252, 254] 
                 },
                 margin: { left: 20, right: 20 }
             });
@@ -4745,6 +4818,22 @@
                     clearBtnEdit.style.display = this.value.trim().length > 0 ? 'block' : 'none';
                 });
             }
+
+            // Init Class Record Date to Today
+            const classDateInput = document.getElementById('classRecordDate');
+            if (classDateInput) {
+                classDateInput.valueAsDate = new Date();
+            }
+
+            // Attach listener for subject dropdown to load subjects
+            const classSubjectSelect = document.getElementById('classRecordSubject');
+            if(classSubjectSelect) {
+                classSubjectSelect.addEventListener('click', function() {
+                    if (this.options.length <= 1) {
+                        loadTeacherSubjectsForRecord();
+                    }
+                });
+            }
         });
 
         function searchStudentAttendance() {
@@ -4827,23 +4916,22 @@
                     </thead>
                     <tbody>
                         ${attendance.map(a => {
-                const pres = parseInt(a.present || a.present_count || 0);
-                const tot = parseInt(a.total || a.total_classes || 0);
-                const abs = parseInt(a.absent || a.absent_count || (tot - pres));
-                const pct = parseFloat(a.percentage || a.pct || (tot > 0 ? (pres / tot * 100) : 0)).toFixed(1);
-                return `<tr>
-                                <td style="font-weight:600">${a.subject || a.subject_name}</td>
-                                <td style="text-align:center">${tot}</td>
-                                <td style="text-align:center;color:var(--success);font-weight:600">${pres}</td>
-                                <td style="text-align:center;color:var(--error);font-weight:600">${abs}</td>
-                                <td style="text-align:center;font-weight:700;color:${pct >= 75 ? 'var(--success)' : pct >= 65 ? 'var(--warning)' : 'var(--error)'}">${pct}%</td>
-                                <td style="text-align:center">
-                                    <span class="badge ${pct >= 75 ? 'badge-present' : pct >= 65 ? 'badge-warn' : 'badge-absent'}">
-                                        ${pct >= 75 ? '✓ Good' : pct >= 65 ? '⚠ Low' : '✗ Critical'}
-                                    </span>
-                                </td>
-                            </tr>`;
-            }).join('')}
+                            const pres = parseInt(a.present || a.present_count || 0);
+                            const tot = parseInt(a.total || a.total_classes || 0);
+                            const abs = parseInt(a.absent || a.absent_count || (tot - pres));
+                            const pct = parseFloat(a.percentage || a.pct || (tot > 0 ? (pres / tot * 100) : 0)).toFixed(1);
+                            const statusCls = pct >= 75 ? 'badge-present' : pct >= 60 ? 'badge-warn' : 'badge-absent';
+                            return `
+                                <tr>
+                                    <td>${a.subject_name}</td>
+                                    <td style="text-align:center">${tot}</td>
+                                    <td style="text-align:center">${pres}</td>
+                                    <td style="text-align:center">${abs}</td>
+                                    <td style="text-align:center">${pct}%</td>
+                                    <td style="text-align:center"><span class="badge ${statusCls}">${pct >= 75 ? '✓ Good' : pct >= 60 ? '! Warning' : '✗ Low'}</span></td>
+                                </tr>
+                            `;
+                        }).join('')}
                     </tbody>
                 </table>
             </div>
@@ -4851,7 +4939,226 @@
     `;
         }
 
+        async function loadTeacherSubjectsForRecord() {
+            const select = document.getElementById('classRecordSubject');
+            try {
+                const res = await fetch('../backend/attendance_api.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'action=getTeacherSubjects'
+                });
+                const data = await res.json();
+                
+                if (data.success && data.subjects) {
+                    select.innerHTML = '<option value="">-- Select Subject --</option>';
+                    data.subjects.forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.id;
+                        opt.textContent = `${s.subject_name} (${s.subject_code})`;
+                        opt.setAttribute('data-name', s.subject_name);
+                        select.appendChild(opt);
+                    });
+                } else {
+                    select.innerHTML = '<option value="">Error loading subjects</option>';
+                }
+            } catch (e) {
+                console.error('Error loading subjects:', e);
+                select.innerHTML = '<option value="">Connection error</option>';
+            }
+        }
 
+        async function generateClassAttendanceRecord() {
+            const subjectId = document.getElementById('classRecordSubject').value;
+            const date = document.getElementById('classRecordDate').value;
+            const display = document.getElementById('classRecordDisplay');
+            const tableBody = document.getElementById('classRecordTableBody');
+            const emptyState = document.getElementById('classRecordEmptyState');
+            const subtitle = document.getElementById('classRecordSubtitle');
+            
+            if (!subjectId) { showToast('Please select a subject', true); return; }
+            if (!date) { showToast('Please select a date', true); return; }
+
+            const subjectOption = document.querySelector(`#classRecordSubject option[value="${subjectId}"]`);
+            const subjectName = subjectOption ? subjectOption.getAttribute('data-name') : 'Subject';
+            
+            try {
+                showToast('<i class="fa-solid fa-spinner fa-spin"></i> Generating record...');
+                const res = await fetch(`../backend/attendance_api.php?action=getClassAttendanceByDate&subject_id=${subjectId}&date=${date}`);
+                const data = await res.json();
+
+                if (data.success) {
+                    tableBody.innerHTML = '';
+                    subtitle.innerHTML = `Subject: <strong>${subjectName}</strong> | Date: <strong>${date}</strong>`;
+                    display.style.display = 'block';
+
+                    if (data.records && data.records.length > 0) {
+                        emptyState.style.display = 'none';
+                        data.records.forEach((r, index) => {
+                            const tr = document.createElement('tr');
+                            const isPresent = r.status.toLowerCase() === 'present';
+                            const statusColor = isPresent ? '#10b981' : '#ef4444';
+                            const bgColor = isPresent ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)';
+                            const borderColor = isPresent ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)';
+                            const statusIcon = isPresent ? 'fa-check-circle' : 'fa-times-circle';
+                            
+                            tr.innerHTML = `
+                                <td style="text-align: center; padding: 1rem; font-weight: 700; color: var(--text-light); border-bottom: 1px solid var(--border);">${index + 1}</td>
+                                <td style="padding: 1rem; font-weight: 600; color: var(--navy-dark); border-bottom: 1px solid var(--border); font-size: 0.95rem;">${r.full_name}</td>
+                                <td style="padding: 1rem; font-family: 'Courier New', monospace; font-weight: 700; border-bottom: 1px solid var(--border); font-size: 1rem; color: var(--navy-dark);">${r.reg_id}</td>
+                                <td style="text-align: center; padding: 1rem; border-bottom: 1px solid var(--border);">
+                                    <span style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; background: ${bgColor}; color: ${statusColor}; border: 1px solid ${borderColor}; letter-spacing: 0.5px;">
+                                        <i class="fa-solid ${statusIcon}"></i> ${r.status}
+                                    </span>
+                                </td>
+                            `;
+                            tableBody.appendChild(tr);
+                        });
+                        showToast('Record generated successfully');
+                    } else {
+                        emptyState.style.display = 'block';
+                        showToast('No enrollment found for this subject', true);
+                    }
+                } else {
+                    showToast(data.message || 'Failed to fetch record', true);
+                }
+            } catch (e) {
+                console.error('Error:', e);
+                showToast('Connection error', true);
+            }
+        }
+
+        async function downloadClassAttendancePDF() {
+            const subjectId = document.getElementById('classRecordSubject').value;
+            const date = document.getElementById('classRecordDate').value;
+            const subjectOption = document.querySelector(`#classRecordSubject option[value="${subjectId}"]`);
+            const subjectName = subjectOption ? subjectOption.getAttribute('data-name') : 'Subject';
+            
+            if (!window.jspdf) {
+                showToast('PDF Library (jsPDF) not loaded. Please refresh.', true);
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const generatedDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString('en-IN');
+
+            // --- PAGE BACKGROUND ---
+            doc.setFillColor(249, 250, 251); // Off-white: #f9fafb
+            doc.rect(0, 0, 210, 297, 'F');
+
+            // --- PREMIUM HEADER (White Style) ---
+            doc.setTextColor(30, 58, 95); // Navy: #1e3a5f
+            doc.setFontSize(26);
+            doc.setFont("helvetica", "bold");
+            doc.text("Attendify - Official Attendance", 20, 25);
+
+            doc.setTextColor(148, 163, 184); // Slate grey: #94a3b8
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Report ID: ATT-${Date.now()}`, 20, 31);
+            doc.text(`Generated on: ${generatedDate}`, 20, 36);
+
+            // Horizontal Divider (Stronger line for structure)
+            doc.setDrawColor(30, 58, 95);
+            doc.setLineWidth(1.2);
+            doc.line(20, 42, 190, 42);
+
+            // Metadata Info Box (Light tint)
+            doc.setFillColor(248, 251, 254);
+            doc.setDrawColor(226, 232, 240);
+            doc.setLineWidth(0.1);
+            doc.roundedRect(20, 48, 170, 26, 3, 3, 'FD');
+
+            // Metadata Content - COMPACT STRUCTURE
+            doc.setTextColor(71, 85, 105);
+            doc.setFontSize(6.5);
+            doc.setFont("helvetica", "bold");
+            doc.text("SUBJECT:", 25, 56);
+            doc.text("LECTURE DATE:", 25, 63);
+            doc.text("INSTRUCTOR:", 25, 70);
+
+            doc.setTextColor(30, 58, 95);
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "bold");
+            doc.text(subjectName.toUpperCase().substring(0, 50), 60, 56);
+            doc.text(date, 60, 63);
+            doc.text(TEACHER.name.toUpperCase(), 60, 70);
+
+            // Table Data Preparation
+            const tableBody = [];
+            document.querySelectorAll('#classRecordTableBody tr').forEach((row, index) => {
+                const cols = row.querySelectorAll('td');
+                if(cols.length >= 4) {
+                    tableBody.push([
+                        index + 1,
+                        cols[1].textContent.trim(),
+                        cols[2].textContent.trim(),
+                        cols[3].textContent.trim().toUpperCase()
+                    ]);
+                }
+            });
+
+            if (tableBody.length === 0) {
+                showToast('No record data to download', true);
+                return;
+            }
+
+            // Table using autoTable with decreased font size and structure
+            doc.autoTable({
+                startY: 85,
+                head: [['SR.', 'STUDENT NAME', 'REGISTRATION ID', 'STATUS']],
+                body: tableBody,
+                theme: 'grid',
+                headStyles: { 
+                    fillColor: [30, 58, 95], // Navy: #1e3a5f
+                    textColor: [255, 255, 255], 
+                    fontSize: 8, 
+                    fontStyle: 'bold'
+                },
+                bodyStyles: {
+                    fontSize: 8,
+                    textColor: [30, 58, 95],
+                    cellPadding: 2
+                },
+                columnStyles: {
+                    0: { halign: 'center', cellWidth: 12 },
+                    1: { halign: 'left' },
+                    2: { halign: 'left', cellWidth: 40, font: 'courier' },
+                    3: { halign: 'center', fontStyle: 'bold', cellWidth: 30 }
+                },
+                styles: {
+                    lineColor: [226, 232, 240],
+                    lineWidth: 0.1
+                },
+                didParseCell: function(data) {
+                    if (data.section === 'body' && data.column.index === 3) {
+                        if (data.cell.raw === 'PRESENT') {
+                            data.cell.styles.textColor = [16, 185, 129];
+                        } else {
+                            data.cell.styles.textColor = [239, 68, 68];
+                        }
+                    }
+                },
+                alternateRowStyles: {
+                    fillColor: [250, 252, 254]
+                },
+                margin: { left: 20, right: 20 }
+            });
+
+            // Footer
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(148, 163, 184);
+                doc.setFont("helvetica", "italic");
+                doc.text(`© ${new Date().getFullYear()} Attendify - Professional Attendance Management System`, 105, 285, { align: 'center' });
+                doc.text(`Page ${i} of ${pageCount}`, 105, 290, { align: 'center' });
+            }
+
+            doc.save(`Attendify_Record_${subjectName.replace(/\s+/g, '_')}_${date}.pdf`);
+            showToast('<i class="fa-solid fa-file-pdf"></i> Premium PDF Downloaded');
+        }
 
         // ─── UTILS ───
         function playBeep() {

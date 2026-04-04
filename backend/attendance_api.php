@@ -1477,3 +1477,95 @@ if ($action === 'getEngagementStats') {
     }
     exit;
 }
+
+// ============================================================================
+// GET TEACHER SUBJECTS (For Dropdown)
+// ============================================================================
+if ($action === 'getTeacherSubjects') {
+    requireRole('teacher');
+    $teacherId = $_SESSION['user_id'];
+    try {
+        // Query subjects from mapping table
+        $stmt = $pdo->prepare("
+            SELECT s.id, s.subject_name, s.subject_code 
+            FROM subjects s
+            JOIN teacher_subjects ts ON s.id = ts.subject_id
+            WHERE ts.teacher_id = ?
+        ");
+        $stmt->execute([$teacherId]);
+        $list1 = $stmt->fetchAll();
+
+        // Query subjects from schedule table (some admins skip teacher_subjects mapping)
+        $stmt = $pdo->prepare("
+            SELECT DISTINCT s.id, s.subject_name, s.subject_code
+            FROM subjects s
+            JOIN teacher_schedules ts ON (s.subject_name = ts.subject_name OR s.subject_code = ts.subject_code)
+            WHERE ts.teacher_id = ?
+        ");
+        $stmt->execute([$teacherId]);
+        $list2 = $stmt->fetchAll();
+
+        // Merge results uniquely
+        $subjects = [];
+        $ids = [];
+        foreach (array_merge($list1, $list2) as $s) {
+            if (!in_array($s['id'], $ids)) {
+                $subjects[] = $s;
+                $ids[] = $s['id'];
+            }
+        }
+
+        // Sort by name
+        usort($subjects, function($a, $b) {
+            return strcmp($a['subject_name'], $b['subject_name']);
+        });
+
+        echo json_encode(['success' => true, 'subjects' => $subjects]);
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+    exit;
+}
+
+// ============================================================================
+// GET FULL CLASS ATTENDANCE BY SUBJECT & DATE
+// ============================================================================
+if ($action === 'getClassAttendanceByDate') {
+    requireRole('teacher');
+    $teacherId = $_SESSION['user_id'];
+    $subjectId = intval($_GET['subject_id'] ?? 0);
+    $date = sanitize($_GET['date'] ?? date('Y-m-d'));
+    
+    if (!$subjectId || !$date) {
+        echo json_encode(['success' => false, 'message' => 'Subject and date are required']);
+        exit;
+    }
+    
+    try {
+        $stmt = $pdo->prepare("
+            SELECT 
+                u.full_name, 
+                u.reg_id, 
+                COALESCE(a.status, 'absent') AS status,
+                a.marked_at
+            FROM users u
+            LEFT JOIN student_subjects ss ON u.id = ss.student_id AND ss.subject_id = ?
+            LEFT JOIN attendance a ON u.id = a.student_id 
+                AND a.subject_id = ? 
+                AND a.attendance_date = ?
+            WHERE ss.id IS NOT NULL OR a.id IS NOT NULL
+            ORDER BY (CASE WHEN COALESCE(a.status, 'absent') = 'present' THEN 1 ELSE 2 END), u.full_name ASC
+        ");
+        $stmt->execute([$subjectId, $subjectId, $date]);
+        $records = $stmt->fetchAll();
+        
+        echo json_encode([
+            'success' => true, 
+            'records' => $records,
+            'count' => count($records)
+        ]);
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+    exit;
+}
