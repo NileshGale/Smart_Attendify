@@ -2725,17 +2725,29 @@
                                         <option value="gt75">Attendance > 75%</option>
                                     </select>
                                 </div>
+
+                                <!-- Sorting Dropdown -->
+                                <div
+                                    style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.5); padding: 0.25rem 0.75rem; border-radius: 8px; border: 1px solid rgba(124, 58, 237, 0.2);">
+                                    <i class="fa-solid fa-sort" style="color: #7c3aed; font-size: 0.8rem;"></i>
+                                    <select id="overallAttendanceSort" onchange="applyOverallAttendanceFilter()"
+                                        style="border: none; background: transparent; font-size: 0.825rem; font-weight: 700; color: var(--navy-dark); outline: none; cursor: pointer; padding: 4px;">
+                                        <option value="default">Default Order</option>
+                                        <option value="low_high">Low to High %</option>
+                                        <option value="high_low">High to Low %</option>
+                                    </select>
+                                </div>
                             </div>
 
                             <div style="display: flex; gap: 0.75rem; align-items: center;">
-                                <button class="btn-download-record" onclick="downloadOverallAttendancePDF()"
-                                    style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: white; border: none; padding: 0.6rem 1.25rem; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2); transition: all 0.3s ease;">
-                                    <i class="fa-solid fa-file-pdf"></i> DOWNLOAD PDF
-                                </button>
                                 <button onclick="document.getElementById('overallReportDisplay').style.display='none'"
                                     title="Close Report"
                                     style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1.5px solid rgba(239, 68, 68, 0.2); width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease;">
                                     <i class="fa-solid fa-xmark"></i>
+                                </button>
+                                <button class="btn-download-record" onclick="downloadOverallAttendancePDF()"
+                                    style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: white; border: none; padding: 0.6rem 1.25rem; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2); transition: all 0.3s ease;">
+                                    <i class="fa-solid fa-file-pdf"></i> DOWNLOAD PDF
                                 </button>
                             </div>
                         </div>
@@ -5577,8 +5589,9 @@
                     subtitle.innerHTML = `Subject: <strong>${subjectName}</strong>`;
                     display.style.display = 'block';
 
-                    // Reset filter dropdown to "all"
+                    // Reset UI controllers
                     document.getElementById('overallAttendanceFilter').value = 'all';
+                    document.getElementById('overallAttendanceSort').value = 'default';
 
                     if (data.students.length > 0) {
                         emptyState.style.display = 'none';
@@ -5636,14 +5649,23 @@
             if (!currentOverallReportData || !currentOverallReportData.students) return;
 
             const filter = document.getElementById('overallAttendanceFilter').value;
-            let filtered = [...currentOverallReportData.students];
+            const sortOrder = document.getElementById('overallAttendanceSort').value;
+            let result = [...currentOverallReportData.students];
 
-            if (filter === 'lt50') filtered = filtered.filter(s => parseFloat(s.percentage) < 50);
-            else if (filter === 'lt60') filtered = filtered.filter(s => parseFloat(s.percentage) < 60);
-            else if (filter === 'gt50') filtered = filtered.filter(s => parseFloat(s.percentage) > 50);
-            else if (filter === 'gt75') filtered = filtered.filter(s => parseFloat(s.percentage) > 75);
+            // 1. Apply Filtering Logic
+            if (filter === 'lt50') result = result.filter(s => parseFloat(s.percentage) < 50);
+            else if (filter === 'lt60') result = result.filter(s => parseFloat(s.percentage) < 60);
+            else if (filter === 'gt50') result = result.filter(s => parseFloat(s.percentage) > 50);
+            else if (filter === 'gt75') result = result.filter(s => parseFloat(s.percentage) > 75);
 
-            renderOverallReportTable(filtered);
+            // 2. Apply Sorting Logic (based on percentage)
+            if (sortOrder === 'low_high') {
+                result.sort((a, b) => parseFloat(a.percentage) - parseFloat(b.percentage));
+            } else if (sortOrder === 'high_low') {
+                result.sort((a, b) => parseFloat(b.percentage) - parseFloat(a.percentage));
+            }
+
+            renderOverallReportTable(result);
         }
 
         function downloadOverallAttendancePDF() {
@@ -5653,13 +5675,21 @@
             }
 
             const filter = document.getElementById('overallAttendanceFilter').value;
+            const sortOrder = document.getElementById('overallAttendanceSort').value;
             let studentsToExport = [...currentOverallReportData.students];
 
-            // Apply filter to PDF as well for consistency
+            // 1. Maintain Filtering Consistency
             if (filter === 'lt50') studentsToExport = studentsToExport.filter(s => parseFloat(s.percentage) < 50);
             else if (filter === 'lt60') studentsToExport = studentsToExport.filter(s => parseFloat(s.percentage) < 60);
             else if (filter === 'gt50') studentsToExport = studentsToExport.filter(s => parseFloat(s.percentage) > 50);
             else if (filter === 'gt75') studentsToExport = studentsToExport.filter(s => parseFloat(s.percentage) > 75);
+
+            // 2. Maintain Sorting Consistency
+            if (sortOrder === 'low_high') {
+                studentsToExport.sort((a, b) => parseFloat(a.percentage) - parseFloat(b.percentage));
+            } else if (sortOrder === 'high_low') {
+                studentsToExport.sort((a, b) => parseFloat(b.percentage) - parseFloat(a.percentage));
+            }
 
             if (studentsToExport.length === 0) {
                 showToast('No data to export for current filter', true);
