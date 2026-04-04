@@ -181,12 +181,13 @@ if ($action === 'resetPassword') {
     
     try {
         // Verify OTP
+        $now = date('Y-m-d H:i:s');
         $stmt = $pdo->prepare("
             SELECT id FROM password_reset_tokens
-            WHERE email = ? AND expires_at > NOW() AND used = 0
+            WHERE email = ? AND expires_at > ? AND used = 0
             ORDER BY created_at DESC LIMIT 1
         ");
-        $stmt->execute([$email]);
+        $stmt->execute([$email, $now]);
         $token = $stmt->fetch();
         
         if (!$token) {

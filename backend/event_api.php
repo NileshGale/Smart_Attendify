@@ -109,8 +109,9 @@ if ($action === 'markEventAttendance') {
             $studentLat = isset($_POST['student_lat']) && $_POST['student_lat'] !== '' ? floatval($_POST['student_lat']) : null;
             $studentLng = isset($_POST['student_lng']) && $_POST['student_lng'] !== '' ? floatval($_POST['student_lng']) : null;
 
-            $stmt = $pdo->prepare("SELECT id, event_name, teacher_lat, teacher_lng, max_distance_meters FROM events WHERE unique_code = ? AND code_expires_at > NOW()");
-            $stmt->execute([$uniqueCode]);
+            $now = date('Y-m-d H:i:s');
+            $stmt = $pdo->prepare("SELECT id, event_name, teacher_lat, teacher_lng, max_distance_meters FROM events WHERE unique_code = ? AND code_expires_at > ?");
+            $stmt->execute([$uniqueCode, $now]);
             $event = $stmt->fetch();
             
             if (!$event) {

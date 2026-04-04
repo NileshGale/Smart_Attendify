@@ -5128,7 +5128,7 @@
                 const statusIcon = isPresent ? 'fa-check-circle' : 'fa-times-circle';
                 
                 const markedTime = r.marked_at 
-                    ? new Date(r.marked_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
+                    ? new Date(r.marked_at.replace(' ', 'T')).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
                     : '-';
 
                 tr.innerHTML = `

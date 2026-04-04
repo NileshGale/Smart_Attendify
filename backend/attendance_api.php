@@ -102,12 +102,12 @@ if ($action === 'generateUniqueCode') {
             $code .= $chars[random_int(0, strlen($chars) - 1)];
         }
         
-        // Calculate expiry entirely in DB to avoid PHP/MySQL timezone mismatches
+        $now = date('Y-m-d H:i:s');
         $stmt = $pdo->prepare("
             INSERT INTO attendance_codes (code, teacher_id, subject_name, expires_at, teacher_lat, teacher_lng, max_distance_meters)
-            VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND), ?, ?, ?)
+            VALUES (?, ?, ?, DATE_ADD(?, INTERVAL ? SECOND), ?, ?, ?)
         ");
-        $stmt->execute([$code, $teacherId, $subjectName, $validitySeconds, $teacherLat, $teacherLng, $maxDistance]);
+        $stmt->execute([$code, $teacherId, $subjectName, $now, $validitySeconds, $teacherLat, $teacherLng, $maxDistance]);
         
         // Fetch the exact DB-assigned expiration time back
         $stmt = $pdo->prepare("SELECT expires_at FROM attendance_codes WHERE code = ? ORDER BY id DESC LIMIT 1");
@@ -241,16 +241,18 @@ if ($action === 'markByUniqueCode') {
         }
         
         // Mark attendance (ON DUPLICATE KEY UPDATE as safety net for unique constraint)
+        $today = date('Y-m-d');
+        $now = date('Y-m-d H:i:s');
         $stmt = $pdo->prepare("
             INSERT INTO attendance (student_id, subject_id, teacher_id, attendance_date, marking_method, status, marked_at)
-            VALUES (?, ?, ?, CURDATE(), 'unique_code', 'present', NOW())
+            VALUES (?, ?, ?, ?, 'unique_code', 'present', ?)
             ON DUPLICATE KEY UPDATE
                 status = 'present',
                 marking_method = 'unique_code',
                 teacher_id = VALUES(teacher_id),
-                marked_at = NOW()
+                marked_at = ?
         ");
-        $stmt->execute([$studentId, $subjectId, $codeRecord['teacher_id']]);
+        $stmt->execute([$studentId, $subjectId, $codeRecord['teacher_id'], $now, $now]);
         
         // Get student name for response
         $stmt = $pdo->prepare("SELECT full_name, reg_id FROM users WHERE id = ?");
@@ -341,18 +343,19 @@ if ($action === 'markByQR') {
         
         // Mark attendance
         try {
+            $now = date('Y-m-d H:i:s');
             $stmt = $pdo->prepare("
                 INSERT INTO attendance (student_id, subject_id, teacher_id, attendance_date, marking_method, status, marked_at)
-                VALUES (?, ?, ?, ?, 'qr', 'present', NOW())
+                VALUES (?, ?, ?, ?, 'qr', 'present', ?)
             ");
-            $stmt->execute([$student['id'], $subjectId, $teacherId, $attendanceDate]);
+            $stmt->execute([$student['id'], $subjectId, $teacherId, $attendanceDate, $now]);
             
             echo json_encode([
                 'success' => true,
                 'message' => 'Successfully attendance marked ' . $student['full_name'],
                 'student_name' => $student['full_name'],
                 'reg_id' => $student['reg_id'],
-                'marked_at' => date('Y-m-d H:i:s')
+                'marked_at' => $now
             ]);
         } catch (PDOException $e) {
             // Handle duplicate entry error (Integrity constraint violation: 1062)
@@ -395,14 +398,15 @@ if ($action === 'markManual') {
         $pdo->beginTransaction();
         
         $marked = 0;
+        $now = date('Y-m-d H:i:s');
         $stmt = $pdo->prepare("
-            INSERT INTO attendance (student_id, subject_id, teacher_id, attendance_date, marking_method, status)
-            VALUES (?, ?, ?, ?, 'manual', ?)
+            INSERT INTO attendance (student_id, subject_id, teacher_id, attendance_date, marking_method, status, marked_at)
+            VALUES (?, ?, ?, ?, 'manual', ?, ?)
             ON DUPLICATE KEY UPDATE 
                 status = VALUES(status),
                 marking_method = 'manual',
                 teacher_id = VALUES(teacher_id),
-                marked_at = NOW()
+                marked_at = VALUES(marked_at)
         ");
         
         foreach ($students as $student) {
@@ -411,7 +415,8 @@ if ($action === 'markManual') {
                 $subjectId,
                 $teacherId,
                 $attendanceDate,
-                $student['status']
+                $student['status'],
+                $now
             ]);
             $marked++;
         }
@@ -1100,22 +1105,23 @@ if ($action === 'updateAttendance') {
         $stmt->execute([$student['id'], $subjectId, $date]);
         $existing = $stmt->fetch();
         
+        $now = date('Y-m-d H:i:s');
         if ($existing) {
             // Update existing record
             $stmt = $pdo->prepare("
                 UPDATE attendance 
-                SET status = ?, teacher_id = ?, marked_at = NOW(), marking_method = 'manual'
+                SET status = ?, teacher_id = ?, marked_at = ?, marking_method = 'manual'
                 WHERE id = ?
             ");
-            $stmt->execute([$status, $teacherId, $existing['id']]);
+            $stmt->execute([$status, $teacherId, $now, $existing['id']]);
             $action_taken = 'updated';
         } else {
             // Insert new record
             $stmt = $pdo->prepare("
                 INSERT INTO attendance (student_id, subject_id, teacher_id, attendance_date, status, marking_method, marked_at)
-                VALUES (?, ?, ?, ?, ?, 'manual', NOW())
+                VALUES (?, ?, ?, ?, ?, 'manual', ?)
             ");
-            $stmt->execute([$student['id'], $subjectId, $teacherId, $date, $status]);
+            $stmt->execute([$student['id'], $subjectId, $teacherId, $date, $status, $now]);
             $action_taken = 'added';
         }
         
@@ -1361,6 +1367,7 @@ if ($action === 'getTeacherAnalytics') {
             
         } else if ($subjectId) {
             // Subject-wise analytics
+            $today = date('Y-m-d');
             $stmt = $pdo->prepare("
                 SELECT 
                     u.id,

@@ -32,6 +32,13 @@ try {
 // Set timezone
 date_default_timezone_set('Asia/Kolkata');
 
+// Attempt to sync MySQL session timezone with PHP (important for InfinityFree/shared hosting)
+try {
+    $pdo->exec("SET time_zone = '+05:30'");
+} catch (PDOException $e) {
+    // Some shared hosting providers block SET time_zone; we handle this by using PHP date() in queries later.
+}
+
 // Session configuration
 if (session_status() === PHP_SESSION_NONE) {
     session_start([
