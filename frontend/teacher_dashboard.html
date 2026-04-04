@@ -44,8 +44,10 @@
             font-family: 'Segoe UI', system-ui, sans-serif;
             background: var(--bg);
             color: var(--text);
-            height: 100vh;      /* fallback */
-            height: 100dvh;     /* dynamic viewport height to prevent browser bar overlap */
+            height: 100vh;
+            /* fallback */
+            height: 100dvh;
+            /* dynamic viewport height to prevent browser bar overlap */
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -1620,7 +1622,7 @@
                 flex-direction: column;
             }
 
-            .search-row > div,
+            .search-row>div,
             .search-row input,
             .search-row button {
                 width: 100%;
@@ -1754,13 +1756,16 @@
             color: white;
             box-shadow: 0 4px 14px rgba(16, 185, 129, .35);
         }
+
         .btn-save-record:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(16, 185, 129, .45);
         }
+
         .btn-save-record:active {
             transform: translateY(0);
         }
+
         .btn-download-record {
             display: inline-flex;
             align-items: center;
@@ -1776,13 +1781,16 @@
             color: white;
             box-shadow: 0 4px 14px rgba(59, 130, 246, .35);
         }
+
         .btn-download-record:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(59, 130, 246, .45);
         }
+
         .btn-download-record:active {
             transform: translateY(0);
         }
+
         .btn-download-pill {
             display: inline-flex;
             align-items: center;
@@ -1799,11 +1807,13 @@
             text-decoration: none;
             line-height: 1;
         }
+
         .btn-download-pill:hover {
             background: #00bcd4;
             color: white;
             box-shadow: 0 2px 8px rgba(0, 188, 212, 0.3);
         }
+
         .btn-download-pill i {
             font-size: 1.1rem;
         }
@@ -1944,14 +1954,15 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Stats Row -->
                 <!-- Stats Row Removed as per request -->
 
 
                 <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
                     <div style="display:flex; align-items:center; gap:0.5rem">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
                             <rect x="3" y="4" width="18" height="18" rx="2" />
                             <line x1="16" y1="2" x2="16" y2="6" />
                             <line x1="8" y1="2" x2="8" y2="6" />
@@ -1959,7 +1970,9 @@
                         </svg>
                         My Weekly Schedule
                     </div>
-                    <button class="btn-primary" onclick="this.querySelector('i').classList.add('fa-spin'); renderSchedule().finally(()=>this.querySelector('i').classList.remove('fa-spin'))" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <button class="btn-primary"
+                        onclick="this.querySelector('i').classList.add('fa-spin'); renderSchedule().finally(()=>this.querySelector('i').classList.remove('fa-spin'))"
+                        style="padding: 0.4rem 0.8rem; font-size: 0.8rem; display: flex; align-items: center; gap: 0.4rem;">
                         <i class="fa-solid fa-rotate-right"></i> Sync Now
                     </button>
                 </div>
@@ -1980,7 +1993,8 @@
                 <div class="card" style="text-align:center;padding:2rem" id="methodPickCard">
                     <p style="color:var(--text-muted);font-size:.9rem">Select a subject from <strong>My
                             Schedule</strong> or choose from <strong>today's allocated subjects</strong>:</p>
-                    <div style="margin-top:1rem; display:flex; flex-wrap:wrap; justify-content:center; gap:0.5rem; align-items:center;">
+                    <div
+                        style="margin-top:1rem; display:flex; flex-wrap:wrap; justify-content:center; gap:0.5rem; align-items:center;">
                         <select id="manualSubjectSelect"
                             style="padding:.625rem 1rem;border:1px solid var(--border);border-radius:8px;font-size:.875rem;max-width:100%;box-sizing:border-box;">
                             <option value="">-- Select Subject --</option>
@@ -2031,9 +2045,12 @@
                                 Stop &amp; Save</button>
                         </div>
                         <div class="scanned-list-wrap" id="scannedListWrap">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; border-bottom:1px solid var(--border); padding-bottom:10px;">
-                                <h4 style="text-align:left;font-size:.875rem;margin:0;color:var(--text-muted)">Scanned Students</h4>
-                                <button id="btnDownloadQR" class="btn-download-pill" onclick="downloadQRRecord()" style="display: none;">
+                            <div
+                                style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; border-bottom:1px solid var(--border); padding-bottom:10px;">
+                                <h4 style="text-align:left;font-size:.875rem;margin:0;color:var(--text-muted)">Scanned
+                                    Students</h4>
+                                <button id="btnDownloadQR" class="btn-download-pill" onclick="downloadQRRecord()"
+                                    style="display: none;">
                                     <i class="fa-solid fa-file-pdf"></i> Download record
                                 </button>
                             </div>
@@ -2056,33 +2073,56 @@
                             students. It expires in <strong>50 seconds</strong>.</p>
 
                         <!-- Location Lock Toggle -->
-                        <div id="geoLockSection" style="background:linear-gradient(135deg, rgba(0,188,212,.06), rgba(124,58,237,.06)); border:1px solid rgba(0,188,212,.15); border-radius:12px; padding:.875rem 1rem; margin-bottom:1rem;">
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:.75rem; flex-wrap:wrap;">
+                        <div id="geoLockSection"
+                            style="background:linear-gradient(135deg, rgba(0,188,212,.06), rgba(124,58,237,.06)); border:1px solid rgba(0,188,212,.15); border-radius:12px; padding:.875rem 1rem; margin-bottom:1rem;">
+                            <div
+                                style="display:flex; align-items:center; justify-content:space-between; gap:.75rem; flex-wrap:wrap;">
                                 <div style="display:flex; align-items:center; gap:.5rem;">
-                                    <i class="fa-solid fa-location-dot" style="color:var(--primary-cyan); font-size:1rem;"></i>
+                                    <i class="fa-solid fa-location-dot"
+                                        style="color:var(--primary-cyan); font-size:1rem;"></i>
                                     <div>
-                                        <div style="font-weight:700; font-size:.85rem; color:var(--navy-dark);">Location Lock</div>
-                                        <div style="font-size:.7rem; color:var(--text-muted);">Restrict to nearby students only</div>
+                                        <div style="font-weight:700; font-size:.85rem; color:var(--navy-dark);">Location
+                                            Lock</div>
+                                        <div style="font-size:.7rem; color:var(--text-muted);">Restrict to nearby
+                                            students only</div>
                                     </div>
                                 </div>
-                                <label style="position:relative; display:inline-block; width:44px; height:24px; cursor:pointer;" onclick="event.stopPropagation();">
-                                    <input type="checkbox" id="geoLockToggle" onchange="toggleGeoLock()" checked style="position:absolute; opacity:0; width:100%; height:100%; z-index:2; cursor:pointer; margin:0;">
-                                    <span id="geoLockBg" style="position:absolute;top:0;left:0;right:0;bottom:0;background:var(--primary-cyan);border-radius:24px;transition:.3s;pointer-events:none;"></span>
-                                    <span id="geoLockSlider" style="position:absolute;top:3px;left:23px;height:18px;width:18px;background:white;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.2);pointer-events:none;z-index:3;"></span>
+                                <label
+                                    style="position:relative; display:inline-block; width:44px; height:24px; cursor:pointer;"
+                                    onclick="event.stopPropagation();">
+                                    <input type="checkbox" id="geoLockToggle" onchange="toggleGeoLock()" checked
+                                        style="position:absolute; opacity:0; width:100%; height:100%; z-index:2; cursor:pointer; margin:0;">
+                                    <span id="geoLockBg"
+                                        style="position:absolute;top:0;left:0;right:0;bottom:0;background:var(--primary-cyan);border-radius:24px;transition:.3s;pointer-events:none;"></span>
+                                    <span id="geoLockSlider"
+                                        style="position:absolute;top:3px;left:23px;height:18px;width:18px;background:white;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.2);pointer-events:none;z-index:3;"></span>
                                 </label>
                             </div>
-                            <div id="geoLockOptions" style="display:block; margin-top:.75rem; padding-top:.75rem; border-top:1px solid rgba(0,188,212,.1);">
-                                <div style="font-size:.75rem; font-weight:600; color:var(--text-muted); margin-bottom:.5rem;">Max Distance:</div>
+                            <div id="geoLockOptions"
+                                style="display:block; margin-top:.75rem; padding-top:.75rem; border-top:1px solid rgba(0,188,212,.1);">
+                                <div
+                                    style="font-size:.75rem; font-weight:600; color:var(--text-muted); margin-bottom:.5rem;">
+                                    Max Distance:</div>
                                 <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
-                                    <button class="geo-preset-btn active" onclick="setGeoDistance(15, this)" style="padding:.35rem .75rem; border:1px solid var(--primary-cyan); border-radius:8px; background:rgba(0,188,212,.1); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--primary-cyan);">🏫 Classroom (15m)</button>
-                                    <button class="geo-preset-btn" onclick="setGeoDistance(100, this)" style="padding:.35rem .75rem; border:1px solid var(--border); border-radius:8px; background:var(--surface); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--text-dark);">🏢 Building (100m)</button>
-                                    <button class="geo-preset-btn" onclick="setGeoDistance(300, this)" style="padding:.35rem .75rem; border:1px solid var(--border); border-radius:8px; background:var(--surface); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--text-dark);">🏟️ Campus (300m)</button>
+                                    <button class="geo-preset-btn active" onclick="setGeoDistance(15, this)"
+                                        style="padding:.35rem .75rem; border:1px solid var(--primary-cyan); border-radius:8px; background:rgba(0,188,212,.1); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--primary-cyan);">🏫
+                                        Classroom (15m)</button>
+                                    <button class="geo-preset-btn" onclick="setGeoDistance(100, this)"
+                                        style="padding:.35rem .75rem; border:1px solid var(--border); border-radius:8px; background:var(--surface); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--text-dark);">🏢
+                                        Building (100m)</button>
+                                    <button class="geo-preset-btn" onclick="setGeoDistance(300, this)"
+                                        style="padding:.35rem .75rem; border:1px solid var(--border); border-radius:8px; background:var(--surface); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--text-dark);">🏟️
+                                        Campus (300m)</button>
                                 </div>
                                 <div style="margin-top:.5rem; display:flex; align-items:center; gap:.5rem;">
-                                    <input type="range" id="geoDistanceSlider" min="10" max="500" value="15" step="1" oninput="updateGeoDistanceLabel()" style="flex:1; accent-color:var(--primary-cyan);">
-                                    <span id="geoDistanceLabel" style="font-size:.8rem; font-weight:700; color:var(--primary-cyan); min-width:50px; text-align:right;">15m</span>
+                                    <input type="range" id="geoDistanceSlider" min="10" max="500" value="15" step="1"
+                                        oninput="updateGeoDistanceLabel()"
+                                        style="flex:1; accent-color:var(--primary-cyan);">
+                                    <span id="geoDistanceLabel"
+                                        style="font-size:.8rem; font-weight:700; color:var(--primary-cyan); min-width:50px; text-align:right;">15m</span>
                                 </div>
-                                <div id="geoStatus" style="font-size:.72rem; color:var(--text-muted); margin-top:.4rem;"></div>
+                                <div id="geoStatus"
+                                    style="font-size:.72rem; color:var(--text-muted); margin-top:.4rem;"></div>
                             </div>
                         </div>
 
@@ -2094,14 +2134,21 @@
                             </div>
                             <div class="code-info-chip"><i class="fa-solid fa-user"></i> Teacher: <span
                                     id="codeTeacher"></span></div>
-                            <div class="code-info-chip" id="geoLockBadge" style="display:none; background:rgba(0,188,212,.1); color:var(--primary-cyan); border-color:rgba(0,188,212,.3);"><i class="fa-solid fa-location-dot"></i> <span id="geoLockBadgeText">📍 Locked 100m</span></div>
+                            <div class="code-info-chip" id="geoLockBadge"
+                                style="display:none; background:rgba(0,188,212,.1); color:var(--primary-cyan); border-color:rgba(0,188,212,.3);">
+                                <i class="fa-solid fa-location-dot"></i> <span id="geoLockBadgeText">📍 Locked
+                                    100m</span></div>
                         </div>
                         <div class="code-timer" id="codeTimer">00:30</div>
-                        <div style="display:flex; align-items:center; gap:10px; justify-content:center; margin-top:0.5rem">
-                            <button class="btn-regenerate" id="btnRegenerateCode" onclick="generateUniqueCode()"> Regenerate Code</button>
-                            <div id="codeLimitIndicator" style="font-size:0.75rem; color:var(--text-muted); font-weight:600"></div>
+                        <div
+                            style="display:flex; align-items:center; gap:10px; justify-content:center; margin-top:0.5rem">
+                            <button class="btn-regenerate" id="btnRegenerateCode" onclick="generateUniqueCode()">
+                                Regenerate Code</button>
+                            <div id="codeLimitIndicator"
+                                style="font-size:0.75rem; color:var(--text-muted); font-weight:600"></div>
                         </div>
-                        <div style="display:flex; gap:.75rem; margin-top:.75rem; justify-content:center; flex-wrap:wrap;">
+                        <div
+                            style="display:flex; gap:.75rem; margin-top:.75rem; justify-content:center; flex-wrap:wrap;">
                             <button class="btn-save-record" onclick="saveCodeRecord()">
                                 <i class="fa-solid fa-floppy-disk"></i> Save Record
                             </button>
@@ -2110,9 +2157,12 @@
                             </button>
                         </div>
                         <div class="code-submissions" id="codeSubmissions">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; border-bottom:1px solid var(--border); padding-bottom:5px;">
-                                <h4 style="text-align:left;font-size:.875rem;margin:0;color:var(--text-muted)">Submitted Students</h4>
-                                <button class="btn-chart-download" onclick="downloadCodeRecord()" style="padding: 2px 8px; font-size: 0.7rem;" title="Download PDF">
+                            <div
+                                style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; border-bottom:1px solid var(--border); padding-bottom:5px;">
+                                <h4 style="text-align:left;font-size:.875rem;margin:0;color:var(--text-muted)">Submitted
+                                    Students</h4>
+                                <button class="btn-chart-download" onclick="downloadCodeRecord()"
+                                    style="padding: 2px 8px; font-size: 0.7rem;" title="Download PDF">
                                     <i class="fa-solid fa-file-pdf"></i> PDF
                                 </button>
                             </div>
@@ -2135,8 +2185,13 @@
                     <div class="input-group">
                         <label>Event Name</label>
                         <div style="position:relative">
-                            <input type="text" id="eventName" placeholder="e.g. Annual Tech Fest 2025" style="width: 100%; box-sizing: border-box; padding-right: 32px;" oninput="document.getElementById('clearEventNameBtn').style.display = this.value ? 'block' : 'none'">
-                            <button type="button" onclick="document.getElementById('eventName').value='';this.style.display='none';" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;padding:4px;display:none" id="clearEventNameBtn">
+                            <input type="text" id="eventName" placeholder="e.g. Annual Tech Fest 2025"
+                                style="width: 100%; box-sizing: border-box; padding-right: 32px;"
+                                oninput="document.getElementById('clearEventNameBtn').style.display = this.value ? 'block' : 'none'">
+                            <button type="button"
+                                onclick="document.getElementById('eventName').value='';this.style.display='none';"
+                                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;padding:4px;display:none"
+                                id="clearEventNameBtn">
                                 <i class="fa-solid fa-xmark"></i>
                             </button>
                         </div>
@@ -2157,38 +2212,61 @@
                             // Format local date to YYYY-MM-DD
                             const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
                             document.getElementById('eventDate').value = localDate;
-                            document.getElementById('eventTime').value = now.toTimeString().slice(0,5);
+                            document.getElementById('eventTime').value = now.toTimeString().slice(0, 5);
                         });
                     </script>
 
                     <!-- Event Location Lock Toggle -->
-                    <div id="eventGeoLockSection" style="background:linear-gradient(135deg, rgba(124,58,237,.06), rgba(0,188,212,.06)); border:1px solid rgba(124,58,237,.15); border-radius:12px; padding:.875rem 1rem; margin-bottom:1rem;">
-                        <div style="display:flex; align-items:center; justify-content:space-between; gap:.75rem; flex-wrap:wrap;">
+                    <div id="eventGeoLockSection"
+                        style="background:linear-gradient(135deg, rgba(124,58,237,.06), rgba(0,188,212,.06)); border:1px solid rgba(124,58,237,.15); border-radius:12px; padding:.875rem 1rem; margin-bottom:1rem;">
+                        <div
+                            style="display:flex; align-items:center; justify-content:space-between; gap:.75rem; flex-wrap:wrap;">
                             <div style="display:flex; align-items:center; gap:.5rem;">
-                                <i class="fa-solid fa-location-crosshairs" style="color:var(--purple-accent); font-size:1rem;"></i>
+                                <i class="fa-solid fa-location-crosshairs"
+                                    style="color:var(--purple-accent); font-size:1rem;"></i>
                                 <div>
-                                    <div style="font-weight:700; font-size:.85rem; color:var(--navy-dark);">Location Lock</div>
-                                    <div style="font-size:.7rem; color:var(--text-muted);">Restrict event attendance to nearby students</div>
+                                    <div style="font-weight:700; font-size:.85rem; color:var(--navy-dark);">Location
+                                        Lock</div>
+                                    <div style="font-size:.7rem; color:var(--text-muted);">Restrict event attendance to
+                                        nearby students</div>
                                 </div>
                             </div>
-                            <label style="position:relative; display:inline-block; width:44px; height:24px; cursor:pointer;" onclick="event.stopPropagation();">
-                                <input type="checkbox" id="eventGeoLockToggle" onchange="toggleEventGeoLock()" checked style="position:absolute; opacity:0; width:100%; height:100%; z-index:2; cursor:pointer; margin:0;">
-                                <span id="eventGeoLockBg" style="position:absolute;top:0;left:0;right:0;bottom:0;background:var(--primary-cyan);border-radius:24px;transition:.3s;pointer-events:none;"></span>
-                                <span id="eventGeoLockSlider" style="position:absolute;top:3px;left:23px;height:18px;width:18px;background:white;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.2);pointer-events:none;z-index:3;"></span>
+                            <label
+                                style="position:relative; display:inline-block; width:44px; height:24px; cursor:pointer;"
+                                onclick="event.stopPropagation();">
+                                <input type="checkbox" id="eventGeoLockToggle" onchange="toggleEventGeoLock()" checked
+                                    style="position:absolute; opacity:0; width:100%; height:100%; z-index:2; cursor:pointer; margin:0;">
+                                <span id="eventGeoLockBg"
+                                    style="position:absolute;top:0;left:0;right:0;bottom:0;background:var(--primary-cyan);border-radius:24px;transition:.3s;pointer-events:none;"></span>
+                                <span id="eventGeoLockSlider"
+                                    style="position:absolute;top:3px;left:23px;height:18px;width:18px;background:white;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.2);pointer-events:none;z-index:3;"></span>
                             </label>
                         </div>
-                        <div id="eventGeoLockOptions" style="display:block; margin-top:.75rem; padding-top:.75rem; border-top:1px solid rgba(124,58,237,.1);">
-                            <div style="font-size:.75rem; font-weight:600; color:var(--text-muted); margin-bottom:.5rem;">Max Distance (Events):</div>
+                        <div id="eventGeoLockOptions"
+                            style="display:block; margin-top:.75rem; padding-top:.75rem; border-top:1px solid rgba(124,58,237,.1);">
+                            <div
+                                style="font-size:.75rem; font-weight:600; color:var(--text-muted); margin-bottom:.5rem;">
+                                Max Distance (Events):</div>
                             <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
-                                <button class="event-geo-preset active" onclick="setEventGeoDistance(50, this)" style="padding:.35rem .75rem; border:1px solid var(--primary-cyan); border-radius:8px; background:rgba(0,188,212,.1); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--primary-cyan);">📍 Hall (50m)</button>
-                                <button class="event-geo-preset" onclick="setEventGeoDistance(200, this)" style="padding:.35rem .75rem; border:1px solid var(--border); border-radius:8px; background:var(--surface); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--text-dark);">🏟️ Ground (200m)</button>
-                                <button class="event-geo-preset" onclick="setEventGeoDistance(500, this)" style="padding:.35rem .75rem; border:1px solid var(--border); border-radius:8px; background:var(--surface); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--text-dark);">🏫 Campus (500m)</button>
+                                <button class="event-geo-preset active" onclick="setEventGeoDistance(50, this)"
+                                    style="padding:.35rem .75rem; border:1px solid var(--primary-cyan); border-radius:8px; background:rgba(0,188,212,.1); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--primary-cyan);">📍
+                                    Hall (50m)</button>
+                                <button class="event-geo-preset" onclick="setEventGeoDistance(200, this)"
+                                    style="padding:.35rem .75rem; border:1px solid var(--border); border-radius:8px; background:var(--surface); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--text-dark);">🏟️
+                                    Ground (200m)</button>
+                                <button class="event-geo-preset" onclick="setEventGeoDistance(500, this)"
+                                    style="padding:.35rem .75rem; border:1px solid var(--border); border-radius:8px; background:var(--surface); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--text-dark);">🏫
+                                    Campus (500m)</button>
                             </div>
                             <div style="margin-top:.5rem; display:flex; align-items:center; gap:.5rem;">
-                                <input type="range" id="eventGeoDistanceSlider" min="10" max="1000" value="50" step="10" oninput="updateEventGeoDistanceLabel()" style="flex:1; accent-color:var(--primary-cyan);">
-                                <span id="eventGeoDistanceLabel" style="font-size:.8rem; font-weight:700; color:var(--primary-cyan); min-width:50px; text-align:right;">50m</span>
+                                <input type="range" id="eventGeoDistanceSlider" min="10" max="1000" value="50" step="10"
+                                    oninput="updateEventGeoDistanceLabel()"
+                                    style="flex:1; accent-color:var(--primary-cyan);">
+                                <span id="eventGeoDistanceLabel"
+                                    style="font-size:.8rem; font-weight:700; color:var(--primary-cyan); min-width:50px; text-align:right;">50m</span>
                             </div>
-                            <div id="eventGeoStatus" style="font-size:.72rem; color:var(--text-muted); margin-top:.4rem;"></div>
+                            <div id="eventGeoStatus"
+                                style="font-size:.72rem; color:var(--text-muted); margin-top:.4rem;"></div>
                         </div>
                     </div>
                     <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
@@ -2242,16 +2320,17 @@
                             <span id="liveAttendeeCount"
                                 style="font-size:0.85rem; font-weight:600; color:var(--text-muted); padding:0.25rem 0.75rem; background:var(--bg-light); border-radius:20px;">0
                                 joined</span>
-                            <button id="btnStopEventCode" onclick="stopEventPolling()" 
+                            <button id="btnStopEventCode" onclick="stopEventPolling()"
                                 style="background:var(--error); color:white; border:none; border-radius:6px; padding:0.4rem 1rem; font-size:0.85rem; font-weight:600; cursor:pointer;">
                                 <i class="fa-solid fa-square"></i> Stop & Save
                             </button>
-                            <button id="btnDownloadEventPDF" onclick="downloadEventPDF()" 
+                            <button id="btnDownloadEventPDF" onclick="downloadEventPDF()"
                                 style="display:none; background:var(--success); color:white; border:none; border-radius:6px; padding:0.4rem 1rem; font-size:0.85rem; font-weight:600; cursor:pointer;">
                                 <i class="fa-solid fa-file-pdf"></i> Download record
                             </button>
                             <!-- close (X) button -->
-                            <button onclick="document.getElementById('eventLiveAttendeesPanel').style.display='none'" title="Close"
+                            <button onclick="document.getElementById('eventLiveAttendeesPanel').style.display='none'"
+                                title="Close"
                                 style="background:rgba(0,0,0,0.05); border:none; color:var(--text-light); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s;">
                                 <i class="fa-solid fa-xmark"></i>
                             </button>
@@ -2382,7 +2461,8 @@
                         <div class="chart-header">
                             <h4><i class="fa-solid fa-chart-line"></i> Daily Attendance Trend</h4>
                             <button class="btn-chart-download"
-                                onclick="downloadChartWithDetails('lineChart','attendance_trend')" title="Download chart">
+                                onclick="downloadChartWithDetails('lineChart','attendance_trend')"
+                                title="Download chart">
                                 <i class="fa-solid fa-download"></i> PNG
                             </button>
                         </div>
@@ -2404,7 +2484,8 @@
                             <h4><i class="fa-solid fa-chart-column"></i> Subject-wise Attendance
                             </h4>
                             <button class="btn-chart-download"
-                                onclick="downloadChartWithDetails('barChart','subject_attendance')" title="Download chart">
+                                onclick="downloadChartWithDetails('barChart','subject_attendance')"
+                                title="Download chart">
                                 <i class="fa-solid fa-download"></i> PNG
                             </button>
                         </div>
@@ -2453,38 +2534,57 @@
                 <div id="studentEditResults" style="display:none;margin-top:1rem"></div>
 
                 <!-- ════ WHOLE CLASS ATTENDANCE RECORD ════ -->
-                <div class="card" style="margin-top: 2.5rem; border-top: 4px solid var(--primary-cyan); position: relative; overflow: hidden;">
-                    <div style="position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; background: rgba(0,188,212,0.05); border-radius: 50%; z-index: 0;"></div>
-                    <h4 style="font-weight: 800; margin-bottom: 1.5rem; color: var(--navy-dark); display: flex; align-items: center; gap: 0.75rem; position: relative; z-index: 1;">
-                        <i class="fa-solid fa-file-invoice" style="color: var(--primary-cyan); background: rgba(0,188,212,0.1); padding: 8px; border-radius: 8px;"></i> 
-                        Generate Whole Class Attendance Record
+                <div class="card"
+                    style="margin-top: 2.5rem; border-top: 4px solid var(--primary-cyan); position: relative; overflow: hidden;">
+                    <div
+                        style="position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; background: rgba(0,188,212,0.05); border-radius: 50%; z-index: 0;">
+                    </div>
+                    <h4
+                        style="font-weight: 800; margin-bottom: 1.5rem; color: var(--navy-dark); display: flex; align-items: center; gap: 0.75rem; position: relative; z-index: 1;">
+                        <i class="fa-solid fa-file-invoice"
+                            style="color: var(--primary-cyan); background: rgba(0,188,212,0.1); padding: 8px; border-radius: 8px;"></i>
+                        Generate Whole Class Attendance Record For Particular Day
                     </h4>
-                    
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; align-items: flex-end; position: relative; z-index: 1;">
+
+                    <div
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; align-items: flex-end; position: relative; z-index: 1;">
                         <div class="input-group" style="margin-bottom: 0;">
-                            <label style="font-weight: 700; color: var(--text-light); margin-bottom: 0.5rem; display: block; font-size: 0.85rem;">SELECT SUBJECT</label>
-                            <select id="classRecordSubject" style="width: 100%; padding: 0.75rem 1rem; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); font-weight: 600; color: var(--navy-dark); transition: all 0.3s ease;">
+                            <label
+                                style="font-weight: 700; color: var(--text-light); margin-bottom: 0.5rem; display: block; font-size: 0.85rem;">SELECT
+                                SUBJECT</label>
+                            <select id="classRecordSubject"
+                                style="width: 100%; padding: 0.75rem 1rem; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); font-weight: 600; color: var(--navy-dark); transition: all 0.3s ease;">
                                 <option value="">-- Click to Load Subjects --</option>
                             </select>
                         </div>
                         <div class="input-group" style="margin-bottom: 0;">
-                            <label style="font-weight: 700; color: var(--text-light); margin-bottom: 0.5rem; display: block; font-size: 0.85rem;">SELECT DATE</label>
-                            <input type="date" id="classRecordDate" style="width: 100%; padding: 0.75rem 1rem; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); font-weight: 600; color: var(--navy-dark); transition: all 0.3s ease;">
+                            <label
+                                style="font-weight: 700; color: var(--text-light); margin-bottom: 0.5rem; display: block; font-size: 0.85rem;">SELECT
+                                DATE</label>
+                            <input type="date" id="classRecordDate"
+                                style="width: 100%; padding: 0.75rem 1rem; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); font-weight: 600; color: var(--navy-dark); transition: all 0.3s ease;">
                         </div>
-                        <button class="btn-primary" onclick="generateClassAttendanceRecord()" style="height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 0.75rem; font-weight: 700; box-shadow: 0 4px 12px rgba(0, 188, 212, 0.2);">
+                        <button class="btn-primary" onclick="generateClassAttendanceRecord()"
+                            style="height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 0.75rem; font-weight: 700; box-shadow: 0 4px 12px rgba(0, 188, 212, 0.2);">
                             <i class="fa-solid fa-wand-magic-sparkles"></i> GENERATE RECORD
                         </button>
                     </div>
 
                     <!-- Record Display Area -->
-                    <div id="classRecordDisplay" style="display:none; margin-top: 2.5rem; border-top: 1px dashed var(--border); padding-top: 2rem; position: relative; z-index: 1;">
-                        
+                    <div id="classRecordDisplay"
+                        style="display:none; margin-top: 2.5rem; border-top: 1px dashed var(--border); padding-top: 2rem; position: relative; z-index: 1;">
+
                         <!-- Filtering Toolbar -->
-                        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; background: var(--surface); padding: 0.75rem 1.25rem; border-radius: 10px; border: 1px solid var(--border); flex-wrap: wrap; box-shadow: var(--shadow-sm);">
+                        <div
+                            style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; background: var(--surface); padding: 0.75rem 1.25rem; border-radius: 10px; border: 1px solid var(--border); flex-wrap: wrap; box-shadow: var(--shadow-sm);">
                             <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <i class="fa-solid fa-filter" style="color: var(--primary-cyan); font-size: 0.9rem;"></i>
-                                <label style="font-size: 0.75rem; font-weight: 800; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;">Show Rows</label>
-                                <select id="recordLimitFilter" onchange="applyAttendanceFilters()" style="padding: 0.4rem 0.8rem; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.825rem; font-weight: 700; color: var(--navy-dark); background: var(--bg); cursor: pointer; outline: none; transition: border-color 0.2s;">
+                                <i class="fa-solid fa-filter"
+                                    style="color: var(--primary-cyan); font-size: 0.9rem;"></i>
+                                <label
+                                    style="font-size: 0.75rem; font-weight: 800; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;">Show
+                                    Rows</label>
+                                <select id="recordLimitFilter" onchange="applyAttendanceFilters()"
+                                    style="padding: 0.4rem 0.8rem; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.825rem; font-weight: 700; color: var(--navy-dark); background: var(--bg); cursor: pointer; outline: none; transition: border-color 0.2s;">
                                     <option value="all">All Rows</option>
                                     <option value="10">First 10</option>
                                     <option value="20">First 20</option>
@@ -2492,8 +2592,10 @@
                             </div>
                             <div style="width: 1px; height: 20px; background: var(--border); margin: 0 0.25rem;"></div>
                             <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <label style="font-size: 0.75rem; font-weight: 800; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;">Status</label>
-                                <select id="recordStatusFilter" onchange="applyAttendanceFilters()" style="padding: 0.4rem 0.8rem; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.825rem; font-weight: 700; color: var(--navy-dark); background: var(--bg); cursor: pointer; outline: none; transition: border-color 0.2s;">
+                                <label
+                                    style="font-size: 0.75rem; font-weight: 800; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;">Status</label>
+                                <select id="recordStatusFilter" onchange="applyAttendanceFilters()"
+                                    style="padding: 0.4rem 0.8rem; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.825rem; font-weight: 700; color: var(--navy-dark); background: var(--bg); cursor: pointer; outline: none; transition: border-color 0.2s;">
                                     <option value="all">All Statuses</option>
                                     <option value="present">Present Only</option>
                                     <option value="absent">Absent Only</option>
@@ -2501,32 +2603,44 @@
                             </div>
                         </div>
 
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; background: rgba(0,188,212,0.03); padding: 1rem; border-radius: 12px; border-left: 4px solid var(--primary-cyan);">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; background: rgba(0,188,212,0.03); padding: 1rem; border-radius: 12px; border-left: 4px solid var(--primary-cyan);">
                             <div>
-                                <h5 id="classRecordTitle" style="font-weight: 800; color: var(--navy-dark); margin: 0; font-size: 1.1rem;">Attendance Record</h5>
-                                <div id="classRecordSubtitle" style="font-size: 0.85rem; color: var(--text-light); margin-top: 2px;">Subject: - | Date: -</div>
+                                <h5 id="classRecordTitle"
+                                    style="font-weight: 800; color: var(--navy-dark); margin: 0; font-size: 1.1rem;">
+                                    Attendance Record</h5>
+                                <div id="classRecordSubtitle"
+                                    style="font-size: 0.85rem; color: var(--text-light); margin-top: 2px;">Subject: - |
+                                    Date: -</div>
                             </div>
                             <div style="display: flex; gap: 0.75rem; align-items: center;">
                                 <!-- Close (X) button -->
-                                <button onclick="document.getElementById('classRecordDisplay').style.display='none'" title="Close Record" 
+                                <button onclick="document.getElementById('classRecordDisplay').style.display='none'"
+                                    title="Close Record"
                                     style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1.5px solid rgba(239, 68, 68, 0.2); width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease;">
                                     <i class="fa-solid fa-xmark"></i>
                                 </button>
-                                <button class="btn-download-record" onclick="downloadClassAttendancePDF()" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 0.6rem 1.25rem; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25); transition: all 0.3s ease;">
+                                <button class="btn-download-record" onclick="downloadClassAttendancePDF()"
+                                    style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 0.6rem 1.25rem; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25); transition: all 0.3s ease;">
                                     <i class="fa-solid fa-file-pdf"></i> DOWNLOAD PDF
                                 </button>
                             </div>
                         </div>
-                        
-                        <div class="table-wrap" style="box-shadow: var(--shadow-sm); border-radius: 10px; border: 1px solid var(--border);">
+
+                        <div class="table-wrap"
+                            style="box-shadow: var(--shadow-sm); border-radius: 10px; border: 1px solid var(--border);">
                             <table style="width: 100%; border-collapse: collapse;">
                                 <thead>
                                     <tr style="background: var(--navy-dark);">
-                                        <th style="width: 60px; text-align: center; padding: 1rem; border-top-left-radius: 10px; color: white;">SR.</th>
+                                        <th
+                                            style="width: 60px; text-align: center; padding: 1rem; border-top-left-radius: 10px; color: white;">
+                                            SR.</th>
                                         <th style="text-align: left; padding: 1rem; color: white;">STUDENT NAME</th>
                                         <th style="text-align: left; padding: 1rem; color: white;">REGISTRATION ID</th>
                                         <th style="text-align: center; padding: 1rem; color: white;">MARKED TIME</th>
-                                        <th style="text-align: center; padding: 1rem; border-top-right-radius: 10px; color: white;">STATUS</th>
+                                        <th
+                                            style="text-align: center; padding: 1rem; border-top-right-radius: 10px; color: white;">
+                                            STATUS</th>
                                     </tr>
                                 </thead>
                                 <tbody id="classRecordTableBody">
@@ -2534,12 +2648,50 @@
                                 </tbody>
                             </table>
                         </div>
-                        
+
                         <!-- Empty State for Table -->
-                        <div id="classRecordEmptyState" style="display: none; padding: 3rem 1rem; text-align: center; color: var(--text-light);">
-                            <i class="fa-solid fa-user-slash" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem; display: block;"></i>
+                        <div id="classRecordEmptyState"
+                            style="display: none; padding: 3rem 1rem; text-align: center; color: var(--text-light);">
+                            <i class="fa-solid fa-user-slash"
+                                style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem; display: block;"></i>
                             <p style="font-weight: 600;">No student enrollment found for this subject.</p>
                         </div>
+                    </div>
+                </div>
+
+                <!-- ════ OVERALL SUBJECT ATTENDANCE REPORT ════ -->
+                <div class="card"
+                    style="margin-top: 2.5rem; border-top: 4px solid #7c3aed; position: relative; overflow: hidden;">
+                    <div
+                        style="position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; background: rgba(124,58,237,0.05); border-radius: 50%; z-index: 0;">
+                    </div>
+                    <h4
+                        style="font-weight: 800; margin-bottom: 1.5rem; color: var(--navy-dark); display: flex; align-items: center; gap: 0.75rem; position: relative; z-index: 1;">
+                        <i class="fa-solid fa-chart-pie"
+                            style="color: #7c3aed; background: rgba(124,58,237,0.1); padding: 8px; border-radius: 8px;"></i>
+                        Overall Subject Attendance Report
+                    </h4>
+                    <p
+                        style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 1.5rem; position: relative; z-index: 1;">
+                        Generate a comprehensive report showing the total attendance percentage for every student
+                        assigned to a specific subject.
+                    </p>
+
+                    <div
+                        style="display: flex; gap: 1.25rem; align-items: flex-end; position: relative; z-index: 1; flex-wrap: wrap;">
+                        <div class="input-group" style="margin-bottom: 0; flex: 1; min-width: 240px;">
+                            <label
+                                style="font-weight: 700; color: var(--text-light); margin-bottom: 0.5rem; display: block; font-size: 0.85rem;">SELECT
+                                SUBJECT</label>
+                            <select id="overallReportSubject"
+                                style="width: 100%; padding: 0.75rem 1rem; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); font-weight: 600; color: var(--navy-dark); transition: all 0.3s ease;">
+                                <option value="">-- Click to Load Subjects --</option>
+                            </select>
+                        </div>
+                        <button class="btn-primary" onclick="generateOverallAttendanceReport()"
+                            style="height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 0.75rem; font-weight: 700; background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); border: none; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2); padding: 0 1.5rem;">
+                            <i class="fa-solid fa-file-pdf"></i> GENERATE OVERALL REPORT
+                        </button>
                     </div>
                 </div>
             </div>
@@ -2551,7 +2703,8 @@
                     Student Risk Analysis
                 </div>
                 <div class="card">
-                    <p style="color:var(--text-muted);margin-bottom:1.5rem">Students with attendance below <strong>75%</strong> in your subjects.</p>
+                    <p style="color:var(--text-muted);margin-bottom:1.5rem">Students with attendance below
+                        <strong>75%</strong> in your subjects.</p>
                     <div class="table-wrap">
                         <table id="riskTable">
                             <thead>
@@ -2823,7 +2976,7 @@
             // 2. Restore Unique Code if valid
             const savedCode = localStorage.getItem('teacher_activeCode');
             const expiry = localStorage.getItem('teacher_codeExpiry');
-            
+
             if (savedCode && expiry && Date.now() < parseInt(expiry)) {
                 activeCode = savedCode;
                 pollCode = localStorage.getItem('teacher_pollCode');
@@ -2833,10 +2986,10 @@
                 document.getElementById('codeSubjectLabel').textContent = `${currentSubject} [${currentSubjectCode}]`;
                 document.getElementById('generatedCode').textContent = activeCode;
                 document.getElementById('uniqueCodePanel').classList.add('show');
-                
+
                 const remaining = Math.floor((parseInt(expiry) - Date.now()) / 1000);
                 updateCodeTimer(remaining);
-                
+
                 clearInterval(codeTimerInterval);
                 codeTimerInterval = setInterval(() => {
                     const sec = Math.floor((parseInt(expiry) - Date.now()) / 1000);
@@ -2854,7 +3007,7 @@
                 pollCodeSubmissions();
                 clearInterval(codePollInterval);
                 codePollInterval = setInterval(pollCodeSubmissions, 3000);
-                
+
                 // Switch to Mark Attendance section if code is active
                 showSection('markAttendance', document.querySelector('.sidebar-menu li:nth-child(2)'));
             }
@@ -2910,11 +3063,11 @@
         async function loadRiskAnalysis() {
             const tbody = document.getElementById('riskTableBody');
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem"><i class="fa-solid fa-spinner fa-spin"></i> Analyzing...</td></tr>';
-            
+
             try {
                 const res = await fetch('../backend/attendance_api.php?action=getRiskAnalysis');
                 const data = await res.json();
-                
+
                 if (data.success) {
                     tbody.innerHTML = '';
                     if (data.data.length === 0) {
@@ -3025,11 +3178,11 @@
         async function renderSchedule() {
             const container = document.getElementById('scheduleContainer');
             if (!TEACHER.db_id) return;
-            
+
             try {
                 const res = await fetch(`../backend/schedule_api.php?action=getTeacherSchedule&teacher_id=${TEACHER.db_id}`);
                 const data = await res.json();
-                
+
                 if (!data.success) {
                     container.innerHTML = `<div class="card" style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--text-muted);">
                         <i class="fa-solid fa-calendar-xmark" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
@@ -3044,10 +3197,10 @@
                 Object.entries(schedule).forEach(([day, slots]) => {
                     const div = document.createElement('div');
                     div.className = 'day-schedule card';
-                    
+
                     const todayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date().getDay()];
                     const isToday = (day === todayName);
-                    
+
                     div.innerHTML = `<h3 data-count="${slots.length} Class${slots.length !== 1 ? 'es' : ''}" style="${isToday ? 'background: linear-gradient(135deg, var(--primary-cyan), var(--navy-dark));' : ''}">${day} ${isToday ? '<span style="font-size:.65rem; background:rgba(255,255,255,.2); padding:2px 8px; border-radius:10px; margin-left:8px;">TODAY</span>' : ''}</h3><div class="schedule-slots">
                         ${slots.length > 0 ? slots.map(s => `
                             <div class="time-slot" style="${isToday ? 'border-left: 3px solid var(--primary-cyan);' : ''}">
@@ -3071,10 +3224,10 @@
                 const todayName = days[new Date().getDay()];
                 const todaySlots = schedule[todayName] || [];
                 const manualSelect = document.getElementById('manualSubjectSelect');
-                
+
                 // Clear and add default
                 manualSelect.innerHTML = '<option value="">-- Select Subject --</option>';
-                
+
                 if (todaySlots.length === 0) {
                     const opt = new Option(`No subjects scheduled for today (${todayName})`, "");
                     opt.disabled = true;
@@ -3295,7 +3448,7 @@
             const options = document.getElementById('geoLockOptions');
             const slider = document.getElementById('geoLockSlider');
             const bg = document.getElementById('geoLockBg');
-            
+
             geoLockEnabled = toggle.checked;
 
             // Visual update
@@ -3307,7 +3460,7 @@
             if (geoLockEnabled) {
                 statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking GPS access…';
                 statusEl.style.color = 'var(--text-muted)';
-                
+
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
                         statusEl.innerHTML = '<i class="fa-solid fa-circle-check" style="color:var(--success)"></i> GPS ready — location will be captured on generation';
@@ -3367,7 +3520,7 @@
             const options = document.getElementById('eventGeoLockOptions');
             const slider = document.getElementById('eventGeoLockSlider');
             const bg = document.getElementById('eventGeoLockBg');
-            
+
             eventGeoLockEnabled = toggle.checked;
             options.style.display = eventGeoLockEnabled ? 'block' : 'none';
             bg.style.background = eventGeoLockEnabled ? 'var(--primary-cyan)' : '#ccc';
@@ -3448,8 +3601,8 @@
                 })
                     .then(r => r.json())
                     .then(data => {
-                        if (!data.success) { 
-                            showToast(data.message || 'Failed to generate code', true); 
+                        if (!data.success) {
+                            showToast(data.message || 'Failed to generate code', true);
                             if (data.message && data.message.includes('Daily limit reached')) {
                                 const limitInd = document.getElementById('codeLimitIndicator');
                                 const regenBtn = document.getElementById('btnRegenerateCode');
@@ -3458,12 +3611,12 @@
                                 regenBtn.disabled = true;
                                 regenBtn.style.opacity = '0.5';
                             }
-                            return; 
+                            return;
                         }
 
                         activeCode = data.unique_code;
                         pollCode = data.unique_code;
-                        
+
                         // Save State
                         localStorage.setItem('teacher_activeCode', activeCode);
                         localStorage.setItem('teacher_pollCode', pollCode);
@@ -3489,7 +3642,7 @@
                         const regenBtn = document.getElementById('btnRegenerateCode');
                         const countToday = data.codes_generated_today || 1;
                         const left = 3 - countToday;
-                        
+
                         if (left > 0) {
                             limitInd.innerHTML = `<span style="color:var(--primary-cyan)">${left}</span> refreshes left today`;
                             limitInd.style.color = 'var(--text-muted)';
@@ -3969,15 +4122,15 @@
         function stopEventPolling() {
             clearInterval(eventCodeTimerInterval);
             clearInterval(liveEventPollInterval);
-            
+
             // Hide the code display at top
             const codeDisplay = document.getElementById('eventCodeDisplay');
-            if(codeDisplay) codeDisplay.style.display = 'none';
-            
+            if (codeDisplay) codeDisplay.style.display = 'none';
+
             // Toggle buttons in live panel
             document.getElementById('btnStopEventCode').style.display = 'none';
             document.getElementById('btnDownloadEventPDF').style.display = 'inline-block';
-            
+
             showToast('Attendance window closed. You can now download the record.');
         }
 
@@ -4008,7 +4161,7 @@
             doc.setFontSize(8);
             doc.setFont("helvetica", "normal");
             doc.text(`Report ID: EVT-${Date.now()}`, 20, 31);
-            
+
             doc.setTextColor(255, 255, 255);
             doc.text(`Generated: ${generatedDate}`, 150, 68);
 
@@ -4043,15 +4196,15 @@
                 body: tableData,
                 startY: 85,
                 theme: 'grid',
-                headStyles: { 
+                headStyles: {
                     fillColor: [8, 145, 178], // Cyan-Teal: #0891b2
-                    textColor: [255, 255, 255], 
-                    fontSize: 8, 
+                    textColor: [255, 255, 255],
+                    fontSize: 8,
                     fontStyle: 'bold'
                 },
-                bodyStyles: { 
-                    fontSize: 8, 
-                    textColor: [30, 58, 95] 
+                bodyStyles: {
+                    fontSize: 8,
+                    textColor: [30, 58, 95]
                 },
                 columnStyles: {
                     0: { halign: 'center', cellWidth: 15 },
@@ -4518,7 +4671,7 @@
             ctx.fillStyle = '#1e3a5f';
             ctx.font = 'bold 18px Segoe UI, sans-serif';
             ctx.fillText('Attendify Analytics Report', PAD, 30);
-            
+
             ctx.fillStyle = '#6b7280';
             ctx.font = '600 13px Segoe UI, sans-serif';
             ctx.fillText(chartTitle.replace(/_/g, ' ').toUpperCase(), PAD, 52);
@@ -4559,7 +4712,7 @@
             const finalH = H - 25;
             ctx.strokeStyle = '#e5e7eb';
             ctx.beginPath(); ctx.moveTo(PAD, finalH); ctx.lineTo(W - PAD, finalH); ctx.stroke();
-            
+
             ctx.fillStyle = '#9ca3af';
             ctx.font = '10px Segoe UI, sans-serif';
             ctx.fillText('Generated by ' + TEACHER.name + ' via Attendify', PAD, finalH + 15);
@@ -4730,10 +4883,10 @@
                 return `<tr>
                                         <td>
                                             <div style="display:flex;align-items:center;gap:0.5rem">
-                                                ${s.photo_path 
-                                                    ? `<img src="../${s.photo_path}" style="width:24px;height:24px;border-radius:50%;object-fit:cover">`
-                                                    : `<div style="width:24px;height:24px;background:var(--bg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700">${s.full_name[0]}</div>`
-                                                }
+                                                ${s.photo_path
+                        ? `<img src="../${s.photo_path}" style="width:24px;height:24px;border-radius:50%;object-fit:cover">`
+                        : `<div style="width:24px;height:24px;background:var(--bg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700">${s.full_name[0]}</div>`
+                    }
                                                 <span>${s.full_name}</span>
                                             </div>
                                         </td>
@@ -4758,10 +4911,10 @@
         <div class="card" style="margin-bottom:1rem; position: relative;">
             <div style="display:flex; justify-content: space-between; align-items: center; width: 100%;">
                 <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
-                    ${student.photo_path 
-                        ? `<img src="../${student.photo_path}" alt="Profile" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--primary-cyan)">`
-                        : `<div style="width:48px;height:48px;background:linear-gradient(135deg,var(--primary-cyan),#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:1.1rem">${student.name[0]}</div>`
-                    }
+                    ${student.photo_path
+                    ? `<img src="../${student.photo_path}" alt="Profile" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--primary-cyan)">`
+                    : `<div style="width:48px;height:48px;background:linear-gradient(135deg,var(--primary-cyan),#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:1.1rem">${student.name[0]}</div>`
+                }
                     <div>
                         <div style="font-weight:700;font-size:1rem">${student.name}</div>
                         <div style="font-size:.8rem;color:var(--text-muted)">${student.reg_id}${student.branch ? ' • ' + student.branch : ''}${student.department ? ' • ' + student.department : ''}</div>
@@ -4778,9 +4931,9 @@
                     <thead><tr><th>Subject</th><th>Total</th><th>Present</th><th>Absent</th><th>%</th><th>Status</th><th>Action</th></tr></thead>
                     <tbody>
                         ${attendance.map(s => {
-                const pct = ((s.present / s.total) * 100).toFixed(1);
-                const cls = pct >= 75 ? 'badge-present' : pct >= 60 ? 'badge-warn' : 'badge-absent';
-                return `<tr>
+                    const pct = ((s.present / s.total) * 100).toFixed(1);
+                    const cls = pct >= 75 ? 'badge-present' : pct >= 60 ? 'badge-warn' : 'badge-absent';
+                    return `<tr>
                                 <td>${s.subject_name}</td>
                                 <td>${s.total}</td>
                                 <td>${s.present}</td>
@@ -4789,7 +4942,7 @@
                                 <td><span class="badge ${cls}">${pct >= 75 ? '✓ Good' : pct >= 60 ? '! Warning' : '✗ Low'}</span></td>
                                 <td><button class="btn-primary" style="padding:.35rem .75rem;font-size:.78rem" onclick="showUpdateModal('${student.reg_id}','${s.subject_name}')">Update</button></td>
                             </tr>`;
-            }).join('')}
+                }).join('')}
                     </tbody>
                 </table>
             </div>
@@ -4800,16 +4953,16 @@
         let currentUpdateRegId = '', currentUpdateSubject = '';
         function showUpdateModal(regId, subject) {
             currentUpdateRegId = regId; currentUpdateSubject = subject;
-            
+
             // Set date limits: max = today, min = 3 months ago
             const dateInput = document.getElementById('updateDate');
             const today = new Date();
             const threeMonthsAgo = new Date();
             threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-            
+
             dateInput.max = today.toISOString().split('T')[0];
             dateInput.min = threeMonthsAgo.toISOString().split('T')[0];
-            
+
             document.getElementById('updateAttendanceModal').classList.add('show');
         }
         function closeUpdateModal() { document.getElementById('updateAttendanceModal').classList.remove('show'); }
@@ -4882,8 +5035,17 @@
 
             // Attach listener for subject dropdown to load subjects
             const classSubjectSelect = document.getElementById('classRecordSubject');
-            if(classSubjectSelect) {
-                classSubjectSelect.addEventListener('click', function() {
+            if (classSubjectSelect) {
+                classSubjectSelect.addEventListener('click', function () {
+                    if (this.options.length <= 1) {
+                        loadTeacherSubjectsForRecord();
+                    }
+                });
+            }
+
+            const overallSubjectShow = document.getElementById('overallReportSubject');
+            if (overallSubjectShow) {
+                overallSubjectShow.addEventListener('click', function () {
                     if (this.options.length <= 1) {
                         loadTeacherSubjectsForRecord();
                     }
@@ -4915,7 +5077,7 @@
                     if (data.success && (data.report || data.attendance)) {
                         const att = data.report || data.attendance;
                         const studentInfo = data.student || { name: query, regId: query, class: 'N/A' };
-                        
+
                         // Store full student data for download metadata
                         currentStudentObject = {
                             name: studentInfo.name || studentInfo.full_name || query,
@@ -4971,12 +5133,12 @@
                     </thead>
                     <tbody>
                         ${attendance.map(a => {
-                            const pres = parseInt(a.present || a.present_count || 0);
-                            const tot = parseInt(a.total || a.total_classes || 0);
-                            const abs = parseInt(a.absent || a.absent_count || (tot - pres));
-                            const pct = parseFloat(a.percentage || a.pct || (tot > 0 ? (pres / tot * 100) : 0)).toFixed(1);
-                            const statusCls = pct >= 75 ? 'badge-present' : pct >= 60 ? 'badge-warn' : 'badge-absent';
-                            return `
+                const pres = parseInt(a.present || a.present_count || 0);
+                const tot = parseInt(a.total || a.total_classes || 0);
+                const abs = parseInt(a.absent || a.absent_count || (tot - pres));
+                const pct = parseFloat(a.percentage || a.pct || (tot > 0 ? (pres / tot * 100) : 0)).toFixed(1);
+                const statusCls = pct >= 75 ? 'badge-present' : pct >= 60 ? 'badge-warn' : 'badge-absent';
+                return `
                                 <tr>
                                     <td>${a.subject_name}</td>
                                     <td style="text-align:center">${tot}</td>
@@ -4986,7 +5148,7 @@
                                     <td style="text-align:center"><span class="badge ${statusCls}">${pct >= 75 ? '✓ Good' : pct >= 60 ? '! Warning' : '✗ Low'}</span></td>
                                 </tr>
                             `;
-                        }).join('')}
+            }).join('')}
                     </tbody>
                 </table>
             </div>
@@ -4996,6 +5158,7 @@
 
         async function loadTeacherSubjectsForRecord() {
             const select = document.getElementById('classRecordSubject');
+            const overallSelect = document.getElementById('overallReportSubject');
             try {
                 const res = await fetch('../backend/attendance_api.php', {
                     method: 'POST',
@@ -5003,22 +5166,23 @@
                     body: 'action=getTeacherSubjects'
                 });
                 const data = await res.json();
-                
+
                 if (data.success && data.subjects) {
-                    select.innerHTML = '<option value="">-- Select Subject --</option>';
-                    data.subjects.forEach(s => {
-                        const opt = document.createElement('option');
-                        opt.value = s.id;
-                        opt.textContent = `${s.subject_name} (${s.subject_code})`;
-                        opt.setAttribute('data-name', s.subject_name);
-                        select.appendChild(opt);
-                    });
+                    const options = '<option value="">-- Select Subject --</option>' +
+                        data.subjects.map(s => `<option value="${s.id}" data-name="${s.subject_name}">${s.subject_name} (${s.subject_code})</option>`).join('');
+
+                    if (select) select.innerHTML = options;
+                    if (overallSelect) overallSelect.innerHTML = options;
                 } else {
-                    select.innerHTML = '<option value="">Error loading subjects</option>';
+                    const err = '<option value="">Error loading subjects</option>';
+                    if (select) select.innerHTML = err;
+                    if (overallSelect) overallSelect.innerHTML = err;
                 }
             } catch (e) {
                 console.error('Error loading subjects:', e);
-                select.innerHTML = '<option value="">Connection error</option>';
+                const connErr = '<option value="">Connection error</option>';
+                if (select) select.innerHTML = connErr;
+                if (overallSelect) overallSelect.innerHTML = connErr;
             }
         }
 
@@ -5032,13 +5196,13 @@
             const tableBody = document.getElementById('classRecordTableBody');
             const emptyState = document.getElementById('classRecordEmptyState');
             const subtitle = document.getElementById('classRecordSubtitle');
-            
+
             if (!subjectId) { showToast('Please select a subject', true); return; }
             if (!date) { showToast('Please select a date', true); return; }
 
             const subjectOption = document.querySelector(`#classRecordSubject option[value="${subjectId}"]`);
             const subjectName = subjectOption ? subjectOption.getAttribute('data-name') : 'Subject';
-            
+
             try {
                 showToast('<i class="fa-solid fa-spinner fa-spin"></i> Generating record...');
                 const res = await fetch(`../backend/attendance_api.php?action=getClassAttendanceByDate&subject_id=${subjectId}&date=${date}`);
@@ -5051,7 +5215,7 @@
 
                     if (data.records && data.records.length > 0) {
                         emptyState.style.display = 'none';
-                        
+
                         // Sort: Present first, then Absent
                         data.records.sort((a, b) => {
                             const sA = (a.status || "").toLowerCase();
@@ -5083,32 +5247,32 @@
         function applyAttendanceFilters() {
             const limit = document.getElementById('recordLimitFilter').value;
             const status = document.getElementById('recordStatusFilter').value;
-            
+
             let filtered = [...currentClassRecords];
-            
+
             // Apply status filter
             if (status !== 'all') {
                 filtered = filtered.filter(r => r.status.toLowerCase() === status.toLowerCase());
             }
-            
+
             // Apply limit filter
             if (limit !== 'all') {
                 const n = parseInt(limit);
                 filtered = filtered.slice(0, n);
             }
-            
+
             renderRecordTable(filtered);
         }
 
         function renderRecordTable(filtered) {
             const tableBody = document.getElementById('classRecordTableBody');
             tableBody.innerHTML = '';
-            
+
             let absentHeaderAdded = false;
-            
+
             filtered.forEach((r, index) => {
                 const isPresent = r.status.toLowerCase() === 'present';
-                
+
                 // If we hit the first absent student, add a sub-header
                 if (!isPresent && !absentHeaderAdded) {
                     const headerTr = document.createElement('tr');
@@ -5126,8 +5290,8 @@
                 const bgColor = isPresent ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)';
                 const borderColor = isPresent ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)';
                 const statusIcon = isPresent ? 'fa-check-circle' : 'fa-times-circle';
-                
-                const markedTime = r.marked_at 
+
+                const markedTime = r.marked_at
                     ? new Date(r.marked_at.replace(' ', 'T')).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
                     : '-';
 
@@ -5151,7 +5315,7 @@
             const date = document.getElementById('classRecordDate').value;
             const subjectOption = document.querySelector(`#classRecordSubject option[value="${subjectId}"]`);
             const subjectName = subjectOption ? subjectOption.getAttribute('data-name') : 'Subject';
-            
+
             if (!window.jspdf) {
                 showToast('PDF Library (jsPDF) not loaded. Please refresh.', true);
                 return;
@@ -5175,7 +5339,7 @@
             doc.setFontSize(8);
             doc.setFont("helvetica", "normal");
             doc.text(`Report ID: ATT-${Date.now()}`, 20, 31);
-            
+
             doc.setTextColor(255, 255, 255);
             doc.text(`Generated: ${generatedDate}`, 150, 68);
 
@@ -5187,7 +5351,7 @@
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(7);
             doc.setFont("helvetica", "normal");
-            
+
             // Labels (Line-by-line)
             doc.text("SUBJECT:", 20, 48);
             doc.text("LECTURE DATE:", 20, 54);
@@ -5196,7 +5360,7 @@
 
             doc.setFontSize(10);
             doc.setFont("helvetica", "bold");
-            
+
             // Values (Aligned)
             doc.text(subjectName.toUpperCase().substring(0, 50), 55, 48);
             doc.text(date, 55, 54);
@@ -5208,7 +5372,7 @@
             let serialNo = 1;
             document.querySelectorAll('#classRecordTableBody tr').forEach((row) => {
                 const cols = row.querySelectorAll('td');
-                if(cols.length >= 5) {
+                if (cols.length >= 5) {
                     tableBody.push([
                         cols[0].textContent.trim(),
                         cols[1].textContent.trim(),
@@ -5230,10 +5394,10 @@
                 head: [['SR.', 'STUDENT NAME', 'REGISTRATION ID', 'TIME', 'STATUS']],
                 body: tableBody,
                 theme: 'grid',
-                headStyles: { 
+                headStyles: {
                     fillColor: [8, 145, 178], // Cyan-Teal: #0891b2
-                    textColor: [255, 255, 255], 
-                    fontSize: 8, 
+                    textColor: [255, 255, 255],
+                    fontSize: 8,
                     fontStyle: 'bold'
                 },
                 bodyStyles: {
@@ -5252,7 +5416,7 @@
                     lineColor: [226, 232, 240],
                     lineWidth: 0.1
                 },
-                didParseCell: function(data) {
+                didParseCell: function (data) {
                     if (data.section === 'body' && data.column.index === 4) {
                         if (data.cell.raw === 'PRESENT') {
                             data.cell.styles.textColor = [16, 185, 129];
@@ -5297,14 +5461,14 @@
             const t = document.getElementById('toast');
             document.getElementById('toastText').innerHTML = msg;
             document.getElementById('toastIcon').innerHTML = isError ? '<i class="fa-solid fa-xmark"></i>' : '<i class="fa-solid fa-check-circle"></i>';
-            
+
             // Position "Login successful" at the top on mobile, others at bottom
             if (msg.toLowerCase().includes('login successful')) {
                 t.classList.add('top-toast');
             } else {
                 t.classList.remove('top-toast');
             }
-            
+
             t.className = 'show ' + (isError ? 'error ' : '') + (t.classList.contains('top-toast') ? 'top-toast ' : '');
             clearTimeout(toastTimeout);
             toastTimeout = setTimeout(() => t.className = '', 3500);
@@ -5312,6 +5476,139 @@
 
         // --- AUTO LOGOUT (10 MIN INACTIVITY) ---
         let inactivityTimer;
+        async function generateOverallAttendanceReport() {
+            const subjectId = document.getElementById('overallReportSubject').value;
+            if (!subjectId) { showToast('Please select a subject', true); return; }
+
+            const subjectOption = document.querySelector(`#overallReportSubject option[value="${subjectId}"]`);
+            const subjectName = subjectOption ? subjectOption.getAttribute('data-name') : 'Subject';
+
+            try {
+                showToast('<i class="fa-solid fa-spinner fa-spin"></i> Calculating attendance percentages...');
+                const res = await fetch(`../backend/attendance_api.php?action=getOverallSubjectAttendance&subject_id=${subjectId}`);
+                const data = await res.json();
+
+                if (data.success) {
+                    if (!data.students || data.students.length === 0) {
+                        showToast('No students enrolled in this subject', true);
+                        return;
+                    }
+
+                    downloadOverallAttendancePDF(data);
+                } else {
+                    showToast(data.message || 'Failed to fetch overall report', true);
+                }
+            } catch (e) {
+                console.error('Error:', e);
+                showToast('Connection error', true);
+            }
+        }
+
+        function downloadOverallAttendancePDF(data) {
+            if (!window.jspdf) {
+                showToast('PDF Library (jsPDF) not loaded. Please refresh.', true);
+                return;
+            }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const subjectName = data.subject_name;
+            const totalClasses = data.total_classes;
+            const generatedDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+
+            // --- PREMIUM HEADER (Purple Theme) ---
+            doc.setFillColor(124, 58, 237); // Purple: #7c3aed
+            doc.rect(0, 0, 210, 80, 'F');
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22);
+            doc.setFont("helvetica", "bold");
+            doc.text("Overall Subject Attendance Report", 20, 25);
+
+            doc.setTextColor(233, 213, 255); // Purple-100
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Report ID: OVR-${Date.now()}`, 20, 31);
+            doc.text(`Generated: ${generatedDate}`, 150, 68);
+
+            doc.setDrawColor(255, 255, 255);
+            doc.setLineWidth(0.2);
+            doc.line(20, 42, 190, 42);
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(8);
+            doc.text("SUBJECT:", 20, 48);
+            doc.text("TOTAL CLASSES HELD:", 20, 54);
+            doc.text("INSTRUCTOR:", 20, 60);
+            doc.text("TEACHER ID:", 20, 66);
+
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.text(subjectName.toUpperCase(), 65, 48);
+            doc.text(totalClasses.toString(), 65, 54);
+            doc.text(TEACHER.name.toUpperCase(), 65, 60);
+            doc.text(TEACHER.id.toUpperCase(), 65, 66);
+
+            // Table Data
+            const tableBody = data.students.map((s, i) => [
+                i + 1,
+                s.full_name,
+                s.reg_id,
+                s.total_classes,
+                s.present_count,
+                s.absent_count,
+                `${s.percentage}%`
+            ]);
+
+            doc.autoTable({
+                startY: 85,
+                head: [['SR. NO.', 'STUDENT NAME', 'REGISTER ID', 'TOTAL LECTURES', 'PRESENT', 'ABSENT', 'ATTENDANCE %']],
+                body: tableBody,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: [109, 40, 217], // Dark Purple: #6d28d9
+                    textColor: [255, 255, 255],
+                    fontSize: 6.5,
+                    fontStyle: 'bold'
+                },
+                bodyStyles: {
+                    fontSize: 6.5,
+                    textColor: [31, 41, 55],
+                    cellPadding: 2
+                },
+                columnStyles: {
+                    0: { halign: 'center', cellWidth: 12 },
+                    1: { halign: 'left' },
+                    2: { halign: 'left', font: 'courier', cellWidth: 25 },
+                    3: { halign: 'center', cellWidth: 25 },
+                    4: { halign: 'center', cellWidth: 15 },
+                    5: { halign: 'center', cellWidth: 15 },
+                    6: { halign: 'center', fontStyle: 'bold', cellWidth: 35 }
+                },
+                didParseCell: function (d) {
+                    if (d.section === 'body' && d.column.index === 6) {
+                        const val = parseFloat(d.cell.raw);
+                        if (val < 75) d.cell.styles.textColor = [220, 38, 38]; // Red
+                        else d.cell.styles.textColor = [5, 150, 105]; // Green
+                    }
+                },
+                margin: { left: 20, right: 20 }
+            });
+
+            // Footer
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(156, 163, 175);
+                doc.setFont("helvetica", "italic");
+                doc.text(`© ${new Date().getFullYear()} Attendify - Professional Analytics Report`, 105, 285, { align: 'center' });
+                doc.text(`Page ${i} of ${pageCount}`, 105, 290, { align: 'center' });
+            }
+
+            doc.save(`Overall_Attendance_${subjectName.replace(/\s+/g, '_')}.pdf`);
+            showToast('<i class="fa-solid fa-file-pdf"></i> Overall Report Downloaded');
+        }
+
         function resetInactivityTimer() {
             clearTimeout(inactivityTimer);
             inactivityTimer = setTimeout(() => {
@@ -5330,21 +5627,21 @@
             window.location.href = '../index.php';
         }
     </script>
-<script>
-    // ============================================================================
-    // AUTO SESSION POLLING (Single Device Login Enforcement)
-    // ============================================================================
-    setInterval(async () => {
-        try {
-            const result = await fetch('../backend/auth_api.php?action=checkSession').then(r => r.json());
-            if (result && !result.logged_in) {
-                window.location.href = 'Attendify.html';
+    <script>
+        // ============================================================================
+        // AUTO SESSION POLLING (Single Device Login Enforcement)
+        // ============================================================================
+        setInterval(async () => {
+            try {
+                const result = await fetch('../backend/auth_api.php?action=checkSession').then(r => r.json());
+                if (result && !result.logged_in) {
+                    window.location.href = 'Attendify.html';
+                }
+            } catch (e) {
+                // ignore network errors silently
             }
-        } catch (e) {
-            // ignore network errors silently
-        }
-    }, 5000); // 5 seconds check
-</script>
+        }, 5000); // 5 seconds check
+    </script>
 </body>
 
 </html>

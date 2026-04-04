@@ -10,6 +10,80 @@ header('Content-Type: application/json');
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 // ============================================================================
+// GET OVERALL ATTENDANCE PER SUBJECT (Aggregated)
+// ============================================================================
+if ($action === 'getOverallSubjectAttendance') {
+    requireRole('teacher');
+    
+    $subjectId = intval($_GET['subject_id'] ?? 0);
+    
+    if (!$subjectId) {
+        echo json_encode(['success' => false, 'message' => 'Subject ID required']);
+        exit;
+    }
+    
+    try {
+        // 1. Get total classes held for this subject (distinct dates in attendance table)
+        $stmt = $pdo->prepare("SELECT COUNT(DISTINCT attendance_date) FROM attendance WHERE subject_id = ?");
+        $stmt->execute([$subjectId]);
+        $totalClasses = (int)$stmt->fetchColumn();
+        
+        // 2. Get all assigned students and their corresponding attendance summary
+        $stmt = $pdo->prepare("
+            SELECT 
+                u.id, 
+                u.full_name, 
+                u.reg_id,
+                COUNT(DISTINCT CASE WHEN a.status = 'present' THEN a.attendance_date END) as present_count
+            FROM users u
+            JOIN subjects s ON s.id = ?
+            LEFT JOIN attendance a ON a.student_id = u.id AND a.subject_id = s.id
+            WHERE u.role = 'student' AND u.is_active = 1
+              AND (u.department = s.department OR EXISTS (
+                  SELECT 1 FROM student_subjects ss 
+                  WHERE ss.student_id = u.id AND ss.subject_id = s.id
+              ))
+            GROUP BY u.id
+            ORDER BY u.full_name ASC
+        ");
+        $stmt->execute([$subjectId]);
+        $students = $stmt->fetchAll();
+        
+        $results = [];
+        foreach ($students as $s) {
+            $present = (int)$s['present_count'];
+            $percentage = $totalClasses > 0 ? round(($present / $totalClasses) * 100, 2) : 0;
+            
+            $results[] = [
+                'id' => $s['id'],
+                'full_name' => $s['full_name'],
+                'reg_id' => $s['reg_id'],
+                'present_count' => $present,
+                'absent_count' => max(0, $totalClasses - $present),
+                'total_classes' => $totalClasses,
+                'percentage' => $percentage
+            ];
+        }
+        
+        // Also get subject name for the report
+        $stmt = $pdo->prepare("SELECT subject_name FROM subjects WHERE id = ?");
+        $stmt->execute([$subjectId]);
+        $subjectName = $stmt->fetchColumn() ?: "Unknown Subject";
+        
+        echo json_encode([
+            'success' => true,
+            'subject_name' => $subjectName,
+            'total_classes' => $totalClasses,
+            'students' => $results
+        ]);
+        
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
+// ============================================================================
 // AUTO-CREATE attendance_codes TABLE IF NOT EXISTS
 // ============================================================================
 try {
