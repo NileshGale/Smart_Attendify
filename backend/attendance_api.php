@@ -104,12 +104,18 @@ try {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     ");
     // Add geo columns if table already exists without them
-    try {
-        $pdo->exec("ALTER TABLE attendance_codes ADD COLUMN teacher_lat DECIMAL(10,7) DEFAULT NULL");
-        $pdo->exec("ALTER TABLE attendance_codes ADD COLUMN teacher_lng DECIMAL(10,7) DEFAULT NULL");
-        $pdo->exec("ALTER TABLE attendance_codes ADD COLUMN max_distance_meters INT DEFAULT NULL");
-    } catch (PDOException $ignore) {
-        // Columns already exist or error, individual column checks are better but this is common in Attendify
+    $columnsToAdd = [
+        "teacher_lat DECIMAL(10,7) DEFAULT NULL",
+        "teacher_lng DECIMAL(10,7) DEFAULT NULL",
+        "teacher_accuracy DECIMAL(8,2) DEFAULT NULL",
+        "max_distance_meters INT DEFAULT NULL"
+    ];
+    foreach ($columnsToAdd as $col) {
+        try {
+            $pdo->exec("ALTER TABLE attendance_codes ADD COLUMN $col");
+        } catch (PDOException $ignore) {
+            // Column already exists
+        }
     }
 } catch (PDOException $e) {
     // Table likely already exists, continue
@@ -178,10 +184,10 @@ if ($action === 'generateUniqueCode') {
         
         $now = date('Y-m-d H:i:s');
         $stmt = $pdo->prepare("
-            INSERT INTO attendance_codes (code, teacher_id, subject_name, expires_at, teacher_lat, teacher_lng, max_distance_meters)
-            VALUES (?, ?, ?, DATE_ADD(?, INTERVAL ? SECOND), ?, ?, ?)
+            INSERT INTO attendance_codes (code, teacher_id, subject_name, expires_at, teacher_lat, teacher_lng, teacher_accuracy, max_distance_meters)
+            VALUES (?, ?, ?, DATE_ADD(?, INTERVAL ? SECOND), ?, ?, ?, ?)
         ");
-        $stmt->execute([$code, $teacherId, $subjectName, $now, $validitySeconds, $teacherLat, $teacherLng, $maxDistance]);
+        $stmt->execute([$code, $teacherId, $subjectName, $now, $validitySeconds, $teacherLat, $teacherLng, $teacherAccuracy, $maxDistance]);
         
         // Fetch the exact DB-assigned expiration time back
         $stmt = $pdo->prepare("SELECT expires_at FROM attendance_codes WHERE code = ? ORDER BY id DESC LIMIT 1");
@@ -236,7 +242,7 @@ if ($action === 'markByUniqueCode') {
     try {
         // Find the code and check if it's still valid
         $stmt = $pdo->prepare("
-            SELECT id, code, teacher_id, subject_name, expires_at, teacher_lat, teacher_lng, max_distance_meters
+            SELECT id, code, teacher_id, subject_name, expires_at, teacher_lat, teacher_lng, teacher_accuracy, max_distance_meters
             FROM attendance_codes
             WHERE code = ? AND expires_at > NOW()
             ORDER BY created_at DESC
@@ -261,22 +267,38 @@ if ($action === 'markByUniqueCode') {
                 exit;
             }
             
-            // Proximity check with basic buffer
+            // Proximity check with dynamic accuracy buffer
             $distance = haversineDistance(
                 $codeRecord['teacher_lat'], $codeRecord['teacher_lng'],
                 $studentLat, $studentLng
             );
             $maxDist = intval($codeRecord['max_distance_meters']);
-            $allowedDistance = $maxDist + 30; // 30m default accuracy buffer
+            
+            // Collect accuracies (fallback to 30m if not provided/available)
+            $tAcc = floatval($codeRecord['teacher_accuracy'] ?? 30);
+            $sAcc = floatval($studentAccuracy > 0 ? $studentAccuracy : 30);
+            
+            // Allowed distance = specified radius + teacher error + student error + 10m safety margin
+            $allowedDistance = $maxDist + $tAcc + $sAcc + 10;
             
             if ($distance > $allowedDistance) {
                 $distRounded = round($distance);
+                $allowedRounded = round($allowedDistance);
+                
+                // Detailed message for users to understand if it's a GPS precision issue
+                $precisionMsg = "";
+                if ($tAcc > 50 || $sAcc > 50) {
+                    $precisionMsg = " (High GPS error: Teacher {$tAcc}m, Student {$sAcc}m)";
+                }
+                
                 echo json_encode([
                     'success' => false, 
-                    'message' => "Location match failed. Reported distance: {$distRounded}m. Max allowed: {$allowedDistance}m.",
+                    'message' => "Location match failed. Reported distance: {$distRounded}m. Max allowed: {$allowedRounded}m.{$precisionMsg}",
                     'geo_rejected' => true,
                     'distance' => $distRounded,
-                    'max_distance' => $maxDist
+                    'max_distance' => $maxDist,
+                    'teacher_accuracy' => $tAcc,
+                    'student_accuracy' => $sAcc
                 ]);
                 exit;
             }
@@ -324,9 +346,9 @@ if ($action === 'markByUniqueCode') {
                 status = 'present',
                 marking_method = 'unique_code',
                 teacher_id = VALUES(teacher_id),
-                marked_at = ?
+                marked_at = VALUES(marked_at)
         ");
-        $stmt->execute([$studentId, $subjectId, $codeRecord['teacher_id'], $now, $now]);
+        $stmt->execute([$studentId, $subjectId, $codeRecord['teacher_id'], $today, $now]);
         
         // Get student name for response
         $stmt = $pdo->prepare("SELECT full_name, reg_id FROM users WHERE id = ?");
