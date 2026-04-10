@@ -150,13 +150,21 @@ if ($action === 'uploadProfilePhoto') {
         exit;
     }
     
+    $targetUserId = $_SESSION['user_id'];
+    
+    // Admin override for editing other users
+    if (isset($_POST['user_id_override']) && hasRole('admin')) {
+        $targetUserId = intval($_POST['user_id_override']);
+    }
+
     $uploadDir = __DIR__ . '/../uploads/photos/';
     if (!file_exists($uploadDir)) {
         mkdir($uploadDir, 0755, true);
     }
     
     $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename = 'profile_' . $_SESSION['user_id'] . '_' . time() . '.' . $ext;
+    // Use target user ID in filename
+    $filename = 'profile_' . $targetUserId . '_' . time() . '.' . $ext;
     $destPath = $uploadDir . $filename;
     
     if (!move_uploaded_file($file['tmp_name'], $destPath)) {
@@ -169,7 +177,7 @@ if ($action === 'uploadProfilePhoto') {
     try {
         // Delete old photo if exists
         $stmt = $pdo->prepare("SELECT photo_path FROM users WHERE id = ?");
-        $stmt->execute([$_SESSION['user_id']]);
+        $stmt->execute([$targetUserId]);
         $oldPhoto = $stmt->fetchColumn();
         
         if ($oldPhoto && file_exists(__DIR__ . '/../' . $oldPhoto)) {
@@ -178,7 +186,7 @@ if ($action === 'uploadProfilePhoto') {
         
         // Update database
         $stmt = $pdo->prepare("UPDATE users SET photo_path = ? WHERE id = ?");
-        $stmt->execute([$photoPath, $_SESSION['user_id']]);
+        $stmt->execute([$photoPath, $targetUserId]);
         
         echo json_encode([
             'success' => true,
@@ -307,6 +315,255 @@ if ($action === 'getUserDetails') {
 // ============================================================================
 // GET ALL SUBJECTS
 // ============================================================================
+// ============================================================================
+// ADMIN: GET USER DETAILS FOR EDITING
+// ============================================================================
+if ($action === 'adminGetUserDetails') {
+    requireRole('admin');
+    
+    $userId = intval($_GET['user_id'] ?? 0);
+    
+    if (!$userId) {
+        echo json_encode(['success' => false, 'message' => 'User ID required']);
+        exit;
+    }
+    
+    try {
+        $stmt = $pdo->prepare("
+            SELECT id, reg_id, username, email, full_name, role, department, branch, 
+                   phone, dob, photo_path, created_at, is_active
+            FROM users
+            WHERE id = ?
+        ");
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch();
+        
+        if (!$user) {
+            echo json_encode(['success' => false, 'message' => 'User not found']);
+            exit;
+        }
+        
+        echo json_encode([
+            'success' => true,
+            'user' => $user
+        ]);
+        
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
+// ============================================================================
+// ADMIN: UPDATE USER PROFILE (General info)
+// ============================================================================
+if ($action === 'adminUpdateUserProfile') {
+    requireRole('admin');
+    
+    $userId     = intval($_POST['user_id'] ?? 0);
+    $fullName   = sanitize($_POST['full_name'] ?? '');
+    $phone      = sanitize($_POST['phone'] ?? '');
+    $dob        = sanitize($_POST['dob'] ?? '');
+    $role       = sanitize($_POST['role'] ?? '');
+    $department = sanitize($_POST['department'] ?? '');
+    $branch     = sanitize($_POST['branch'] ?? '');
+    $newRegId   = sanitize($_POST['reg_id'] ?? '');
+    
+    if (!$userId || !$fullName || !$newRegId) {
+        echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+        exit;
+    }
+
+    try {
+        // 1. Check if reg_id changed and if it exists
+        $stmt = $pdo->prepare("SELECT reg_id FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $currentUser = $stmt->fetch();
+        
+        if ($currentUser['reg_id'] !== $newRegId) {
+            $stmt = $pdo->prepare("SELECT id FROM users WHERE reg_id = ? AND id != ?");
+            $stmt->execute([$newRegId, $userId]);
+            if ($stmt->fetch()) {
+                // SUGGEST NEW ID
+                $suggestedId = generateRegId($role, $pdo);
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Registration ID already exists.',
+                    'suggested_id' => $suggestedId
+                ]);
+                exit;
+            }
+        }
+
+        // 2. Perform Update
+        $stmt = $pdo->prepare("
+            UPDATE users 
+            SET full_name = ?, phone = ?, dob = ?, role = ?, department = ?, branch = ?, reg_id = ?
+            WHERE id = ?
+        ");
+        $stmt->execute([
+            $fullName, $phone ?: null, $dob ?: null, $role, 
+            $department ?: null, $branch ?: null, $newRegId, $userId
+        ]);
+
+        // 3. Notify user
+        require_once 'send_otp.php';
+        $stmt = $pdo->prepare("SELECT email, full_name FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $uInfo = $stmt->fetch();
+        sendProfileUpdateNotification($uInfo['email'], $uInfo['full_name']);
+
+        echo json_encode(['success' => true, 'message' => 'User profile updated and notification sent']);
+        
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
+// ============================================================================
+// ADMIN: INITIATE EMAIL CHANGE (Send OTP to NEW email)
+// ============================================================================
+if ($action === 'adminSendEmailChangeOTP') {
+    requireRole('admin');
+    
+    $userId   = intval($_POST['user_id'] ?? 0);
+    $newEmail = filter_var(trim($_POST['new_email'] ?? ''), FILTER_VALIDATE_EMAIL);
+    
+    if (!$userId || !$newEmail) {
+        echo json_encode(['success' => false, 'message' => 'Invalid email or user ID']);
+        exit;
+    }
+    
+    try {
+        // Check if email already taken
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
+        $stmt->execute([$newEmail, $userId]);
+        if ($stmt->fetch()) {
+            echo json_encode(['success' => false, 'message' => 'This email is already linked to another account']);
+            exit;
+        }
+
+        // Generate OTP
+        $otp = sprintf('%06d', random_int(100000, 999999));
+        
+        require_once 'send_otp.php';
+        $stmt = $pdo->prepare("DELETE FROM password_reset_tokens WHERE email = ?");
+        $stmt->execute([$newEmail]);
+
+        $stmt = $pdo->prepare("
+            INSERT INTO password_reset_tokens (email, token, expires_at)
+            VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 5 MINUTE))
+        ");
+        $stmt->execute([$newEmail, password_hash($otp, PASSWORD_DEFAULT)]);
+
+        $stmt = $pdo->prepare("SELECT full_name FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $userName = $stmt->fetchColumn() ?: 'User';
+
+        $result = sendOTPEmail($newEmail, $userName, $otp);
+        if ($result['sent']) {
+            echo json_encode(['success' => true, 'message' => 'Verification code sent to the new email address']);
+        } else {
+             echo json_encode(['success' => true, 'message' => 'OTP generated (Email failed)', 'otp' => $otp]);
+        }
+
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
+// ============================================================================
+// ADMIN: VERIFY EMAIL CHANGE & NOTIFY BOTH
+// ============================================================================
+if ($action === 'adminVerifyEmailChange') {
+    requireRole('admin');
+    
+    $userId   = intval($_POST['user_id'] ?? 0);
+    $newEmail = filter_var(trim($_POST['new_email'] ?? ''), FILTER_VALIDATE_EMAIL);
+    $otp      = trim($_POST['otp'] ?? '');
+    
+    if (!$userId || !$newEmail || !$otp) {
+        echo json_encode(['success' => false, 'message' => 'Missing data for verification']);
+        exit;
+    }
+    
+    try {
+        $stmt = $pdo->prepare("
+            SELECT token FROM password_reset_tokens
+            WHERE email = ? AND expires_at > NOW() AND used = 0
+            ORDER BY created_at DESC LIMIT 1
+        ");
+        $stmt->execute([$newEmail]);
+        $row = $stmt->fetch();
+
+        if ($row && password_verify($otp, $row['token'])) {
+            $stmt = $pdo->prepare("SELECT email, full_name FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+            $userData = $stmt->fetch();
+            $oldEmail = $userData['email'];
+            $fullName = $userData['full_name'];
+
+            $stmt = $pdo->prepare("UPDATE users SET email = ? WHERE id = ?");
+            $stmt->execute([$newEmail, $userId]);
+
+            $stmt = $pdo->prepare("UPDATE password_reset_tokens SET used = 1 WHERE email = ?");
+            $stmt->execute([$newEmail]);
+
+            require_once 'send_otp.php';
+            sendEmailChangeAlert_Old($oldEmail, $fullName, $newEmail);
+            sendEmailChangeAlert_New($newEmail, $fullName, $oldEmail);
+
+            echo json_encode(['success' => true, 'message' => 'Email address successfully updated']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Invalid or expired OTP code']);
+        }
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
+// ============================================================================
+// ADMIN: DIRECT PASSWORD RESET
+// ============================================================================
+if ($action === 'adminUpdatePassword') {
+    requireRole('admin');
+    
+    $userId      = intval($_POST['user_id'] ?? 0);
+    $newPassword = $_POST['new_password'] ?? '';
+    
+    if (!$userId || strlen($newPassword) < 6) {
+        echo json_encode(['success' => false, 'message' => 'Password must be at least 6 characters']);
+        exit;
+    }
+    
+    try {
+        $stmt = $pdo->prepare("SELECT email, full_name, reg_id FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch();
+        
+        if (!$user) {
+            echo json_encode(['success' => false, 'message' => 'User not found']);
+            exit;
+        }
+
+        $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
+        $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+        $stmt->execute([$hashed, $userId]);
+
+        require_once 'send_otp.php';
+        sendAdminPasswordUpdateEmail($user['email'], $user['full_name'], $user['reg_id'], $newPassword);
+
+        echo json_encode(['success' => true, 'message' => 'Password reset successfully and email sent to user']);
+        
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
 if ($action === 'getAllSubjects') {
     requireLogin();
     
@@ -453,7 +710,7 @@ if ($action === 'toggleUserStatus') {
 }
 
 // ============================================================================
-// DELETE USER (Admin only)
+// DELETE USER (Admin only - Enhanced Cleanup)
 // ============================================================================
 if ($action === 'deleteUser') {
     requireRole('admin');
@@ -472,12 +729,36 @@ if ($action === 'deleteUser') {
     }
     
     try {
+        // 1. Fetch details for notification and file cleanup
+        $stmt = $pdo->prepare("SELECT email, full_name, photo_path, qr_code_path FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch();
+
+        if (!$user) {
+            echo json_encode(['success' => false, 'message' => 'User not found']);
+            exit;
+        }
+
+        // 2. 물리적 파일 삭제 (Physical file cleanup)
+        $baseDir = __DIR__ . '/../';
+        if ($user['photo_path'] && file_exists($baseDir . $user['photo_path'])) {
+            unlink($baseDir . $user['photo_path']);
+        }
+        if ($user['qr_code_path'] && file_exists($baseDir . $user['qr_code_path'])) {
+            unlink($baseDir . $user['qr_code_path']);
+        }
+
+        // 3. Send Deletion Email
+        require_once 'send_otp.php';
+        sendDeletionNotification($user['email'], $user['full_name']);
+
+        // 4. Delete from Database (Cascades will handle attendance records if fk defined)
         $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
         $stmt->execute([$userId]);
         
         echo json_encode([
             'success' => true,
-            'message' => 'User deleted successfully'
+            'message' => 'User and all associated data deleted successfully'
         ]);
         
     } catch (PDOException $e) {
@@ -577,7 +858,7 @@ if ($action === 'getDashboardStats') {
         
         // Recent registrations (all users including admin, teacher, student)
         $stmt = $pdo->query("
-            SELECT full_name, reg_id, role, department, created_at 
+            SELECT id, full_name, reg_id, role, department, branch, phone, dob, email, photo_path, created_at 
             FROM users 
             ORDER BY created_at DESC
         ");
@@ -650,6 +931,40 @@ if ($action === 'getDashboardStats') {
 }
 
 // ============================================================================
+// GET DISTINCT DEPARTMENTS AND BRANCHES (For dropdowns)
+// ============================================================================
+if ($action === 'getFilterOptions') {
+    requireRole('admin');
+    
+    try {
+        // Fetch departments from both users and subjects to be comprehensive
+        $stmt = $pdo->query("
+            SELECT DISTINCT department FROM users WHERE department IS NOT NULL AND department != ''
+            UNION
+            SELECT DISTINCT department FROM subjects WHERE department IS NOT NULL AND department != ''
+        ");
+        $departments = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        
+        // Fetch branches from users
+        $stmt = $pdo->query("SELECT DISTINCT branch FROM users WHERE branch IS NOT NULL AND branch != ''");
+        $branches = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        
+        // Fallback for empty database (Ensuring user's specific request values are prioritized)
+        if (empty($departments)) $departments = ['Commerce and Management'];
+        if (empty($branches)) $branches = ['BCCA'];
+
+        echo json_encode([
+            'success' => true,
+            'departments' => array_values(array_unique($departments)),
+            'branches' => array_values(array_unique($branches))
+        ]);
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
+// ============================================================================
 // GET RECENT REGISTRATIONS (Admin)
 // ============================================================================
 if ($action === 'getRecentRegistrations') {
@@ -660,7 +975,7 @@ if ($action === 'getRecentRegistrations') {
     $search = sanitize($_GET['search'] ?? '');
     
     try {
-        $sql = "SELECT full_name, reg_id, role, department, created_at FROM users WHERE 1=1";
+        $sql = "SELECT id, full_name, reg_id, role, department, branch, phone, dob, email, photo_path, created_at FROM users WHERE 1=1";
         $params = [];
         
         if ($role !== 'all') {

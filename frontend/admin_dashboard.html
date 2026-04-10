@@ -1423,6 +1423,7 @@
                                     <th>Role</th>
                                     <th>Department</th>
                                     <th>Registered</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="recentRegistrations">
@@ -1656,6 +1657,55 @@
             }
         }
 
+        // FILTER OPTIONS (Departments, Branches)
+        async function loadFilterOptions() {
+            try {
+                const res = await fetch('../backend/user_api.php?action=getFilterOptions');
+                const data = await res.json();
+                
+                if (data.success) {
+                    // 1. Populate Dashboard Department Filter
+                    const filterDept = document.getElementById('recentDeptFilter');
+                    if (filterDept) {
+                        const currentVal = filterDept.value;
+                        filterDept.innerHTML = '<option value="all">All Departments</option>';
+                        data.departments.forEach(dept => {
+                            filterDept.innerHTML += `<option value="${dept}">${dept}</option>`;
+                        });
+                        filterDept.value = currentVal;
+                    }
+
+                    // 2. Populate Management Modal Department
+                    const mgmtDept = document.getElementById('mgmtDept');
+                    if (mgmtDept) {
+                        const currentVal = mgmtDept.value;
+                        mgmtDept.innerHTML = '';
+                        data.departments.forEach(dept => {
+                            mgmtDept.innerHTML += `<option value="${dept}">${dept}</option>`;
+                        });
+                        if (currentVal && data.departments.includes(currentVal)) {
+                            mgmtDept.value = currentVal;
+                        }
+                    }
+
+                    // 3. Populate Management Modal Branch
+                    const mgmtBranch = document.getElementById('mgmtBranch');
+                    if (mgmtBranch) {
+                        const currentVal = mgmtBranch.value;
+                        mgmtBranch.innerHTML = '';
+                        data.branches.forEach(br => {
+                            mgmtBranch.innerHTML += `<option value="${br}">${br}</option>`;
+                        });
+                        if (currentVal && data.branches.includes(currentVal)) {
+                            mgmtBranch.value = currentVal;
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load filter options", err);
+            }
+        }
+
         async function loadDashboardStats() {
             try {
                 const res = await fetch('../backend/user_api.php?action=getDashboardStats');
@@ -1689,11 +1739,23 @@
                                         <td><span class="badge ${badgeClass}">${roleText}</span></td>
                                         <td>${r.department || '-'}</td>
                                         <td>${date}</td>
+                                        <td style="text-align: center;">
+                                            <div style="display: flex; gap: 0.8rem; justify-content: center; align-items: center;">
+                                                <button class="action-btn edit-btn" onclick='openEditUserModal(${JSON.stringify(r)})' title="Edit User" 
+                                                    style="background:rgba(79, 70, 229, 0.1); color:#4f46e5; border:none; padding:8px; border-radius:8px; cursor:pointer; transition: all 0.2s;">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                                </button>
+                                                <button class="action-btn delete-btn" onclick="deleteUserWithConfirm(${r.id}, '${r.full_name}')" title="Delete User"
+                                                    style="background:rgba(239, 68, 68, 0.1); color:#ef4444; border:none; padding:8px; border-radius:8px; cursor:pointer; transition: all 0.2s;">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                                </button>
+                                            </div>
+                                        </td>
                                     </tr>
                             `;
                             });
                         } else {
-                            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem">No recent registrations found</td></tr>';
+                            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem">No recent registrations found</td></tr>';
                         }
                     }
 
@@ -1738,11 +1800,23 @@
                                 <td><span class="badge ${badgeClass}">${roleText}</span></td>
                                 <td>${r.department || '-'}</td>
                                 <td>${date}</td>
+                                <td style="text-align: center;">
+                                    <div style="display: flex; gap: 0.8rem; justify-content: center; align-items: center;">
+                                        <button class="action-btn edit-btn" onclick='openEditUserModal(${JSON.stringify(r)})' title="Edit User" 
+                                            style="background:rgba(79, 70, 229, 0.1); color:#4f46e5; border:none; padding:8px; border-radius:8px; cursor:pointer; transition: all 0.2s;">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                        </button>
+                                        <button class="action-btn delete-btn" onclick="deleteUserWithConfirm(${r.id}, '${r.full_name}')" title="Delete User"
+                                            style="background:rgba(239, 68, 68, 0.1); color:#ef4444; border:none; padding:8px; border-radius:8px; cursor:pointer; transition: all 0.2s;">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                        </button>
+                                    </div>
+                                </td>
                             </tr>
                         `;
                     });
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem">No registrations found matching filters</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem">No registrations found matching filters</td></tr>';
                 }
             } catch (err) {
                 console.error('Failed to filter registrations', err);
@@ -2670,6 +2744,486 @@
             document.addEventListener(event, resetInactivityTimer);
         });
         resetInactivityTimer();
+    </script>
+
+    <!-- USER MANAGEMENT MODAL (EDIT/DELETE) -->
+    <div id="userMgmtModal" class="modal" style="display:none; align-items:flex-start; padding-top:2rem;">
+        <div class="modal-content" style="max-width: 700px; padding: 0; border-radius: 16px; overflow: hidden; border: none; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
+            <!-- Modal Header -->
+            <div style="background: linear-gradient(135deg, var(--primary-cyan) 0%, var(--navy-dark) 100%); padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; color: #fff;">
+                <div>
+                    <h2 id="mgmtModalTitle" style="margin: 0; font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px;">Manage User Account</h2>
+                    <p id="mgmtModalSubtitle" style="margin: 4px 0 0 0; color: rgba(255,255,255,0.7); font-size: 0.9rem;">Update profile information and security settings</p>
+                </div>
+                <button onclick="closeUserMgmtModal()" style="background: rgba(255,255,255,0.1); border: none; color: #fff; width: 36px; height: 36px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 240px 1fr; min-height: 500px;">
+                <!-- Sidebar Tabs -->
+                <div style="background: #f8fafc; border-right: 1px solid #e2e8f0; padding: 1.5rem 0;">
+                    <div class="mgmt-tab active" onclick="switchMgmtTab('general', this)" style="padding: 0.8rem 1.5rem; cursor: pointer; font-weight: 600; color: #1e3a5f; display: flex; align-items: center; gap: 12px; border-right: 3px solid #1e3a5f; background: rgba(30, 58, 95, 0.05);">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        General Info
+                    </div>
+                    <div class="mgmt-tab" onclick="switchMgmtTab('academic', this)" style="padding: 0.8rem 1.5rem; cursor: pointer; font-weight: 500; color: #64748b; display: flex; align-items: center; gap: 12px; transition: all 0.2s;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
+                        Academic Info
+                    </div>
+                    <div class="mgmt-tab" onclick="switchMgmtTab('security', this)" style="padding: 0.8rem 1.5rem; cursor: pointer; font-weight: 500; color: #64748b; display: flex; align-items: center; gap: 12px; transition: all 0.2s;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        Security
+                    </div>
+                    <div class="mgmt-tab" onclick="showAccountCleanup()" style="padding: 0.8rem 1.5rem; cursor: pointer; font-weight: 500; color: #ef4444; display: flex; align-items: center; gap: 12px; margin-top: auto; transition: all 0.2s;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        Delete User
+                    </div>
+                </div>
+
+                <!-- Content Area -->
+                <div style="padding: 2rem; background: #fff; max-height: 600px; overflow-y: auto;">
+                    <form id="mgmtUserForm" onsubmit="return false;">
+                        <input type="hidden" id="mgmtUserId">
+                        
+                        <!-- GENERAL TAB -->
+                        <div id="tab-general" class="mgmt-content">
+                            <div style="text-align: center; margin-bottom: 2rem;">
+                                <div style="position: relative; width: 100px; height: 100px; margin: 0 auto;">
+                                    <div class="mgmt-photo-container" style="width: 100%; height: 100%; background: #f1f5f9; border-radius: 50%; border: 4px solid #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                        <img id="mgmtUserPhoto" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                                    </div>
+                                    <label for="mgmtPhotoInput" style="position: absolute; bottom: 0; right: 0; background: #1e3a5f; color: #fff; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); z-index: 20;">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                                    </label>
+                                    <input type="file" id="mgmtPhotoInput" style="display: none;" accept="image/*" onchange="previewMgmtPhoto(this)">
+                                </div>
+                                <style>
+                                    .mgmt-photo-container::before {
+                                        content: attr(data-initials);
+                                        font-size: 2.5rem;
+                                        font-weight: 700;
+                                        color: #64748b;
+                                    }
+                                    .mgmt-photo-container img {
+                                        z-index: 5;
+                                    }
+                                </style>
+                                <p style="font-size: 0.8rem; color: #64748b; margin-top: 8px;">Click to update profile photo</p>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 1.5rem;">
+                                <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">Full Name</label>
+                                <input type="text" id="mgmtFullName" class="form-control" style="width:100%; padding:0.8rem; border:1.5px solid #e2e8f0; border-radius:10px;" placeholder="Enter full name">
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div class="form-group">
+                                    <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">Mobile Number</label>
+                                    <input type="tel" id="mgmtPhone" class="form-control" style="width:100%; padding:0.8rem; border:1.5px solid #e2e8f0; border-radius:10px;" placeholder="10-digit number">
+                                </div>
+                                <div class="form-group">
+                                    <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">Date of Birth</label>
+                                    <input type="date" id="mgmtDob" class="form-control" style="width:100%; padding:0.8rem; border:1.5px solid #e2e8f0; border-radius:10px;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ACADEMIC TAB -->
+                        <div id="tab-academic" class="mgmt-content" style="display: none;">
+                            <div class="form-group" style="margin-bottom: 1.5rem;">
+                                <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">User Role</label>
+                                <select id="mgmtRole" class="form-control" style="width:100%; padding:0.8rem; border:1.5px solid #e2e8f0; border-radius:10px;">
+                                    <option value="student">Student</option>
+                                    <option value="teacher">Teacher</option>
+                                    <option value="admin">Administrator</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 1.5rem;">
+                                <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">Registration ID</label>
+                                <div style="display: flex; gap: 10px;">
+                                    <input type="text" id="mgmtRegId" class="form-control" style="flex: 1; padding:0.8rem; border:1.5px solid #e2e8f0; border-radius:10px;" placeholder="e.g. SEE2004034">
+                                </div>
+                                <p id="regIdNotice" style="font-size: 0.75rem; margin-top: 5px; color: #64748b; font-style: italic;"></p>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 1.5rem;">
+                                <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">Department</label>
+                                <select id="mgmtDept" class="form-control" style="width:100%; padding:0.8rem; border:1.5px solid #e2e8f0; border-radius:10px;">
+                                    <option value="Commerce and Management">Commerce and Management</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">Branch / Core</label>
+                                <select id="mgmtBranch" class="form-control" style="width:100%; padding:0.8rem; border:1.5px solid #e2e8f0; border-radius:10px;">
+                                    <option value="BCCA">BCCA</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- SECURITY TAB -->
+                        <div id="tab-security" class="mgmt-content" style="display: none;">
+                            <div style="background: rgba(79, 70, 229, 0.03); border: 1.5px solid rgba(79, 70, 229, 0.1); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem;">
+                                <h4 style="margin: 0 0 1rem 0; color: #4f46e5; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                                    Change Email Address
+                                </h4>
+                                <div class="form-group">
+                                    <label style="display:block; margin-bottom:0.5rem; font-size: 0.85rem; color: #64748b;">New Email Address</label>
+                                    <div style="display: flex; gap: 10px;">
+                                        <input type="email" id="mgmtNewEmail" class="form-control" style="flex:1; padding:0.75rem; border:1.5px solid #e2e8f0; border-radius:10px;" placeholder="new@example.com">
+                                        <button onclick="initiateEmailChange()" class="btn-primary" style="padding: 0 1rem; border-radius: 10px; font-size: 0.85rem;">Send OTP</button>
+                                    </div>
+                                </div>
+                                
+                                <div id="otpVerificationSection" style="margin-top: 1rem; display: none;">
+                                    <label style="display:block; margin-bottom:0.5rem; font-size: 0.85rem; color: #64748b;">Verify OTP</label>
+                                    <div style="display: flex; gap: 10px;">
+                                        <input type="text" id="mgmtEmailOtp" class="form-control" style="flex:1; padding:0.75rem; border:1.5px solid #e2e8f0; border-radius:10px; text-align: center; letter-spacing: 4px; font-weight: bold;" placeholder="000000">
+                                        <button onclick="verifyEmailChange()" class="btn-secondary" style="background:#10b981; color:#fff; border:none; padding: 0 1rem; border-radius: 10px;">Verify & Save</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="background: rgba(245, 158, 11, 0.03); border: 1.5px solid rgba(245, 158, 11, 0.1); padding: 1.5rem; border-radius: 12px;">
+                                <h4 style="margin: 0 0 1rem 0; color: #f59e0b; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                    Direct Password Override
+                                </h4>
+                                <div class="form-group">
+                                    <label style="display:block; margin-bottom:0.5rem; font-size: 0.85rem; color: #64748b;">New Password</label>
+                                    <div style="display: flex; gap: 10px;">
+                                        <input type="text" id="mgmtNewPass" class="form-control" style="flex:1; padding:0.75rem; border:1.5px solid #e2e8f0; border-radius:10px;" placeholder="Leave empty to keep current">
+                                        <button onclick="updateUserPassword()" class="btn-secondary" style="background:#f59e0b; border:none; color:#fff; padding: 0 1rem; border-radius: 10px; font-size: 0.85rem;">Update Pw</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #f1f5f9; padding-top: 2rem;">
+                            <button onclick="saveMgmtProfile()" id="saveMgmtBtn" class="btn-primary" style="flex: 1; padding: 1rem; border-radius: 12px; font-weight: 700; height: auto;">
+                                Save All Changes
+                            </button>
+                            <button onclick="closeUserMgmtModal()" class="btn-secondary" style="flex: 1; padding: 1rem; border-radius: 12px; font-weight: 700; height: auto; background: #fff; border: 1.5px solid #e2e8f0; color: #64748b;">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIMPLE DELETE CONFIRM OVERLAY -->
+    <div id="deleteConfirmOverlay" class="modal" style="display:none; align-items:center; background: rgba(0,0,0,0.6); z-index: 9999;">
+        <div style="background: #fff; padding: 2.5rem; border-radius: 20px; max-width: 400px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+            <div style="background: rgba(239, 68, 68, 0.1); width: 64px; height: 64px; border-radius: 50%; color: #ef4444; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+            </div>
+            <h3 style="font-size: 1.5rem; color: #1e3a5f; margin-bottom: 0.5rem;">Delete User Account?</h3>
+            <p style="color: #64748b; margin-bottom: 2rem;">Are you sure you want to remove <strong id="deleteTargetName"></strong>? This will permanently delete their attendance records and profile photo.</p>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <button onclick="executeUserDeletion()" class="btn-primary" style="background:#ef4444; border:none; padding: 0.8rem; border-radius: 12px; font-weight: 700;">Yes, Delete</button>
+                <button onclick="hideDeleteConfirm()" class="btn-secondary" style="background: #fff; border: 1.5px solid #e2e8f0; color: #64748b; padding: 0.8rem; border-radius: 12px; font-weight: 700;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================================
+        // ADMIN USER MANAGEMENT LOGIC (Edit/Delete)
+        // ============================================================================
+        let currentMgmtUserId = null;
+        let deleteUserId = null;
+
+        function openEditUserModal(user) {
+            currentMgmtUserId = user.id;
+            document.getElementById('mgmtUserId').value = user.id;
+            document.getElementById('mgmtFullName').value = user.full_name;
+            document.getElementById('mgmtPhone').value = user.phone || '';
+            document.getElementById('mgmtDob').value = user.dob || '';
+            document.getElementById('mgmtRegId').value = user.reg_id;
+            document.getElementById('mgmtRole').value = user.role;
+            document.getElementById('mgmtDept').value = user.department || 'Commerce and Management';
+            document.getElementById('mgmtBranch').value = user.branch || 'BCCA';
+            
+            // Set profile photo with initials fallback
+            const photoEl = document.getElementById('mgmtUserPhoto');
+            const initials = user.full_name ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : '??';
+            const photoContainer = photoEl.parentElement;
+            
+            if (user.photo_path) {
+                photoEl.style.display = 'block';
+                photoEl.src = '../' + user.photo_path;
+                // If the real photo fails to load, show initials
+                photoEl.onerror = () => {
+                    photoEl.style.display = 'none';
+                    photoContainer.setAttribute('data-initials', initials);
+                };
+            } else {
+                photoEl.style.display = 'none';
+                photoContainer.setAttribute('data-initials', initials);
+            }
+            
+            // Reset security section
+            document.getElementById('mgmtNewEmail').value = '';
+            document.getElementById('mgmtEmailOtp').value = '';
+            document.getElementById('mgmtNewPass').value = '';
+            document.getElementById('otpVerificationSection').style.display = 'none';
+            document.getElementById('regIdNotice').textContent = '';
+
+            // Default tab
+            switchMgmtTab('general', document.querySelector('.mgmt-tab'));
+            
+            document.getElementById('userMgmtModal').style.display = 'flex';
+        }
+
+        function closeUserMgmtModal() {
+            document.getElementById('userMgmtModal').style.display = 'none';
+        }
+
+        function switchMgmtTab(tabName, el) {
+            document.querySelectorAll('.mgmt-content').forEach(c => c.style.display = 'none');
+            document.getElementById('tab-' + tabName).style.display = 'block';
+            
+            document.querySelectorAll('.mgmt-tab').forEach(t => {
+                t.style.fontWeight = '500';
+                t.style.color = '#64748b';
+                t.style.background = 'transparent';
+                t.style.borderRight = 'none';
+            });
+            
+            el.style.fontWeight = '700';
+            el.style.color = '#1e3a5f';
+            el.style.background = 'rgba(30, 58, 95, 0.05)';
+            el.style.borderRight = '3px solid #1e3a5f';
+        }
+
+        async function saveMgmtProfile() {
+            const userId = document.getElementById('mgmtUserId').value;
+            const fullName = document.getElementById('mgmtFullName').value.trim();
+            const phone = document.getElementById('mgmtPhone').value.trim();
+            const dob = document.getElementById('mgmtDob').value;
+            const role = document.getElementById('mgmtRole').value;
+            const dept = document.getElementById('mgmtDept').value;
+            const branch = document.getElementById('mgmtBranch').value;
+            const regId = document.getElementById('mgmtRegId').value.trim();
+
+            if (!fullName || !regId) {
+                showToast('Basic information and Reg ID are required', true);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('action', 'adminUpdateUserProfile');
+            formData.append('user_id', userId);
+            formData.append('full_name', fullName);
+            formData.append('phone', phone);
+            formData.append('dob', dob);
+            formData.append('role', role);
+            formData.append('department', dept);
+            formData.append('branch', branch);
+            formData.append('reg_id', regId);
+
+            showToast('Updating profile...');
+            try {
+                const res = await fetch('../backend/user_api.php', { method: 'POST', body: formData });
+                const result = await res.json();
+                
+                if (result.success) {
+                    showToast('User profile updated successfully');
+                    filterRecentRegistrations(); // Refresh list
+                    if (result.suggested_id) {
+                         document.getElementById('mgmtRegId').value = result.suggested_id;
+                         document.getElementById('regIdNotice').innerHTML = `Note: Applied suggested ID <strong style="color:#10b981">${result.suggested_id}</strong> as requested one existed.`;
+                    }
+                } else {
+                    if (result.suggested_id) {
+                        showToast(result.message, true);
+                        document.getElementById('regIdNotice').innerHTML = `Clash! Try suggested ID: <strong style="color:#1e3a5f; cursor:pointer;" onclick="document.getElementById('mgmtRegId').value='${result.suggested_id}'">${result.suggested_id}</strong>`;
+                    } else {
+                        showToast(result.message, true);
+                    }
+                }
+            } catch (err) {
+                showToast('Connection error during update', true);
+            }
+        }
+
+        async function initiateEmailChange() {
+            const userId = document.getElementById('mgmtUserId').value;
+            const newEmail = document.getElementById('mgmtNewEmail').value.trim();
+            
+            if (!newEmail || !newEmail.includes('@')) {
+                showToast('Enter a valid new email address', true);
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('action', 'adminSendEmailChangeOTP');
+                formData.append('user_id', userId);
+                formData.append('new_email', newEmail);
+
+                showToast('Sending OTP to ' + newEmail + '...');
+                const res = await fetch('../backend/user_api.php', { method: 'POST', body: formData });
+                const result = await res.json();
+
+                if (result.success) {
+                    showToast(result.message);
+                    document.getElementById('otpVerificationSection').style.display = 'block';
+                    if (result.otp) console.log('DEV OTP:', result.otp);
+                } else {
+                    showToast(result.message, true);
+                }
+            } catch (err) {
+                showToast('Failed to initiate email change', true);
+            }
+        }
+
+        async function verifyEmailChange() {
+            const userId = document.getElementById('mgmtUserId').value;
+            const newEmail = document.getElementById('mgmtNewEmail').value.trim();
+            const otp = document.getElementById('mgmtEmailOtp').value.trim();
+
+            if (!otp || otp.length < 6) {
+                showToast('Enter the 6-digit verification code', true);
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('action', 'adminVerifyEmailChange');
+                formData.append('user_id', userId);
+                formData.append('new_email', newEmail);
+                formData.append('otp', otp);
+
+                const res = await fetch('../backend/user_api.php', { method: 'POST', body: formData });
+                const result = await res.json();
+
+                if (result.success) {
+                    showToast('Email updated successfully');
+                    document.getElementById('otpVerificationSection').style.display = 'none';
+                    document.getElementById('mgmtNewEmail').value = '';
+                    document.getElementById('mgmtEmailOtp').value = '';
+                    filterRecentRegistrations();
+                } else {
+                    showToast(result.message, true);
+                }
+            } catch (err) {
+                showToast('Verification failed', true);
+            }
+        }
+
+        async function updateUserPassword() {
+            const userId = document.getElementById('mgmtUserId').value;
+            const newPass = document.getElementById('mgmtNewPass').value.trim();
+
+            if (!newPass || newPass.length < 6) {
+                showToast('Password must be at least 6 characters', true);
+                return;
+            }
+
+            if (!confirm('This will immediately change the password and email the new credentials to the user. Proceed?')) return;
+
+            try {
+                const formData = new FormData();
+                formData.append('action', 'adminUpdatePassword');
+                formData.append('user_id', userId);
+                formData.append('new_password', newPass);
+
+                showToast('Updating password...');
+                const res = await fetch('../backend/user_api.php', { method: 'POST', body: formData });
+                const result = await res.json();
+
+                if (result.success) {
+                    showToast('Password reset successful');
+                    document.getElementById('mgmtNewPass').value = '';
+                } else {
+                    showToast(result.message, true);
+                }
+            } catch (err) {
+                showToast('Password update failed', true);
+            }
+        }
+
+        function deleteUserWithConfirm(userId, name) {
+            deleteUserId = userId;
+            document.getElementById('deleteTargetName').textContent = name;
+            document.getElementById('deleteConfirmOverlay').style.display = 'flex';
+        }
+
+        function hideDeleteConfirm() {
+            document.getElementById('deleteConfirmOverlay').style.display = 'none';
+        }
+
+        function showAccountCleanup() {
+            const name = document.getElementById('mgmtFullName').value;
+            const id = document.getElementById('mgmtUserId').value;
+            deleteUserWithConfirm(id, name);
+        }
+
+        async function executeUserDeletion() {
+            if (!deleteUserId) return;
+            
+            try {
+                const formData = new FormData();
+                formData.append('action', 'deleteUser');
+                formData.append('user_id', deleteUserId);
+
+                showToast('Removing user records and cleanup...');
+                const res = await fetch('../backend/user_api.php', { method: 'POST', body: formData });
+                const result = await res.json();
+
+                if (result.success) {
+                    showToast('Account successfully purged');
+                    hideDeleteConfirm();
+                    closeUserMgmtModal();
+                    filterRecentRegistrations();
+                } else {
+                    showToast(result.message, true);
+                }
+            } catch (err) {
+                showToast('Network error during deletion', true);
+            }
+        }
+
+        function previewMgmtPhoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const photoEl = document.getElementById('mgmtUserPhoto');
+                    photoEl.src = e.target.result;
+                    photoEl.style.display = 'block';
+                    uploadMgmtPhoto(input.files[0]);
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        async function uploadMgmtPhoto(file) {
+            const userId = document.getElementById('mgmtUserId').value;
+            const formData = new FormData();
+            formData.append('action', 'uploadProfilePhoto');
+            formData.append('photo', file);
+            formData.append('user_id_override', userId); // Need to ensure backend accepts this
+
+            showToast('Uploading new photo...');
+            try {
+                const res = await fetch('../backend/user_api.php', { method: 'POST', body: formData });
+                const result = await res.json();
+                if (result.success) {
+                    showToast('Profile photo updated');
+                    filterRecentRegistrations();
+                } else {
+                    showToast(result.message, true);
+                }
+            } catch (err) {
+                showToast('Photo upload failed', true);
+            }
+        }
     </script>
 <script>
     // ============================================================================
