@@ -657,6 +657,7 @@ if ($action === 'getRecentRegistrations') {
     
     $role = sanitize($_GET['role'] ?? 'all');
     $dept = sanitize($_GET['dept'] ?? 'all');
+    $search = sanitize($_GET['search'] ?? '');
     
     try {
         $sql = "SELECT full_name, reg_id, role, department, created_at FROM users WHERE 1=1";
@@ -669,6 +670,11 @@ if ($action === 'getRecentRegistrations') {
         if ($dept !== 'all') {
             $sql .= " AND department = ?";
             $params[] = $dept;
+        }
+        if ($search !== '') {
+            $sql .= " AND (full_name LIKE ? OR reg_id LIKE ?)";
+            $params[] = "%$search%";
+            $params[] = "%$search%";
         }
         
         $sql .= " ORDER BY created_at DESC";

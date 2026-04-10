@@ -266,7 +266,7 @@ function generateOTPEmailHTML(string $name, string $otp): string {
     <div class="header"><h1>Password Security</h1><p style="opacity:.85;margin:8px 0 0">Attendify Security</p></div>
     <div class="body">
         <p>Hello <strong>{$name}</strong>,</p>
-        <p>We received a request to OTP to your email. Use the OTP below:</p>
+        <p>We have received a request to send a OTP to your email address. Please use the OTP provided below to proceed:</p>
         <div class="otp-box">
             <div class="otp">{$otp}</div>
             <div class="note">Expires in 2 minutes</div>
@@ -290,7 +290,7 @@ function generateRegistrationEmailHTML(string $name, string $regId, string $role
     .container{max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; padding: 20px;}
     .header{font-size: 20px; font-weight: bold; margin-bottom: 20px; color: #4f46e5;}
     .box{background: #f4f4f4; padding: 15px; border-radius: 5px; margin: 20px 0;}
-    .reg-id{font-size: 24px; font-weight: bold; color: #333;}
+    .reg-id{font-size: 19px; font-weight: bold; color: #333;}
     .footer{font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;}
 </style></head>
 <body>
@@ -303,6 +303,7 @@ function generateRegistrationEmailHTML(string $name, string $regId, string $role
         <strong>Role:</strong> {$roleLabel}<br>
         <strong>Email:</strong> {$email}<br>
         {$passwordRow}
+        <strong>Click here to visit website ➡️<a href="https://attendify.gt.tc">Attendify</a></strong>
     </div>
     <p><strong>Important:</strong> Please keep these credentials safe.</p>
     <div class="footer">
