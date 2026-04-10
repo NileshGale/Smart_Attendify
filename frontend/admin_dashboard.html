@@ -2364,11 +2364,12 @@
             const currentRole = document.getElementById('recentRoleFilter').value;
             const currentDept = document.getElementById('recentDeptFilter').value;
             const currentLimit = document.getElementById('recentLimitFilter').value;
+            const currentSearch = document.getElementById('recentSearchInput').value.trim();
 
             showToast('Fetching data for PDF...');
 
             try {
-                const res = await fetch(`../backend/user_api.php?action=getRecentRegistrations&role=${encodeURIComponent(currentRole)}&dept=${encodeURIComponent(currentDept)}&limit=${currentLimit}`);
+                const res = await fetch(`../backend/user_api.php?action=getRecentRegistrations&role=${encodeURIComponent(currentRole)}&dept=${encodeURIComponent(currentDept)}&limit=${currentLimit}&search=${encodeURIComponent(currentSearch)}`);
                 const data = await res.json();
 
                 if (!data.success || !data.recent_registrations || data.recent_registrations.length === 0) {
@@ -2389,21 +2390,22 @@
 
                     tableRowsHTML += `
                         <tr style="background:${bgColor}; page-break-inside: avoid;">
-                            <td style="padding:8px 6px;border-bottom:1px solid #e5e7eb;color:#475569;text-align:center;font-weight:600;font-size:12px">${idx + 1}</td>
-                            <td style="padding:8px 6px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#1e3a5f;font-size:12px">${r.full_name}</td>
-                            <td style="padding:8px 6px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-family:monospace;font-size:12px">${r.reg_id || '-'}</td>
-                            <td style="padding:8px 6px;border-bottom:1px solid #e5e7eb">
+                            <td style="padding:8px 6px;border:1px solid #e5e7eb;color:#475569;text-align:center;font-weight:600;font-size:12px">${idx + 1}</td>
+                            <td style="padding:8px 6px;border:1px solid #e5e7eb;font-weight:600;color:#1e3a5f;font-size:12px">${r.full_name}</td>
+                            <td style="padding:8px 6px;border:1px solid #e5e7eb;color:#6b7280;font-family:monospace;font-size:12px">${r.reg_id || '-'}</td>
+                            <td style="padding:8px 6px;border:1px solid #e5e7eb">
                                 <span style="background:${roleBg};color:${roleColor};padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;text-transform:uppercase">${roleText}</span>
                             </td>
-                            <td style="padding:8px 6px;border-bottom:1px solid #e5e7eb;color:#374151;font-size:12px">${r.department || '-'}</td>
-                            <td style="padding:8px 6px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:12px">${date}</td>
+                            <td style="padding:8px 6px;border:1px solid #e5e7eb;color:#374151;font-size:12px">${r.department || '-'}</td>
+                            <td style="padding:8px 6px;border:1px solid #e5e7eb;color:#6b7280;font-size:12px">${date}</td>
                         </tr>`;
                 });
 
                 const generatedDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString('en-IN');
                 const roleLabel = currentRole === 'all' ? 'All Users' : currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
                 const deptLabel = currentDept === 'all' ? 'All Departments' : currentDept;
-                const filterInfo = `Filters: ${roleLabel} | ${deptLabel} | ${data.recent_registrations.length} records`;
+                const searchLabel = currentSearch ? ` | Search: "${currentSearch}"` : "";
+                const filterInfo = `Filters: ${roleLabel} | ${deptLabel}${searchLabel} | ${data.recent_registrations.length} records`;
 
                 const pdfContainer = document.createElement('div');
                 pdfContainer.innerHTML = `
@@ -2427,12 +2429,12 @@
                             <table style="width: 100%; border-collapse: collapse;">
                                 <thead>
                                     <tr style="background: #f1f5f9; page-break-inside: avoid;">
-                                        <th style="padding:10px 6px; text-align:center; color:#475569; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; width:50px;">Sr No.</th>
-                                        <th style="padding:10px 6px; text-align:left; color:#475569; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">Full Name</th>
-                                        <th style="padding:10px 6px; text-align:left; color:#475569; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">Reg ID</th>
-                                        <th style="padding:10px 6px; text-align:left; color:#475569; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">Role</th>
-                                        <th style="padding:10px 6px; text-align:left; color:#475569; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">Department</th>
-                                        <th style="padding:10px 6px; text-align:left; color:#475569; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">Reg Date</th>
+                                        <th style="padding:10px 6px; border:1px solid #e5e7eb; text-align:center; color:#475569; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; width:50px;">Sr No.</th>
+                                        <th style="padding:10px 6px; border:1px solid #e5e7eb; text-align:left; color:#475569; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">Full Name</th>
+                                        <th style="padding:10px 6px; border:1px solid #e5e7eb; text-align:left; color:#475569; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">Reg ID</th>
+                                        <th style="padding:10px 6px; border:1px solid #e5e7eb; text-align:left; color:#475569; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">Role</th>
+                                        <th style="padding:10px 6px; border:1px solid #e5e7eb; text-align:left; color:#475569; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">Department</th>
+                                        <th style="padding:10px 6px; border:1px solid #e5e7eb; text-align:left; color:#475569; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;">Reg Date</th>
                                     </tr>
                                 </thead>
                                 <tbody>
