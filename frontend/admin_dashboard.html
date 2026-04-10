@@ -2135,30 +2135,36 @@
         }
 
         async function deleteSchedule(id) {
+            showMgmtConfirm({
+                title: 'Delete Schedule?',
+                message: 'Are you sure you want to delete this class schedule? This will remove it from the teacher\'s and students\' timetables.',
+                buttonText: 'Yes, Delete',
+                type: 'danger',
+                onConfirm: async () => {
+                    const params = new URLSearchParams();
+                    params.append('action', 'deleteSchedule');
+                    params.append('id', id);
 
+                    try {
+                        const res = await fetch('../backend/schedule_api.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: params.toString()
+                        });
+                        const data = await res.json();
 
-            const params = new URLSearchParams();
-            params.append('action', 'deleteSchedule');
-            params.append('id', id);
-
-            try {
-                const res = await fetch('../backend/schedule_api.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: params.toString()
-                });
-                const data = await res.json();
-
-                if (data.success) {
-                    showToast('<i class="fa-solid fa-trash-can"></i> Deleted successfully');
-                    searchTeacher(true); // Pass true to avoid loading spinner
-                } else {
-                    showToast(data.message || 'Delete failed', true);
+                        if (data.success) {
+                            showToast('<i class="fa-solid fa-trash-can"></i> Deleted successfully');
+                            searchTeacher(true);
+                        } else {
+                            showToast(data.message || 'Delete failed', true);
+                        }
+                    } catch (err) {
+                        console.error('Delete error:', err);
+                        showToast('Network error while deleting', true);
+                    }
                 }
-            } catch (err) {
-                console.error('Delete error:', err);
-                showToast('Network error while deleting', true);
-            }
+            });
         }
 
         function toggleProfileMenu() {
@@ -2785,6 +2791,7 @@
                 <div style="padding: 2rem; background: #fff; max-height: 600px; overflow-y: auto;">
                     <form id="mgmtUserForm" onsubmit="return false;">
                         <input type="hidden" id="mgmtUserId">
+                        <input type="hidden" id="mgmtRole">
                         
                         <!-- GENERAL TAB -->
                         <div id="tab-general" class="mgmt-content">
@@ -2831,14 +2838,6 @@
 
                         <!-- ACADEMIC TAB -->
                         <div id="tab-academic" class="mgmt-content" style="display: none;">
-                            <div class="form-group" style="margin-bottom: 1.5rem;">
-                                <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">User Role</label>
-                                <select id="mgmtRole" class="form-control" style="width:100%; padding:0.8rem; border:1.5px solid #e2e8f0; border-radius:10px;">
-                                    <option value="student">Student</option>
-                                    <option value="teacher">Teacher</option>
-                                    <option value="admin">Administrator</option>
-                                </select>
-                            </div>
 
                             <div class="form-group" style="margin-bottom: 1.5rem;">
                                 <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">Registration ID</label>
@@ -2874,7 +2873,7 @@
                                     <label style="display:block; margin-bottom:0.5rem; font-size: 0.85rem; color: #64748b;">New Email Address</label>
                                     <div style="display: flex; gap: 10px;">
                                         <input type="email" id="mgmtNewEmail" class="form-control" style="flex:1; padding:0.75rem; border:1.5px solid #e2e8f0; border-radius:10px;" placeholder="new@example.com">
-                                        <button onclick="initiateEmailChange()" class="btn-primary" style="padding: 0 1rem; border-radius: 10px; font-size: 0.85rem;">Send OTP</button>
+                                        <button id="mgmtSendOtpBtn" onclick="initiateEmailChange()" class="btn-primary" style="padding: 0 1rem; border-radius: 10px; font-size: 0.85rem;">Send OTP</button>
                                     </div>
                                 </div>
                                 
@@ -2882,7 +2881,7 @@
                                     <label style="display:block; margin-bottom:0.5rem; font-size: 0.85rem; color: #64748b;">Verify OTP</label>
                                     <div style="display: flex; gap: 10px;">
                                         <input type="text" id="mgmtEmailOtp" class="form-control" style="flex:1; padding:0.75rem; border:1.5px solid #e2e8f0; border-radius:10px; text-align: center; letter-spacing: 4px; font-weight: bold;" placeholder="000000">
-                                        <button onclick="verifyEmailChange()" class="btn-secondary" style="background:#10b981; color:#fff; border:none; padding: 0 1rem; border-radius: 10px;">Verify & Save</button>
+                                        <button id="mgmtVerifyBtn" onclick="verifyEmailChange()" class="btn-secondary" style="background:#10b981; color:#fff; border:none; padding: 0 1rem; border-radius: 10px;">Verify & Save</button>
                                     </div>
                                 </div>
                             </div>
@@ -2916,17 +2915,17 @@
         </div>
     </div>
 
-    <!-- SIMPLE DELETE CONFIRM OVERLAY -->
-    <div id="deleteConfirmOverlay" class="modal" style="display:none; align-items:center; background: rgba(0,0,0,0.6); z-index: 9999;">
-        <div style="background: #fff; padding: 2.5rem; border-radius: 20px; max-width: 400px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
-            <div style="background: rgba(239, 68, 68, 0.1); width: 64px; height: 64px; border-radius: 50%; color: #ef4444; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto;">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+    <!-- GENERIC MANAGEMENT CONFIRM OVERLAY -->
+    <div id="mgmtConfirmOverlay" class="modal" style="display:none; align-items:center; background: rgba(0,0,0,0.6); z-index: 9999;">
+        <div style="background: #fff; padding: 2.5rem; border-radius: 20px; max-width: 450px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+            <div id="confirmIconContainer" style="background: rgba(239, 68, 68, 0.1); width: 64px; height: 64px; border-radius: 50%; color: #ef4444; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto;">
+                <!-- Icon will be injected by JS -->
             </div>
-            <h3 style="font-size: 1.5rem; color: #1e3a5f; margin-bottom: 0.5rem;">Delete User Account?</h3>
-            <p style="color: #64748b; margin-bottom: 2rem;">Are you sure you want to remove <strong id="deleteTargetName"></strong>? This will permanently delete their attendance records and profile photo.</p>
+            <h3 id="confirmTitle" style="font-size: 1.5rem; color: #1e3a5f; margin-bottom: 0.5rem;">Confirm Action</h3>
+            <p id="confirmMessage" style="color: #64748b; margin-bottom: 2rem;">Are you sure you want to proceed with this action?</p>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                <button onclick="executeUserDeletion()" class="btn-primary" style="background:#ef4444; border:none; padding: 0.8rem; border-radius: 12px; font-weight: 700;">Yes, Delete</button>
-                <button onclick="hideDeleteConfirm()" class="btn-secondary" style="background: #fff; border: 1.5px solid #e2e8f0; color: #64748b; padding: 0.8rem; border-radius: 12px; font-weight: 700;">Cancel</button>
+                <button id="confirmExecuteBtn" class="btn-primary" style="background:#ef4444; border:none; padding: 0.8rem; border-radius: 12px; font-weight: 700;">Confirm</button>
+                <button onclick="hideMgmtConfirm()" class="btn-secondary" style="background: #fff; border: 1.5px solid #e2e8f0; color: #64748b; padding: 0.8rem; border-radius: 12px; font-weight: 700;">Cancel</button>
             </div>
         </div>
     </div>
@@ -3035,6 +3034,7 @@
                 if (result.success) {
                     showToast('User profile updated successfully');
                     filterRecentRegistrations(); // Refresh list
+                    closeUserMgmtModal(); // Auto-close modal after success
                     if (result.suggested_id) {
                          document.getElementById('mgmtRegId').value = result.suggested_id;
                          document.getElementById('regIdNotice').innerHTML = `Note: Applied suggested ID <strong style="color:#10b981">${result.suggested_id}</strong> as requested one existed.`;
@@ -3061,7 +3061,13 @@
                 return;
             }
 
+            const btn = document.getElementById('mgmtSendOtpBtn');
+            const originalText = btn.innerHTML;
+
             try {
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+                btn.disabled = true;
+
                 const formData = new FormData();
                 formData.append('action', 'adminSendEmailChangeOTP');
                 formData.append('user_id', userId);
@@ -3080,6 +3086,9 @@
                 }
             } catch (err) {
                 showToast('Failed to initiate email change', true);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
         }
 
@@ -3093,7 +3102,13 @@
                 return;
             }
 
+            const btn = document.getElementById('mgmtVerifyBtn');
+            const originalText = btn.innerHTML;
+
             try {
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
+                btn.disabled = true;
+
                 const formData = new FormData();
                 formData.append('action', 'adminVerifyEmailChange');
                 formData.append('user_id', userId);
@@ -3114,6 +3129,9 @@
                 }
             } catch (err) {
                 showToast('Verification failed', true);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
         }
 
@@ -3126,68 +3144,123 @@
                 return;
             }
 
-            if (!confirm('This will immediately change the password and email the new credentials to the user. Proceed?')) return;
+            showMgmtConfirm({
+                title: 'Confirm Password Reset',
+                message: 'This will immediately change the password and email the new credentials to the user. Proceed?',
+                buttonText: 'Yes, Update Password',
+                type: 'warning',
+                icon: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>',
+                onConfirm: async () => {
+                    try {
+                        const formData = new FormData();
+                        formData.append('action', 'adminUpdatePassword');
+                        formData.append('user_id', userId);
+                        formData.append('new_password', newPass);
 
-            try {
-                const formData = new FormData();
-                formData.append('action', 'adminUpdatePassword');
-                formData.append('user_id', userId);
-                formData.append('new_password', newPass);
+                        showToast('Updating password...');
+                        const res = await fetch('../backend/user_api.php', { method: 'POST', body: formData });
+                        const result = await res.json();
 
-                showToast('Updating password...');
-                const res = await fetch('../backend/user_api.php', { method: 'POST', body: formData });
-                const result = await res.json();
-
-                if (result.success) {
-                    showToast('Password reset successful');
-                    document.getElementById('mgmtNewPass').value = '';
-                } else {
-                    showToast(result.message, true);
+                        if (result.success) {
+                            showToast('Password reset successful');
+                            document.getElementById('mgmtNewPass').value = '';
+                        } else {
+                            showToast(result.message, true);
+                        }
+                    } catch (err) {
+                        showToast('Password update failed', true);
+                    }
                 }
-            } catch (err) {
-                showToast('Password update failed', true);
+            });
+        }
+
+        function showMgmtConfirm(config) {
+            const overlay = document.getElementById('mgmtConfirmOverlay');
+            const iconCont = document.getElementById('confirmIconContainer');
+            const titleEl = document.getElementById('confirmTitle');
+            const msgEl = document.getElementById('confirmMessage');
+            const btnEl = document.getElementById('confirmExecuteBtn');
+
+            titleEl.textContent = config.title || 'Confirm Action';
+            msgEl.innerHTML = config.message || 'Are you sure?';
+            btnEl.textContent = config.buttonText || 'Confirm';
+
+            if (config.type === 'danger') {
+                iconCont.style.background = 'rgba(239, 68, 68, 0.1)';
+                iconCont.style.color = '#ef4444';
+                btnEl.style.background = '#ef4444';
+            } else {
+                iconCont.style.background = 'rgba(245, 158, 11, 0.1)';
+                iconCont.style.color = '#f59e0b';
+                btnEl.style.background = '#f59e0b';
             }
+
+            iconCont.innerHTML = config.icon || '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+
+            btnEl.onclick = () => {
+                config.onConfirm();
+                hideMgmtConfirm();
+            };
+
+            overlay.style.display = 'flex';
         }
 
-        function deleteUserWithConfirm(userId, name) {
-            deleteUserId = userId;
-            document.getElementById('deleteTargetName').textContent = name;
-            document.getElementById('deleteConfirmOverlay').style.display = 'flex';
-        }
-
-        function hideDeleteConfirm() {
-            document.getElementById('deleteConfirmOverlay').style.display = 'none';
+        function hideMgmtConfirm() {
+            document.getElementById('mgmtConfirmOverlay').style.display = 'none';
         }
 
         function showAccountCleanup() {
             const name = document.getElementById('mgmtFullName').value;
-            const id = document.getElementById('mgmtUserId').value;
-            deleteUserWithConfirm(id, name);
+            const userId = document.getElementById('mgmtUserId').value;
+            
+            showMgmtConfirm({
+                title: 'Delete User Account?',
+                message: `Are you sure you want to remove <strong>${name}</strong>? This will permanently delete their attendance records and profile photo.`,
+                buttonText: 'Yes, Delete Account',
+                type: 'danger',
+                icon: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>',
+                onConfirm: async () => {
+                    executeUserDeletion(userId);
+                }
+            });
         }
 
-        async function executeUserDeletion() {
-            if (!deleteUserId) return;
+        async function executeUserDeletion(userId) {
+            if (!userId) return;
             
             try {
                 const formData = new FormData();
                 formData.append('action', 'deleteUser');
-                formData.append('user_id', deleteUserId);
+                formData.append('user_id', userId);
 
                 showToast('Removing user records and cleanup...');
                 const res = await fetch('../backend/user_api.php', { method: 'POST', body: formData });
                 const result = await res.json();
 
                 if (result.success) {
-                    showToast('Account successfully purged');
-                    hideDeleteConfirm();
+                    showToast('Account deleted successfully');
                     closeUserMgmtModal();
                     filterRecentRegistrations();
                 } else {
                     showToast(result.message, true);
                 }
             } catch (err) {
-                showToast('Network error during deletion', true);
+                showToast('Deletion failed', true);
             }
+        }
+
+        // Triggered from Registrations Table Delete Button
+        function deleteUserWithConfirm(userId, name) {
+            showMgmtConfirm({
+                title: 'Delete User Account?',
+                message: `Are you sure you want to remove <strong>${name}</strong>? This will permanently delete their attendance records and profile photo.`,
+                buttonText: 'Yes, Delete Account',
+                type: 'danger',
+                icon: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>',
+                onConfirm: async () => {
+                    executeUserDeletion(userId);
+                }
+            });
         }
 
         function previewMgmtPhoto(input) {

@@ -2445,14 +2445,7 @@
                         <option value="2week">Last 2 Weeks</option>
                         <option value="month">This Month</option>
                     </select>
-                    <select id="graphClass" onchange="refreshCharts()">
-                        <option value="all">All Classes</option>
-                        <option>CSE-2A</option>
-                        <option>CSE-2B</option>
-                        <option>CSE-2C</option>
-                        <option>CSE-3A</option>
-                        <option>CSE-3B</option>
-                    </select>
+                    <!-- Removed Class Filter as per request -->
 
                 </div>
                 <div class="stats-row" id="analyticsStats"></div>
@@ -4843,7 +4836,7 @@
         function downloadAttendanceCSV() {
             const subject = document.getElementById('graphSubjectFilter').value;
             const range = document.getElementById('graphRange').value;
-            const cls = document.getElementById('graphClass').value;
+            const cls = 'all'; // Defaulted to all after filter removal
             const today = new Date().toISOString().split('T')[0];
 
             // Try backend first
@@ -4886,7 +4879,7 @@
         // ─── DOWNLOAD MARKS ATTENDANCE RECORD ───
         function downloadMarksRecord() {
             const subject = document.getElementById('graphSubjectFilter').value;
-            const cls = document.getElementById('graphClass').value;
+            const cls = 'all'; // Defaulted to all after filter removal
             const today = new Date().toISOString().split('T')[0];
 
             // Demo data matching what's in the view-edit section

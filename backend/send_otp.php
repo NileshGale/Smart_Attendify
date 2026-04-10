@@ -367,37 +367,41 @@ HTML;
 function generateRegistrationEmailHTML(string $name, string $regId, string $role, string $email, string $password = ''): string {
     $roleLabel = ucfirst($role);
     $passwordRow = $password ? "<p>Password: <strong style=\"color:#4f46e5\">{$password}</strong></p>" : '';
-    return <<<HTML
+    return '
 <!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><style>
-    body{font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px;}
-    .container{max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; padding: 20px;}
-    .header{font-size: 20px; font-weight: bold; margin-bottom: 20px; color: #4f46e5;}
-    .box{background: #f4f4f4; padding: 15px; border-radius: 5px; margin: 20px 0;}
-    .reg-id{font-size: 19px; font-weight: bold; color: #333;}
-    .footer{font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;}
+    body{font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;}
 </style></head>
-<body>
-<div class="container">
-    <div class="header">Registration Successful - Attendify</div>
-    <p>Dear <strong>{$name}</strong>,</p>
-    <p>Your account has been created. Here are your credentials:</p>
-    <div class="box">
-        <strong>Registration ID:</strong> <span class="reg-id">{$regId}</span><br>
-        <strong>Role:</strong> {$roleLabel}<br>
-        <strong>Email:</strong> {$email}<br>
-        {$passwordRow}
-        <strong>Click here to visit website ➡️<a href="https://attendify.gt.tc">Attendify</a></strong>
-    </div>
-    <p><strong>Important:</strong> Please keep these credentials safe.</p>
-    <div class="footer">
-        Thank you for using <strong>Attendify</strong><br>
-        &copy; Attendance Management System
-    </div>
-</div>
-</body></html>
-HTML;
+<body style="background-color: #f8fafc; padding: 20px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                    <tr>
+                        <td style="padding: 40px;">
+                            <div style="font-size: 20px; font-weight: bold; margin-bottom: 20px; color: #4f46e5;">Registration Successful - Attendify</div>
+                            <p>Dear <strong>' . $name . '</strong>,</p>
+                            <p>Your account has been created. Here are your credentials:</p>
+                            <div style="background: #f1f5f9; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
+                                <strong>Registration ID:</strong> <span style="font-size: 19px; font-weight: bold; color: #333;">' . $regId . '</span><br>
+                                <strong>Role:</strong> ' . $roleLabel . '<br>
+                                <strong>Email:</strong> ' . $email . '<br>
+                                ' . $passwordRow . '
+                                <p style="margin-top: 15px;"><strong>Click here to visit website ➡️<a href="https://attendify.gt.tc" style="color: #4f46e5; text-decoration: none; font-weight: bold;">Attendify</a></strong></p>
+                            </div>
+                            <p><strong>Important:</strong> Please keep these credentials safe.</p>
+                            <div style="font-size: 12px; color: #64748b; margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                                Thank you for using <strong>Attendify</strong><br>
+                                &copy; Attendance Management System
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body></html>';
 }
 
 function generateProfileUpdateEmailHTML(string $name): string {
@@ -405,23 +409,30 @@ function generateProfileUpdateEmailHTML(string $name): string {
 <!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><style>
-    body{font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px;}
-    .container{max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; padding: 20px;}
-    .header{font-size: 20px; font-weight: bold; margin-bottom: 20px; color: #4f46e5; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;}
-    .footer{font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;}
+    body{font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;}
 </style></head>
-<body>
-<div class="container">
-    <div class="header">Account Details Updated - Attendify</div>
-    <p>Hello <strong>' . $name . '</strong>,</p>
-    <p>This is to inform you that some changes have been made to your Attendify account profile by the administrator.</p>
-    <p>The updated details include one or more of the following: <strong>Name, Phone Number, Date of Birth, Role, Department, or Branch</strong>.</p>
-    <p>Please log in to your account to verify your updated information. If you did not expect these changes, please contact the administration immediately.</p>
-    <div class="footer">
-        Team Attendify<br>
-        &copy; Attendance Management System
-    </div>
-</div>
+<body style="background-color: #f8fafc; padding: 20px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                    <tr>
+                        <td style="padding: 40px;">
+                            <div style="font-size: 24px; font-weight: bold; margin-bottom: 20px; color: #4f46e5; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px;">Account Details Updated - Attendify</div>
+                            <p>Hello <strong>' . $name . '</strong>,</p>
+                            <p>This is to inform you that some changes have been made to your Attendify account profile by the administrator.</p>
+                            <p>The updated details include one or more of the following: <strong>Name, Phone Number, Date of Birth, Role, Department, or Branch</strong>.</p>
+                            <p>Please log in to your account to verify your updated information. If you did not expect these changes, please contact the administration immediately.</p>
+                            <div style="font-size: 12px; color: #64748b; margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                                Team Attendify<br>
+                                &copy; Attendance Management System
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body></html>';
 }
 
@@ -430,27 +441,33 @@ function generateAdminPasswordUpdateEmailHTML(string $name, string $regId, strin
 <!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><style>
-    body{font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px;}
-    .container{max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; padding: 200/px 20px 30px 20px;}
-    .header{font-size: 20px; font-weight: bold; margin-bottom: 20px; color: #ef4444; border-bottom: 2px solid #fef2f2; padding-bottom: 10px;}
-    .box{background: #f8fafc; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; margin: 20px 0;}
-    .footer{font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;}
+    body{font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;}
 </style></head>
-<body>
-<div class="container">
-    <div class="header">Your Password Has Been Changed</div>
-    <p>Hello <strong>' . $name . '</strong>,</p>
-    <p>Your Attendify account password has been reset by the administration. You can now log in using the credentials below:</p>
-    <div class="box">
-        <p style="margin: 5px 0;"><strong>Registration ID:</strong> ' . $regId . '</p>
-        <p style="margin: 5px 0;"><strong>New Password:</strong> <span style="color: #4f46e5; font-weight: bold;">' . $newPassword . '</span></p>
-    </div>
-    <p style="color: #64748b; font-size: 14px;"><em>For your security, we recommend changing this password immediately after logging in.</em></p>
-    <div class="footer">
-        Attendify Security Team<br>
-        &copy; Attendance Management System
-    </div>
-</div>
+<body style="background-color: #f8fafc; padding: 20px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                    <tr>
+                        <td style="padding: 40px;">
+                            <div style="font-size: 24px; font-weight: bold; margin-bottom: 20px; color: #ef4444; border-bottom: 2px solid #fee2e2; padding-bottom: 15px;">Your Password Has Been Changed</div>
+                            <p>Hello <strong>' . $name . '</strong>,</p>
+                            <p>Your Attendify account password has been reset by the administration. You can now log in using the credentials below:</p>
+                            <div style="background: #f1f5f9; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
+                                <p style="margin: 5px 0;"><strong>Registration ID:</strong> ' . $regId . '</p>
+                                <p style="margin: 5px 0;"><strong>New Password:</strong> <span style="color: #4f46e5; font-weight: bold;">' . $newPassword . '</span></p>
+                            </div>
+                            <p style="color: #64748b; font-size: 14px;"><em>For your security, we recommend changing this password immediately after logging in.</em></p>
+                            <div style="font-size: 12px; color: #64748b; margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                                Attendify Security Team<br>
+                                &copy; Attendance Management System
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body></html>';
 }
 
@@ -459,23 +476,30 @@ function generateEmailChangeOldTemplate(string $name, string $newEmail): string 
 <!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><style>
-    body{font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px;}
-    .container{max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; padding: 20px;}
-    .header{font-size: 20px; font-weight: bold; margin-bottom: 20px; color: #f59e0b; border-bottom: 2px solid #fffbeb; padding-bottom: 10px;}
-    .footer{font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;}
+    body{font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;}
 </style></head>
-<body>
-<div class="container">
-    <div class="header">Your Email Address Has Been Changed</div>
-    <p>Hello <strong>' . $name . '</strong>,</p>
-    <p>This is a security notification to inform you that your registered email address on Attendify has been successfully changed to: <strong>' . $newEmail . '</strong></p>
-    <p>From now on, all notifications, attendance reports, and account alerts will be sent exclusively to the new email address.</p>
-    <p>If you did not authorize this change, please report it to the principal or administrator immediately.</p>
-    <div class="footer">
-        Attendify Security<br>
-        &copy; Attendance Management System
-    </div>
-</div>
+<body style="background-color: #fffbeb; padding: 20px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border: 1px solid #fef3c7; border-radius: 12px; overflow: hidden;">
+                    <tr>
+                        <td style="padding: 40px;">
+                            <div style="font-size: 24px; font-weight: bold; margin-bottom: 20px; color: #f59e0b; border-bottom: 2px solid #fffbeb; padding-bottom: 15px;">Your Email Address Has Been Changed</div>
+                            <p>Hello <strong>' . $name . '</strong>,</p>
+                            <p>This is a security notification to inform you that your registered email address on Attendify has been successfully changed to: <strong>' . $newEmail . '</strong></p>
+                            <p>From now on, all notifications, attendance reports, and account alerts will be sent exclusively to the new email address.</p>
+                            <p>If you did not authorize this change, please report it to the principal or administrator immediately.</p>
+                            <div style="font-size: 12px; color: #64748b; margin-top: 30px; border-top: 1px solid #fffbeb; padding-top: 15px;">
+                                Attendify Security<br>
+                                &copy; Attendance Management System
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body></html>';
 }
 
@@ -484,22 +508,29 @@ function generateEmailChangeNewTemplate(string $name, string $oldEmail): string 
 <!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><style>
-    body{font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px;}
-    .container{max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; padding: 20px;}
-    .header{font-size: 20px; font-weight: bold; margin-bottom: 20px; color: #10b981; border-bottom: 2px solid #f0fdf4; padding-bottom: 10px;}
-    .footer{font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;}
+    body{font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;}
 </style></head>
-<body>
-<div class="container">
-    <div class="header">Email Successfully Updated</div>
-    <p>Hello <strong>' . $name . '</strong>,</p>
-    <p>Your email address for Attendify has been successfully updated to this account.</p>
-    <p>We have removed your previous email (<strong>' . $oldEmail . '</strong>) from our records. You will now receive all account-related updates and attendance info here.</p>
-    <div class="footer">
-        Welcome to your new primary email!<br>
-        Attendify Team
-    </div>
-</div>
+<body style="background-color: #f0fdf4; padding: 20px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border: 1px solid #dcfce7; border-radius: 12px; overflow: hidden;">
+                    <tr>
+                        <td style="padding: 40px;">
+                            <div style="font-size: 24px; font-weight: bold; margin-bottom: 20px; color: #10b981; border-bottom: 2px solid #f0fdf4; padding-bottom: 15px;">Email Successfully Updated</div>
+                            <p>Hello <strong>' . $name . '</strong>,</p>
+                            <p>Your email address for Attendify has been successfully updated to this account.</p>
+                            <p>We have removed your previous email (<strong>' . $oldEmail . '</strong>) from our records. You will now receive all account-related updates and attendance info here.</p>
+                            <div style="font-size: 12px; color: #64748b; margin-top: 30px; border-top: 1px solid #f0fdf4; padding-top: 15px;">
+                                Welcome to your new primary email!<br>
+                                Attendify Team
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body></html>';
 }
 
@@ -508,28 +539,37 @@ function generateDeletionEmailHTML(string $name): string {
 <!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><style>
-    body{font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px;}
-    .container{max-width: 600px; margin: 0 auto; border: 1px solid #ef4444; border-radius: 8px; padding: 20px; background: #fffafb;}
-    .header{font-size: 20px; font-weight: bold; margin-bottom: 20px; color: #ef4444;}
-    .footer{font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #fee2e2; padding-top: 10px;}
+    body{font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;}
 </style></head>
-<body>
-<div class="container">
-    <div class="header">Your Attendify Account Has Been Deleted</div>
-    <p>Dear <strong>' . $name . '</strong>,</p>
-    <p>This email is to inform you that your Attendify account has been officially deleted from our system by the administrator.</p>
-    <p><strong>What does this mean?</strong></p>
-    <ul>
-        <li>You can no longer log in to the Attendify portal.</li>
-        <li>Your profile photo and identification QR code have been permanently removed.</li>
-        <li>All your current session attendance logs have been erased.</li>
-    </ul>
-    <p>If you believe this was an error, please contact your department head or the administration office.</p>
-    <div class="footer">
-        Attendify Team<br>
-        &copy; Attendance Management System
-    </div>
-</div>
+<body style="background-color: #fef2f2; padding: 20px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border: 2px solid #ef4444; border-radius: 12px; overflow: hidden;">
+                    <tr>
+                        <td style="padding: 40px;">
+                            <div style="font-size: 24px; font-weight: bold; margin-bottom: 20px; color: #ef4444;">Your Attendify Account Has Been Deleted</div>
+                            <p>Dear <strong>' . $name . '</strong>,</p>
+                            <p>This email is to inform you that your Attendify account has been officially deleted from our system by the administrator.</p>
+                            <div style="background: #fff5f5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ef4444;">
+                                <p style="margin: 0 0 10px 0;"><strong>What does this mean?</strong></p>
+                                <ul style="margin: 0; padding-left: 20px;">
+                                    <li>You can no longer log in to the Attendify portal.</li>
+                                    <li>Your profile photo and identification QR code have been permanently removed.</li>
+                                    <li>All your current session attendance logs have been erased.</li>
+                                </ul>
+                            </div>
+                            <p>If you believe this was an error, please contact your department head or the administration office.</p>
+                            <div style="font-size: 12px; color: #64748b; margin-top: 30px; border-top: 1px solid #fee2e2; padding-top: 15px;">
+                                Attendify Team<br>
+                                &copy; Attendance Management System
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body></html>';
 }
 ?>
