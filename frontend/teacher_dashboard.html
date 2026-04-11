@@ -2104,22 +2104,27 @@
                                     style="font-size:.75rem; font-weight:600; color:var(--text-muted); margin-bottom:.5rem;">
                                     Max Distance:</div>
                                 <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
-                                    <button class="geo-preset-btn active" onclick="setGeoDistance(15, this)"
-                                        style="padding:.35rem .75rem; border:1px solid var(--primary-cyan); border-radius:8px; background:rgba(0,188,212,.1); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--primary-cyan);">🏫
-                                        Classroom (15m)</button>
-                                    <button class="geo-preset-btn" onclick="setGeoDistance(100, this)"
-                                        style="padding:.35rem .75rem; border:1px solid var(--border); border-radius:8px; background:var(--surface); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--text-dark);">🏢
-                                        Building (100m)</button>
-                                    <button class="geo-preset-btn" onclick="setGeoDistance(300, this)"
-                                        style="padding:.35rem .75rem; border:1px solid var(--border); border-radius:8px; background:var(--surface); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--text-dark);">🏟️
-                                        Campus (300m)</button>
+                                    <button class="geo-preset-btn" onclick="setGeoDistance(5, this)"
+                                        style="padding:.35rem .75rem; border:1px solid var(--border); border-radius:8px; background:var(--surface); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--text-dark);">5m</button>
+                                    <button class="geo-preset-btn" onclick="setGeoDistance(7, this)"
+                                        style="padding:.35rem .75rem; border:1px solid var(--border); border-radius:8px; background:var(--surface); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--text-dark);">7m</button>
+                                    <button class="geo-preset-btn active" onclick="setGeoDistance(10, this)"
+                                        style="padding:.35rem .75rem; border:1px solid var(--primary-cyan); border-radius:8px; background:rgba(0,188,212,.1); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--primary-cyan);">10m</button>
+                                    <button class="geo-preset-btn" onclick="setGeoDistance(15, this)"
+                                        style="padding:.35rem .75rem; border:1px solid var(--border); border-radius:8px; background:var(--surface); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--text-dark);">15m</button>
+                                    <button class="geo-preset-btn" onclick="setGeoDistance(20, this)"
+                                        style="padding:.35rem .75rem; border:1px solid var(--border); border-radius:8px; background:var(--surface); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--text-dark);">20m</button>
+                                    <button class="geo-preset-btn" onclick="setGeoDistance(30, this)"
+                                        style="padding:.35rem .75rem; border:1px solid var(--border); border-radius:8px; background:var(--surface); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--text-dark);">30m</button>
+                                    <button class="geo-preset-btn" onclick="setGeoDistance(40, this)"
+                                        style="padding:.35rem .75rem; border:1px solid var(--border); border-radius:8px; background:var(--surface); font-size:.78rem; font-weight:600; cursor:pointer; transition:all .2s; color:var(--text-dark);">40m</button>
                                 </div>
                                 <div style="margin-top:.5rem; display:flex; align-items:center; gap:.5rem;">
-                                    <input type="range" id="geoDistanceSlider" min="10" max="500" value="15" step="1"
+                                    <input type="range" id="geoDistanceSlider" min="5" max="500" value="10" step="1"
                                         oninput="updateGeoDistanceLabel()"
                                         style="flex:1; accent-color:var(--primary-cyan);">
                                     <span id="geoDistanceLabel"
-                                        style="font-size:.8rem; font-weight:700; color:var(--primary-cyan); min-width:50px; text-align:right;">15m</span>
+                                        style="font-size:.8rem; font-weight:700; color:var(--primary-cyan); min-width:50px; text-align:right;">10m</span>
                                 </div>
                                 <div id="geoStatus"
                                     style="font-size:.72rem; color:var(--text-muted); margin-top:.4rem;"></div>
@@ -3516,7 +3521,7 @@
 
         // ─── GEO LOCK HELPERS ───
         let geoLockEnabled = true; // Auto-enabled
-        let geoMaxDistance = 15; // default 15m (Classroom)
+        let geoMaxDistance = 10; // default 10m
 
         function toggleGeoLock() {
             const toggle = document.getElementById('geoLockToggle');
