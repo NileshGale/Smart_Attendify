@@ -115,7 +115,7 @@ function sendRegistrationEmail(string $toEmail, string $toName, string $regId, s
                 <p style='margin: 5px 0;'><strong>Email:</strong> {$toEmail}</p>
                 <p style='margin: 5px 0;'>{$passwordInfo}</p>
             </div>
-            <p>We're excited to have you on board. Start tracking your attendance today!</p>
+            <p>We're excited to have you on board. Start tracking your attendance today! and for security reasons, we strongly recommend changing your password after your first login</p>
         ";
         
         $mail->Body = generatePremiumTemplate(
