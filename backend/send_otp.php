@@ -70,7 +70,23 @@ function sendOTPEmail(string $toEmail, string $toName, string $otp): array {
         $mail->addAddress($toEmail, $toName);
         $mail->isHTML(true);
         $mail->Subject = 'Password Reset OTP - Attendify';
-        $mail->Body    = generateOTPEmailHTML($toName, $otp);
+        
+        $content = "
+            <p style='margin-bottom: 24px;'>We received a request to reset your password. Use the security code below to proceed with the reset. It will expire in 2 minutes.</p>
+            <div style='background: #f8f7ff; border: 2px dashed #1a1a7a; border-radius: 12px; text-align: center; padding: 24px; margin: 24px 0;'>
+                <div style=\"font-size: 42px; font-weight: 900; letter-spacing: .2em; color: #1a1a7a; font-family: 'Courier New', monospace;\">{$otp}</div>
+                <div style='color: #ef4444; font-weight: 600; font-size: 14px; margin-top: 8px;'>Expires in 2 minutes</div>
+            </div>
+            <p style='color: #64748b; font-size: 14px;'>If you did not request this, you can safely ignore this email.</p>
+        ";
+        
+        $mail->Body = generatePremiumTemplate(
+            "Account Security",
+            "Confirm Your Identity",
+            "hi {$toName},",
+            $content
+        );
+        
         $mail->AltBody = "Hello $toName,\n\nYour OTP is: $otp\n\nExpires in 2 minutes.\n\nAttendify Team";
         $mail->send();
         return ['sent' => true];
@@ -87,7 +103,30 @@ function sendRegistrationEmail(string $toEmail, string $toName, string $regId, s
         $mail->addAddress($toEmail, $toName);
         $mail->isHTML(true);
         $mail->Subject = 'Welcome to Attendify - Registration Successful';
-        $mail->Body    = generateRegistrationEmailHTML($toName, $regId, $role, $toEmail, $password);
+        
+        $roleLabel = ucfirst($role);
+        $passwordInfo = $password ? "Your password is: <strong style='color:#1a1a7a'>{$password}</strong>" : "Use your existing password to log in.";
+        
+        $content = "
+            <p>Welcome to Attendify! Your account has been successfully created. You can now access your dashboard using the credentials below:</p>
+            <div style='background: #f8fafc; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; margin: 24px 0;'>
+                <p style='margin: 5px 0;'><strong>Registration ID:</strong> {$regId}</p>
+                <p style='margin: 5px 0;'><strong>Role:</strong> {$roleLabel}</p>
+                <p style='margin: 5px 0;'><strong>Email:</strong> {$toEmail}</p>
+                <p style='margin: 5px 0;'>{$passwordInfo}</p>
+            </div>
+            <p>We're excited to have you on board. Start tracking your attendance today!</p>
+        ";
+        
+        $mail->Body = generatePremiumTemplate(
+            "Welcome to Attendify",
+            "Thanks for signing up",
+            "hi {$toName},",
+            $content,
+            "Go to Attendify",
+            "https://attendify.gt.tc"
+        );
+        
         $mail->AltBody = "Welcome $toName!\n\nYour Registration ID: $regId\nRole: $role\nEmail: $toEmail\nPassword: $password\n\nPlease keep these credentials safe.\n\nThank you for using Attendify";
         $mail->send();
         return true;
@@ -104,7 +143,22 @@ function sendProfileUpdateNotification(string $toEmail, string $toName): bool {
         $mail->addAddress($toEmail, $toName);
         $mail->isHTML(true);
         $mail->Subject = 'Profile Updated - Attendify';
-        $mail->Body    = generateProfileUpdateEmailHTML($toName);
+        
+        $content = "
+            <p>This is a security notification to inform you that your profile information has been updated by the administrator.</p>
+            <p>The following fields may have been modified: <strong>Name, Phone, Academic Details, or Security Settings</strong>.</p>
+            <p style='margin-top: 20px;'>If you authorized these changes, no further action is required. If not, please contact the IT department immediately.</p>
+        ";
+        
+        $mail->Body = generatePremiumTemplate(
+            "Profile Update",
+            "Your Account was Modified",
+            "hi {$toName},",
+            $content,
+            "Go to Attendify",
+            "https://attendify.gt.tc"
+        );
+        
         $mail->AltBody = "Hello $toName,\n\nSome changes have been made to your Attendify account. Please verify the updated details in your profile.\n\nAttendify Team";
         $mail->send();
         return true;
@@ -121,7 +175,25 @@ function sendAdminPasswordUpdateEmail(string $toEmail, string $toName, string $r
         $mail->addAddress($toEmail, $toName);
         $mail->isHTML(true);
         $mail->Subject = 'Your Account Password Has Been Reset - Attendify';
-        $mail->Body    = generateAdminPasswordUpdateEmailHTML($toName, $regId, $newPassword);
+        
+        $content = "
+            <p>Your password has been reset by the system administrator. You can now log in using the temporary credentials provided below:</p>
+            <div style='background: #fff5f5; padding: 20px; border: 1px solid #feb2b2; border-radius: 12px; margin: 24px 0;'>
+                <p style='margin: 5px 0;'><strong>Registration ID:</strong> {$regId}</p>
+                <p style='margin: 5px 0;'><strong>New Password:</strong> <strong style='color:#ef4444'>{$newPassword}</strong></p>
+            </div>
+            <p style='color: #64748b; font-size: 14px;'><em>Note: We strongly recommend changing this password immediately after logging in. and if you didn't requested to change password then report it to the Attendify Administrator immediately.</em></p>
+        ";
+        
+        $mail->Body = generatePremiumTemplate(
+            "Security Alert",
+            "Password Reset by Admin",
+            "hi {$toName},",
+            $content,
+            "Log In Now",
+            "https://attendify.gt.tc"
+        );
+        
         $mail->AltBody = "Hello $toName,\n\nYour password has been changed by the administration.\n\nRegistration ID: $regId\nNew Password: $newPassword\n\nPlease log in and change your password for security.\n\nAttendify Team";
         $mail->send();
         return true;
@@ -138,7 +210,22 @@ function sendEmailChangeAlert_Old(string $oldEmail, string $toName, string $newE
         $mail->addAddress($oldEmail, $toName);
         $mail->isHTML(true);
         $mail->Subject = 'Email Address Changed - Attendify';
-        $mail->Body    = generateEmailChangeOldTemplate($toName, $newEmail);
+        
+        $content = "
+            <p>Your registered email address on Attendify has been changed. From now on, you will no longer receive updates at this address.</p>
+            <p style='margin: 20px 0;'><strong>New Email:</strong> {$newEmail}</p>
+            <p style='color: #ef4444; font-weight: 600;'>If you did not authorize this change, please report it to the Attendify Administrator immediately.</p>
+        ";
+        
+        $mail->Body = generatePremiumTemplate(
+            "Security Update",
+            "Email Address Transfer",
+            "hi {$toName},",
+            $content,
+            "Contact Support",
+            "mailto:nileshgale520@gmail.com"
+        );
+        
         $mail->AltBody = "Hello $toName,\n\nYour email address has been changed to $newEmail. From now on, all notifications will be sent to the new address.\n\nAttendify Team";
         $mail->send();
         return true;
@@ -155,7 +242,21 @@ function sendEmailChangeAlert_New(string $newEmail, string $toName, string $oldE
         $mail->addAddress($newEmail, $toName);
         $mail->isHTML(true);
         $mail->Subject = 'Email Verified Successfully - Attendify';
-        $mail->Body    = generateEmailChangeNewTemplate($toName, $oldEmail);
+        
+        $content = "
+            <p>Your email address has been successfully updated to this account. Your previous address (<strong>{$oldEmail}</strong>) has been unlinked.</p>
+            <p>You will now receive all attendance reports, OTPs, and system alerts at this address.</p>
+        ";
+        
+        $mail->Body = generatePremiumTemplate(
+            "Verification",
+            "New Email Linked",
+            "hi {$toName},",
+            $content,
+            "Open Attendify",
+            "https://attendify.gt.tc"
+        );
+        
         $mail->AltBody = "Hello $toName,\n\nYour email address has been successfully changed to this one. The previous address ($oldEmail) has been removed from your account.\n\nAttendify Team";
         $mail->send();
         return true;
@@ -172,7 +273,21 @@ function sendDeletionNotification(string $toEmail, string $toName): bool {
         $mail->addAddress($toEmail, $toName);
         $mail->isHTML(true);
         $mail->Subject = 'Account Deleted - Attendify';
-        $mail->Body    = generateDeletionEmailHTML($toName);
+        
+        $content = "
+            <p>This is a final confirmation that your Attendify account and all associated data (profile photo, QR code, attendance logs) have been permanently removed from our system.</p>
+            <p style='margin-top: 20px;'>If you believe this account should not have been deleted, please contact the administration office.</p>
+        ";
+        
+        $mail->Body = generatePremiumTemplate(
+            "Account Closed",
+            "Your Data was Removed",
+            "hi {$toName},",
+            $content,
+            "Contact Office",
+            "mailto:nileshgale520@gmail.com"
+        );
+        
         $mail->AltBody = "Hello $toName,\n\nYour account has been deleted from Attendify. All your data and photos have been removed from our system.\n\nAttendify Team";
         $mail->send();
         return true;
@@ -329,207 +444,90 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ── EMAIL TEMPLATES ──────────────────────────────────────────────────────────
+// ── UNIVERSAL PREMIUM TEMPLATE (Recess Inspired) ──────────────────────────────
 
-function generateOTPEmailHTML(string $name, string $otp): string {
+function generatePremiumTemplate(string $title, string $subtitle, string $greeting, string $content, string $actionText = '', string $actionUrl = ''): string {
+    $baseUrl = 'https://attendify.gt.tc';
+    $headerImg = $baseUrl . '/frontend/img/email_header_3d.jpg'; // Using optimized JPG for speed
+
+    $buttonHtml = '';
+    if (!empty($actionText)) {
+        $buttonHtml = "
+            <div class='btn-container'>
+                <a href='{$actionUrl}' class='button'>{$actionText}</a>
+            </div>";
+    }
+
     return <<<HTML
 <!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><style>
-    body{font-family:'Segoe UI',sans-serif;background:#f1f5f9;margin:0;padding:20px}
-    .wrap{max-width:540px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.1)}
-    .header{background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:32px;text-align:center;color:#fff}
-    .header h1{margin:0;font-size:24px}
-    .body{padding:32px}
-    .otp-box{background:#f8f7ff;border:2px dashed #4f46e5;border-radius:12px;text-align:center;padding:24px;margin:24px 0}
-    .otp{font-size:42px;font-weight:900;letter-spacing:.2em;color:#4f46e5;font-family:'Courier New',monospace}
-    .note{color:#ef4444;font-weight:600;font-size:14px;margin-top:8px}
-    .footer{background:#f8f9fa;padding:20px;text-align:center;color:#64748b;font-size:13px;border-top:1px solid #e2e8f0}
-</style></head>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{$title}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { margin: 0; padding: 0; background-color: #fdf1ec; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        .wrapper { width: 100%; table-layout: fixed; background-color: #fdf1ec; padding-bottom: 40px; padding-top: 40px; }
+        .main-table { width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 12px solid #1a1a7a; border-radius: 4px; border-collapse: separate; }
+        .header-img-cell { padding: 40px 20px 20px; text-align: center; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+        .header-img { width: 100%; max-width: 320px; height: auto; display: inline-block; pointer-events: none; -webkit-user-drag: none; pointer-events: none; }
+        .content-cell { padding: 0 50px 40px; }
+        .branding-text { color: #1a1a7a; font-family: Georgia, serif; font-size: 24px; font-weight: bold; margin-bottom: 40px; text-align: center; letter-spacing: -0.02em; }
+        .headline { color: #1a1a7a; font-family: Georgia, serif; font-size: 32px; font-weight: bold; line-height: 1.2; margin-bottom: 12px; text-align: center; }
+        .subtitle { color: #1a1a7a; font-size: 16px; font-weight: 600; margin-bottom: 40px; text-align: center; opacity: 0.8; }
+        .greeting { color: #1a1a7a; font-size: 16px; margin-bottom: 20px; font-weight: 500; }
+        .body-text { color: #1a1a7a; font-size: 15px; line-height: 1.6; margin-bottom: 30px; }
+        .btn-container { text-align: center; padding-top: 10px; padding-bottom: 40px; }
+        .button { background-color: #0000ff; color: #ffffff !important; padding: 16px 48px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 12px rgba(0,0,255,0.2); }
+        .footer-cell { padding: 30px 50px; border-top: 1px solid #fdf1ec; }
+        .footer-text { color: #1a1a7a; font-size: 13px; line-height: 1.6; opacity: 0.7; }
+        .footer-link { color: #1a1a7a; text-decoration: underline; }
+        @media screen and (max-width: 600px) {
+            .content-cell { padding: 0 25px 30px; }
+            .headline { font-size: 26px; }
+            .main-table { border-width: 8px; }
+        }
+    </style>
+</head>
 <body>
-<div class="wrap">
-    <div class="header"><h1>Password Security</h1><p style="opacity:.85;margin:8px 0 0">Attendify Security</p></div>
-    <div class="body">
-        <p>Hello <strong>{$name}</strong>,</p>
-        <p>We have received a request to send a OTP to your email address. Please use the OTP provided below to proceed:</p>
-        <div class="otp-box">
-            <div class="otp">{$otp}</div>
-            <div class="note">Expires in 2 minutes</div>
-        </div>
-        <p>If you did not request this, please ignore this email.</p>
-    </div>
-    <div class="footer"><p>&copy; Attendify &mdash; Attendance Management System</p></div>
-</div>
-</body></html>
+    <center class="wrapper">
+        <table class="main-table" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+                <td class="header-img-cell">
+                    <img src="{$headerImg}" alt="Attendify" class="header-img">
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 0 50px;">
+                    <div class="branding-text">Attendify</div>
+                </td>
+            </tr>
+            <tr>
+                <td class="content-cell">
+                    <div class="headline">{$title}</div>
+                    <div class="subtitle">{$subtitle}</div>
+                    
+                    <div class="greeting">{$greeting}</div>
+                    <div class="body-text">
+                        {$content}
+                    </div>
+                    
+                    {$buttonHtml}
+                </td>
+            </tr>
+            <tr>
+                <td class="footer-cell">
+                    <div class="footer-text">
+                        If you didn't request this email or you're not sure why you received it, you can safely ignore it. Your account will not be affected.<br><br>
+                        If you have any questions, you can reply to this email or contact Attendify Support at <a href="mailto:nileshgale520@gmail.com" class="footer-link">nileshgale520@gmail.com</a>.
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </center>
+</body>
+</html>
 HTML;
-}
-
-function generateRegistrationEmailHTML(string $name, string $regId, string $role, string $email, string $password = ''): string {
-    $roleLabel = ucfirst($role);
-    $passwordRow = $password ? "<p>Password: <strong style=\"color:#4f46e5\">{$password}</strong></p>" : '';
-    return <<<HTML
-<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><style>
-    body{font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px;}
-    .container{max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; padding: 20px;}
-    .header{font-size: 20px; font-weight: bold; margin-bottom: 20px; color: #4f46e5;}
-    .box{background: #f4f4f4; padding: 15px; border-radius: 5px; margin: 20px 0;}
-    .reg-id{font-size: 19px; font-weight: bold; color: #333;}
-    .footer{font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;}
-</style></head>
-<body>
-<div class="container">
-    <div class="header">Registration Successful - Attendify</div>
-    <p>Dear <strong>{$name}</strong>,</p>
-    <p>Your account has been created. Here are your credentials:</p>
-    <div class="box">
-        <strong>Registration ID:</strong> <span class="reg-id">{$regId}</span><br>
-        <strong>Role:</strong> {$roleLabel}<br>
-        <strong>Email:</strong> {$email}<br>
-        {$passwordRow}
-        <strong>Click here to visit website ➡️<a href="https://attendify.gt.tc">Attendify</a></strong>
-    </div>
-    <p><strong>Important:</strong> Please keep these credentials safe.</p>
-    <div class="footer">
-        Thank you for using <strong>Attendify</strong><br>
-        &copy; Attendance Management System
-    </div>
-</div>
-</body></html>
-HTML;
-}
-
-function generateProfileUpdateEmailHTML(string $name): string {
-    return '
-<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><style>
-    body{font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px;}
-    .container{max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; padding: 20px;}
-    .header{font-size: 20px; font-weight: bold; margin-bottom: 20px; color: #4f46e5; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;}
-    .footer{font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;}
-</style></head>
-<body>
-<div class="container">
-    <div class="header">Account Details Updated - Attendify</div>
-    <p>Hello <strong>' . $name . '</strong>,</p>
-    <p>This is to inform you that some changes have been made to your Attendify account profile by the administrator.</p>
-    <p>The updated details include one or more of the following: <strong>Name, Phone Number, Date of Birth, Role, Department, or Branch</strong>.</p>
-    <p>Please log in to your account to verify your updated information. If you did not expect these changes, please contact the administration immediately.</p>
-    <div class="footer">
-        Team Attendify<br>
-        &copy; Attendance Management System
-    </div>
-</div>
-</body></html>';
-}
-
-function generateAdminPasswordUpdateEmailHTML(string $name, string $regId, string $newPassword): string {
-    return '
-<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><style>
-    body{font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px;}
-    .container{max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; padding: 200/px 20px 30px 20px;}
-    .header{font-size: 20px; font-weight: bold; margin-bottom: 20px; color: #ef4444; border-bottom: 2px solid #fef2f2; padding-bottom: 10px;}
-    .box{background: #f8fafc; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; margin: 20px 0;}
-    .footer{font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;}
-</style></head>
-<body>
-<div class="container">
-    <div class="header">Your Password Has Been Changed</div>
-    <p>Hello <strong>' . $name . '</strong>,</p>
-    <p>Your Attendify account password has been reset by the administration. You can now log in using the credentials below:</p>
-    <div class="box">
-        <p style="margin: 5px 0;"><strong>Registration ID:</strong> ' . $regId . '</p>
-        <p style="margin: 5px 0;"><strong>New Password:</strong> <span style="color: #4f46e5; font-weight: bold;">' . $newPassword . '</span></p>
-    </div>
-    <p style="color: #64748b; font-size: 14px;"><em>For your security, we recommend changing this password immediately after logging in.</em></p>
-    <div class="footer">
-        Attendify Security Team<br>
-        &copy; Attendance Management System
-    </div>
-</div>
-</body></html>';
-}
-
-function generateEmailChangeOldTemplate(string $name, string $newEmail): string {
-    return '
-<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><style>
-    body{font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px;}
-    .container{max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; padding: 20px;}
-    .header{font-size: 20px; font-weight: bold; margin-bottom: 20px; color: #f59e0b; border-bottom: 2px solid #fffbeb; padding-bottom: 10px;}
-    .footer{font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;}
-</style></head>
-<body>
-<div class="container">
-    <div class="header">Your Email Address Has Been Changed</div>
-    <p>Hello <strong>' . $name . '</strong>,</p>
-    <p>This is a security notification to inform you that your registered email address on Attendify has been successfully changed to: <strong>' . $newEmail . '</strong></p>
-    <p>From now on, all notifications, attendance reports, and account alerts will be sent exclusively to the new email address.</p>
-    <p>If you did not authorize this change, please report it to the principal or administrator immediately.</p>
-    <div class="footer">
-        Attendify Security<br>
-        &copy; Attendance Management System
-    </div>
-</div>
-</body></html>';
-}
-
-function generateEmailChangeNewTemplate(string $name, string $oldEmail): string {
-    return '
-<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><style>
-    body{font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px;}
-    .container{max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; padding: 20px;}
-    .header{font-size: 20px; font-weight: bold; margin-bottom: 20px; color: #10b981; border-bottom: 2px solid #f0fdf4; padding-bottom: 10px;}
-    .footer{font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;}
-</style></head>
-<body>
-<div class="container">
-    <div class="header">Email Successfully Updated</div>
-    <p>Hello <strong>' . $name . '</strong>,</p>
-    <p>Your email address for Attendify has been successfully updated to this account.</p>
-    <p>We have removed your previous email (<strong>' . $oldEmail . '</strong>) from our records. You will now receive all account-related updates and attendance info here.</p>
-    <div class="footer">
-        Welcome to your new primary email!<br>
-        Attendify Team
-    </div>
-</div>
-</body></html>';
-}
-
-function generateDeletionEmailHTML(string $name): string {
-    return '
-<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><style>
-    body{font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px;}
-    .container{max-width: 600px; margin: 0 auto; border: 1px solid #ef4444; border-radius: 8px; padding: 20px; background: #fffafb;}
-    .header{font-size: 20px; font-weight: bold; margin-bottom: 20px; color: #ef4444;}
-    .footer{font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #fee2e2; padding-top: 10px;}
-</style></head>
-<body>
-<div class="container">
-    <div class="header">Your Attendify Account Has Been Deleted</div>
-    <p>Dear <strong>' . $name . '</strong>,</p>
-    <p>This email is to inform you that your Attendify account has been officially deleted from our system by the administrator.</p>
-    <p><strong>What does this mean?</strong></p>
-    <ul>
-        <li>You can no longer log in to the Attendify portal.</li>
-        <li>Your profile photo and identification QR code have been permanently removed.</li>
-        <li>All your current session attendance logs have been erased.</li>
-    </ul>
-    <p>If you believe this was an error, please contact your department head or the administration office.</p>
-    <div class="footer">
-        Attendify Team<br>
-        &copy; Attendance Management System
-    </div>
-</div>
-</body></html>';
 }
 ?>
