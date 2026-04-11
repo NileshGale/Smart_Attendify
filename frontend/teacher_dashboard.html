@@ -2431,14 +2431,6 @@
                     <i class="fa-solid fa-filter" style="color:var(--primary-cyan);font-size:.85rem"></i>
                     <select id="graphSubjectFilter" onchange="refreshCharts()">
                         <option value="all">All Subjects</option>
-                        <option>C Programming</option>
-                        <option>Core Java</option>
-                        <option>Python Programming</option>
-                        <option>PHP</option>
-                        <option>SQL with Oracle</option>
-                        <option>E Commerce</option>
-                        <option>Cloud Computing</option>
-                        <option>Digital Marketing</option>
                     </select>
                     <select id="graphRange" onchange="refreshCharts()">
                         <option value="week">This Week</option>
@@ -4704,7 +4696,7 @@
                         type: 'doughnut',
                         data: {
                             labels: ['Present', 'Absent'],
-                            datasets: [{ data: [totals.present, totals.absent], backgroundColor: ['var(--primary-cyan)', '#ef4444'], hoverOffset: 4, borderWidth: 0 }]
+                            datasets: [{ data: [totals.present, totals.absent], backgroundColor: ['var(--success)', '#ef4444'], hoverOffset: 4, borderWidth: 0 }]
                         },
                         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }, cutout: '65%' }
                     });
@@ -5094,6 +5086,9 @@
 
         // ─── SEARCH STUDENT ATTENDANCE IN ANALYTICS ───
         document.addEventListener('DOMContentLoaded', () => {
+            // Auto-load subjects on page load
+            loadTeacherSubjectsForRecord();
+
             const searchInputAnalytics = document.getElementById('studentSearchAnalytics');
             const clearBtnAnalytics = document.getElementById('searchClearBtnAnalytics');
             if (searchInputAnalytics && clearBtnAnalytics) {
@@ -5114,25 +5109,6 @@
             const classDateInput = document.getElementById('classRecordDate');
             if (classDateInput) {
                 classDateInput.valueAsDate = new Date();
-            }
-
-            // Attach listener for subject dropdown to load subjects
-            const classSubjectSelect = document.getElementById('classRecordSubject');
-            if (classSubjectSelect) {
-                classSubjectSelect.addEventListener('click', function () {
-                    if (this.options.length <= 1) {
-                        loadTeacherSubjectsForRecord();
-                    }
-                });
-            }
-
-            const overallSubjectShow = document.getElementById('overallReportSubject');
-            if (overallSubjectShow) {
-                overallSubjectShow.addEventListener('click', function () {
-                    if (this.options.length <= 1) {
-                        loadTeacherSubjectsForRecord();
-                    }
-                });
             }
         });
 
@@ -5242,6 +5218,7 @@
         async function loadTeacherSubjectsForRecord() {
             const select = document.getElementById('classRecordSubject');
             const overallSelect = document.getElementById('overallReportSubject');
+            const graphSelect = document.getElementById('graphSubjectFilter');
             try {
                 const res = await fetch('../backend/attendance_api.php', {
                     method: 'POST',
@@ -5256,10 +5233,18 @@
 
                     if (select) select.innerHTML = options;
                     if (overallSelect) overallSelect.innerHTML = options;
+
+                    // For analytics, we keep "All Subjects" and use subject name for value (as backend expects names)
+                    if (graphSelect) {
+                        const graphOptions = '<option value="all">All Subjects</option>' +
+                            data.subjects.map(s => `<option value="${s.subject_name}">${s.subject_name}</option>`).join('');
+                        graphSelect.innerHTML = graphOptions;
+                    }
                 } else {
                     const err = '<option value="">Error loading subjects</option>';
                     if (select) select.innerHTML = err;
                     if (overallSelect) overallSelect.innerHTML = err;
+                    if (graphSelect) graphSelect.innerHTML = '<option value="all">All Subjects</option>';
                 }
             } catch (e) {
                 console.error('Error loading subjects:', e);
