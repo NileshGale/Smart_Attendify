@@ -448,7 +448,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 function generatePremiumTemplate(string $title, string $subtitle, string $greeting, string $content, string $actionText = '', string $actionUrl = ''): string {
     $baseUrl = 'https://attendify.gt.tc';
-    $headerImg = $baseUrl . '/frontend/img/email_header_3d.jpg'; // Using optimized JPG for speed
+    $headerImg = $baseUrl . '/frontend/img/email_header_3d.png'; // Using optimized JPG for speed
 
     $buttonHtml = '';
     if (!empty($actionText)) {
@@ -519,7 +519,6 @@ function generatePremiumTemplate(string $title, string $subtitle, string $greeti
             <tr>
                 <td class="footer-cell">
                     <div class="footer-text">
-                        If you didn't request this email or you're not sure why you received it, you can safely ignore it. Your account will not be affected.<br><br>
                         If you have any questions, you can reply to this email or contact Attendify Support at <a href="mailto:nileshgale520@gmail.com" class="footer-link">nileshgale520@gmail.com</a>.
                     </div>
                 </td>
