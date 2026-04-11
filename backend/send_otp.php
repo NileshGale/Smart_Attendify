@@ -147,7 +147,7 @@ function sendProfileUpdateNotification(string $toEmail, string $toName): bool {
         $content = "
             <p>This is a security notification to inform you that your profile information has been updated by the administrator.</p>
             <p>The following fields may have been modified: <strong>Name, Phone, Academic Details, or Security Settings</strong>.</p>
-            <p style='margin-top: 20px;'>If you authorized these changes, no further action is required. If not, please contact the IT department immediately.</p>
+            <p style='margin-top: 20px;'>If you authorized these changes, no further action is required. If not, please contact the Attendify Administrator immediately.</p>
         ";
         
         $mail->Body = generatePremiumTemplate(
@@ -182,7 +182,7 @@ function sendAdminPasswordUpdateEmail(string $toEmail, string $toName, string $r
                 <p style='margin: 5px 0;'><strong>Registration ID:</strong> {$regId}</p>
                 <p style='margin: 5px 0;'><strong>New Password:</strong> <strong style='color:#ef4444'>{$newPassword}</strong></p>
             </div>
-            <p style='color: #64748b; font-size: 14px;'><em>Note: We strongly recommend changing this password immediately after logging in. and if you didn't requested to change password then report it to the Attendify Administrator immediately.</em></p>
+            <p style='color: #64748b; font-size: 14px;'><em>Note: We strongly recommend changing this password immediately after logging in. & if you didn't requested to change password then report it to the Attendify Administrator immediately</em></p>
         ";
         
         $mail->Body = generatePremiumTemplate(
