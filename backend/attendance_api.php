@@ -241,14 +241,15 @@ if ($action === 'markByUniqueCode') {
     
     try {
         // Find the code and check if it's still valid
+        $now = date('Y-m-d H:i:s');
         $stmt = $pdo->prepare("
             SELECT id, code, teacher_id, subject_name, expires_at, teacher_lat, teacher_lng, teacher_accuracy, max_distance_meters
             FROM attendance_codes
-            WHERE code = ? AND expires_at > NOW()
-            ORDER BY created_at DESC
+            WHERE code = ? AND expires_at > ?
+            ORDER BY id DESC
             LIMIT 1
         ");
-        $stmt->execute([$uniqueCode]);
+        $stmt->execute([$uniqueCode, $now]);
         $codeRecord = $stmt->fetch();
         
         if (!$codeRecord) {
