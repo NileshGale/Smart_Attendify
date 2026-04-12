@@ -16,7 +16,7 @@
             --primary-dark: #0097A7;
             --navy-dark: #1e3a5f;
             --navy-light: #2c5282;
-            --purple-accent: #7c3aed;
+            --purple-accent: #1e3a5f;
             --success: #00bcd4;
             --error: #ef4444;
             --danger: #ef4444;
@@ -589,7 +589,7 @@
             display: inline-flex;
             align-items: center;
             gap: .375rem;
-            background: linear-gradient(135deg, var(--primary-cyan), #7c3aed);
+            background: linear-gradient(135deg, var(--primary-cyan), #1e3a5f);
             color: white;
             padding: .375rem .875rem;
             border-radius: 20px;
@@ -632,7 +632,7 @@
         }
 
         .method-card.qr .method-icon {
-            background: linear-gradient(135deg, rgba(0, 188, 212, .15), rgba(124, 58, 237, .15));
+            background: linear-gradient(135deg, rgba(0, 188, 212, .15), rgba(30, 58, 95, .15));
         }
 
         .method-card.code .method-icon {
@@ -678,7 +678,7 @@
         }
 
         .scanner-panel-header {
-            background: linear-gradient(135deg, var(--primary-cyan), #7c3aed);
+            background: linear-gradient(135deg, var(--primary-cyan), #1e3a5f);
             color: white;
             padding: 1rem 1.25rem;
             display: flex;
@@ -806,7 +806,7 @@
         }
 
         .counter-badge {
-            background: linear-gradient(135deg, var(--primary-cyan), #7c3aed);
+            background: linear-gradient(135deg, var(--primary-cyan), #1e3a5f);
             color: white;
             padding: .25rem .75rem;
             border-radius: 20px;
@@ -894,7 +894,7 @@
             font-weight: 900;
             letter-spacing: .25em;
             font-family: 'Courier New', monospace;
-            background: linear-gradient(135deg, var(--primary-cyan), #7c3aed);
+            background: linear-gradient(135deg, var(--primary-cyan), #1e3a5f);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -1187,7 +1187,7 @@
             width: 36px;
             height: 36px;
             border-radius: 10px;
-            background: linear-gradient(135deg, rgba(0, 188, 212, .1), rgba(124, 58, 237, .1));
+            background: linear-gradient(135deg, rgba(0, 188, 212, .1), rgba(30, 58, 95, .1));
             color: var(--primary-cyan);
             font-size: .9rem;
             margin-bottom: .5rem;
@@ -1777,7 +1777,7 @@
             font-size: .85rem;
             cursor: pointer;
             transition: all .3s ease;
-            background: linear-gradient(135deg, #3b82f6 0%, #7c3aed 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #1e3a5f 100%);
             color: white;
             box-shadow: 0 4px 14px rgba(59, 130, 246, .35);
         }
@@ -2074,7 +2074,7 @@
 
                         <!-- Location Lock Toggle -->
                         <div id="geoLockSection"
-                            style="background:linear-gradient(135deg, rgba(0,188,212,.06), rgba(124,58,237,.06)); border:1px solid rgba(0,188,212,.15); border-radius:12px; padding:.875rem 1rem; margin-bottom:1rem;">
+                            style="background:linear-gradient(135deg, rgba(0,188,212,.06), rgba(30,58,95,.06)); border:1px solid rgba(0,188,212,.15); border-radius:12px; padding:.875rem 1rem; margin-bottom:1rem;">
                             <div
                                 style="display:flex; align-items:center; justify-content:space-between; gap:.75rem; flex-wrap:wrap;">
                                 <div style="display:flex; align-items:center; gap:.5rem;">
@@ -2223,7 +2223,7 @@
 
                     <!-- Event Location Lock Toggle -->
                     <div id="eventGeoLockSection"
-                        style="background:linear-gradient(135deg, rgba(124,58,237,.06), rgba(0,188,212,.06)); border:1px solid rgba(124,58,237,.15); border-radius:12px; padding:.875rem 1rem; margin-bottom:1rem;">
+                        style="background:linear-gradient(135deg, rgba(30,58,95,.06), rgba(0,188,212,.06)); border:1px solid rgba(30,58,95,.15); border-radius:12px; padding:.875rem 1rem; margin-bottom:1rem;">
                         <div
                             style="display:flex; align-items:center; justify-content:space-between; gap:.75rem; flex-wrap:wrap;">
                             <div style="display:flex; align-items:center; gap:.5rem;">
@@ -2555,7 +2555,7 @@
                                 style="width: 100%; padding: 0.75rem 1rem; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); font-weight: 600; color: var(--navy-dark); transition: all 0.3s ease;">
                         </div>
                         <button class="btn-primary" onclick="generateClassAttendanceRecord()"
-                            style="height: 48px; width: 300px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 0.75rem; font-weight: 700; box-shadow: 0 4px 12px rgba(0, 188, 212, 0.2);">
+                            style="height: 48px; width: 300px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 0.75rem; font-weight: 700; background: linear-gradient(135deg, var(--primary-cyan), var(--primary-dark)); border: none; color: white; box-shadow: 0 4px 12px rgba(0, 188, 212, 0.2); cursor: pointer;">
                             <i class="fa-solid fa-wand-magic-sparkles"></i> GENERATE RECORD
                         </button>
                     </div>
@@ -2611,7 +2611,7 @@
                                     <i class="fa-solid fa-xmark"></i>
                                 </button>
                                 <button class="btn-download-record" onclick="downloadClassAttendancePDF()"
-                                    style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 0.6rem 1.25rem; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25); transition: all 0.3s ease;">
+                                    style="background: linear-gradient(135deg, var(--primary-cyan), var(--primary-dark)); color: white; border: none; padding: 0.6rem 1.25rem; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; box-shadow: 0 4px 10px rgba(0, 188, 212, 0.2); transition: all 0.3s ease;">
                                     <i class="fa-solid fa-file-pdf"></i> DOWNLOAD PDF
                                 </button>
                             </div>
@@ -2651,14 +2651,14 @@
 
                 <!-- ════ OVERALL SUBJECT ATTENDANCE REPORT ════ -->
                 <div class="card"
-                    style="margin-top: 2.5rem; border-top: 4px solid #7c3aed; position: relative; overflow: hidden;">
+                    style="margin-top: 2.5rem; border-top: 4px solid #1e3a5f; position: relative; overflow: hidden;">
                     <div
-                        style="position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; background: rgba(124,58,237,0.05); border-radius: 50%; z-index: 0;">
+                        style="position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; background: rgba(30, 58, 95, 0.05); border-radius: 50%; z-index: 0;">
                     </div>
                     <h4
                         style="font-weight: 800; margin-bottom: 1.5rem; color: var(--navy-dark); display: flex; align-items: center; gap: 0.75rem; position: relative; z-index: 1;">
                         <i class="fa-solid fa-chart-pie"
-                            style="color: #7c3aed; background: rgba(124,58,237,0.1); padding: 8px; border-radius: 8px;"></i>
+                            style="color: #1e3a5f; background: rgba(30, 58, 95, 0.1); padding: 8px; border-radius: 8px;"></i>
                         Overall Subject Attendance Report
                     </h4>
                     <p
@@ -2679,7 +2679,7 @@
                             </select>
                         </div>
                         <button class="btn-primary" onclick="generateOverallAttendanceReport()"
-                            style="height: 48px; width: 300px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 0.75rem; font-weight: 700; background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); border: none; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2); padding: 0;">
+                            style="height: 48px; width: 300px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 0.75rem; font-weight: 700; background: linear-gradient(135deg, var(--primary-cyan), var(--primary-dark)); border: none; color: white; box-shadow: 0 4px 12px rgba(0, 188, 212, 0.2); padding: 0; cursor: pointer;">
                             <i class="fa-solid fa-chart-line"></i> GENERATE OVERALL REPORT
                         </button>
                     </div>
@@ -2690,7 +2690,7 @@
 
                         <!-- Toolbar -->
                         <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; background: rgba(124, 58, 237, 0.03); padding: 1rem; border-radius: 12px; border-left: 4px solid #7c3aed;">
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; background: rgba(30, 58, 95, 0.03); padding: 1rem; border-radius: 12px; border-left: 4px solid #1e3a5f;">
                             <div style="display: flex; align-items: center; gap: 1.5rem;">
                                 <div>
                                     <h5 id="overallReportTitle"
@@ -2704,8 +2704,8 @@
 
                                 <!-- Filtering Dropdown -->
                                 <div
-                                    style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.5); padding: 0.25rem 0.75rem; border-radius: 8px; border: 1px solid rgba(124, 58, 237, 0.2);">
-                                    <i class="fa-solid fa-filter" style="color: #7c3aed; font-size: 0.8rem;"></i>
+                                    style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.5); padding: 0.25rem 0.75rem; border-radius: 8px; border: 1px solid rgba(30, 58, 95, 0.2);">
+                                    <i class="fa-solid fa-filter" style="color: #1e3a5f; font-size: 0.8rem;"></i>
                                     <select id="overallAttendanceFilter" onchange="applyOverallAttendanceFilter()"
                                         style="border: none; background: transparent; font-size: 0.825rem; font-weight: 700; color: var(--navy-dark); outline: none; cursor: pointer; padding: 4px;">
                                         <option value="all">All Students</option>
@@ -2718,8 +2718,8 @@
 
                                 <!-- Sorting Dropdown -->
                                 <div
-                                    style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.5); padding: 0.25rem 0.75rem; border-radius: 8px; border: 1px solid rgba(124, 58, 237, 0.2);">
-                                    <i class="fa-solid fa-sort" style="color: #7c3aed; font-size: 0.8rem;"></i>
+                                    style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.5); padding: 0.25rem 0.75rem; border-radius: 8px; border: 1px solid rgba(30, 58, 95, 0.2);">
+                                    <i class="fa-solid fa-sort" style="color: #1e3a5f; font-size: 0.8rem;"></i>
                                     <select id="overallAttendanceSort" onchange="applyOverallAttendanceFilter()"
                                         style="border: none; background: transparent; font-size: 0.825rem; font-weight: 700; color: var(--navy-dark); outline: none; cursor: pointer; padding: 4px;">
                                         <option value="default">Default Order</option>
@@ -2736,7 +2736,7 @@
                                     <i class="fa-solid fa-xmark"></i>
                                 </button>
                                 <button class="btn-download-record" onclick="downloadOverallAttendancePDF()"
-                                    style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: white; border: none; padding: 0.6rem 1.25rem; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2); transition: all 0.3s ease;">
+                                    style="background: linear-gradient(135deg, var(--primary-cyan), var(--primary-dark)); color: white; border: none; padding: 0.6rem 1.25rem; border-radius: 8px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 188, 212, 0.2); transition: all 0.3s ease;">
                                     <i class="fa-solid fa-file-pdf"></i> DOWNLOAD PDF
                                 </button>
                             </div>
@@ -5753,7 +5753,7 @@
             const generatedDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
 
             // --- PREMIUM HEADER (Purple Theme) ---
-            doc.setFillColor(124, 58, 237); // Purple: #7c3aed
+            doc.setFillColor(30, 58, 95); // Navy Blue: #1e3a5f
             doc.rect(0, 0, 210, 80, 'F');
 
             doc.setTextColor(255, 255, 255);
@@ -5761,7 +5761,7 @@
             doc.setFont("helvetica", "bold");
             doc.text("Overall Subject Attendance Report", 20, 25);
 
-            doc.setTextColor(233, 213, 255); // Purple-100
+            doc.setTextColor(165, 243, 252); // Cyan-100
             doc.setFontSize(8);
             doc.setFont("helvetica", "normal");
             doc.text(`Report ID: OVR-${Date.now()}`, 20, 31);
@@ -5802,7 +5802,7 @@
                 body: tableBody,
                 theme: 'grid',
                 headStyles: {
-                    fillColor: [109, 40, 217], // Dark Purple: #6d28d9
+                    fillColor: [26, 54, 93], // Dark Navy: #1a365d
                     textColor: [255, 255, 255],
                     fontSize: 6.5,
                     fontStyle: 'bold'
