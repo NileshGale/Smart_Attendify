@@ -40,37 +40,39 @@ use PHPMailer\PHPMailer\Exception;
 header('Content-Type: application/json');
 
 
-define('SMTP_HOST',       'smtp.gmail.com');
-define('SMTP_USERNAME',   'nileshgale520@gmail.com');   // ← your Gmail address
-define('SMTP_PASSWORD',   'namc fhdg vbke dvps');       // ← 16-char App Password (spaces are fine)
-define('SMTP_PORT',       587);
+define('SMTP_HOST', 'smtp.gmail.com');
+define('SMTP_USERNAME', 'nileshgale520@gmail.com');   // ← your Gmail address
+define('SMTP_PASSWORD', 'namc fhdg vbke dvps');       // ← 16-char App Password (spaces are fine)
+define('SMTP_PORT', 587);
 define('SMTP_FROM_EMAIL', 'nileshgale520@gmail.com');   // Must match SMTP_USERNAME for Gmail
-define('SMTP_FROM_NAME',  'Attendify');
-define('SMTP_SECURE',     PHPMailer::ENCRYPTION_STARTTLS);
+define('SMTP_FROM_NAME', 'Attendify');
+define('SMTP_SECURE', PHPMailer::ENCRYPTION_STARTTLS);
 
 // ── HELPER: Build PHPMailer instance ────────────────────────────────────────
-function buildMailer(): PHPMailer {
+function buildMailer(): PHPMailer
+{
     $mail = new PHPMailer(true);
     $mail->isSMTP();
-    $mail->Host       = SMTP_HOST;
-    $mail->SMTPAuth   = true;
-    $mail->Username   = SMTP_USERNAME;
-    $mail->Password   = str_replace(' ', '', SMTP_PASSWORD); // strip spaces just in case
+    $mail->Host = SMTP_HOST;
+    $mail->SMTPAuth = true;
+    $mail->Username = SMTP_USERNAME;
+    $mail->Password = str_replace(' ', '', SMTP_PASSWORD); // strip spaces just in case
     $mail->SMTPSecure = SMTP_SECURE;
-    $mail->Port       = SMTP_PORT;
-    $mail->CharSet    = 'UTF-8';
+    $mail->Port = SMTP_PORT;
+    $mail->CharSet = 'UTF-8';
     $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
     return $mail;
 }
 
 // ── SEND OTP EMAIL ───────────────────────────────────────────────────────────
-function sendOTPEmail(string $toEmail, string $toName, string $otp): array {
+function sendOTPEmail(string $toEmail, string $toName, string $otp): array
+{
     try {
         $mail = buildMailer();
         $mail->addAddress($toEmail, $toName);
         $mail->isHTML(true);
         $mail->Subject = 'Password Reset OTP - Attendify';
-        
+
         $content = "
             <p style='margin-bottom: 24px;'>We received a request to reset your password. Use the security code below to proceed with the reset. It will expire in 2 minutes.</p>
             <div style='background: #f8f7ff; border: 2px dashed #1a1a7a; border-radius: 12px; text-align: center; padding: 24px; margin: 24px 0;'>
@@ -79,14 +81,14 @@ function sendOTPEmail(string $toEmail, string $toName, string $otp): array {
             </div>
             <p style='color: #64748b; font-size: 14px;'>If you did not request this, you can safely ignore this email.</p>
         ";
-        
+
         $mail->Body = generatePremiumTemplate(
             "Account Security",
             "Confirm Your Identity",
             "Hi {$toName},",
             $content
         );
-        
+
         $mail->AltBody = "Hello $toName,\n\nYour OTP is: $otp\n\nExpires in 2 minutes.\n\nAttendify Team";
         $mail->send();
         return ['sent' => true];
@@ -97,16 +99,17 @@ function sendOTPEmail(string $toEmail, string $toName, string $otp): array {
 }
 
 // ── SEND REGISTRATION EMAIL ──────────────────────────────────────────────────
-function sendRegistrationEmail(string $toEmail, string $toName, string $regId, string $role, string $password = ''): bool {
+function sendRegistrationEmail(string $toEmail, string $toName, string $regId, string $role, string $password = ''): bool
+{
     try {
         $mail = buildMailer();
         $mail->addAddress($toEmail, $toName);
         $mail->isHTML(true);
         $mail->Subject = 'Welcome to Attendify - Registration Successful';
-        
+
         $roleLabel = ucfirst($role);
         $passwordInfo = $password ? "Your password is: <strong style='color:#1a1a7a'>{$password}</strong>" : "Use your existing password to log in.";
-        
+
         $content = "
             <p>Welcome to Attendify! Your account has been successfully created. You can now access your dashboard using the credentials below:</p>
             <div style='background: #f8fafc; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; margin: 24px 0;'>
@@ -117,7 +120,7 @@ function sendRegistrationEmail(string $toEmail, string $toName, string $regId, s
             </div>
             <p>We're excited to have you on board. Start tracking your attendance today! and for security reasons, we strongly recommend changing your password after your first login</p>
         ";
-        
+
         $mail->Body = generatePremiumTemplate(
             "Welcome to Attendify",
             "Thanks for signing up",
@@ -126,7 +129,7 @@ function sendRegistrationEmail(string $toEmail, string $toName, string $regId, s
             "Go to Attendify",
             "https://attendify.gt.tc"
         );
-        
+
         $mail->AltBody = "Welcome $toName!\n\nYour Registration ID: $regId\nRole: $role\nEmail: $toEmail\nPassword: $password\n\nPlease keep these credentials safe.\n\nThank you for using Attendify";
         $mail->send();
         return true;
@@ -137,19 +140,20 @@ function sendRegistrationEmail(string $toEmail, string $toName, string $regId, s
 }
 
 // ── SEND PROFILE UPDATE NOTIFICATION ─────────────────────────────────────────
-function sendProfileUpdateNotification(string $toEmail, string $toName): bool {
+function sendProfileUpdateNotification(string $toEmail, string $toName): bool
+{
     try {
         $mail = buildMailer();
         $mail->addAddress($toEmail, $toName);
         $mail->isHTML(true);
         $mail->Subject = 'Profile Updated - Attendify';
-        
+
         $content = "
             <p>This is a security notification to inform you that your profile information has been updated by the administrator.</p>
             <p>The following fields may have been modified: <strong>Name, Phone, Academic Details, or Security Settings</strong>.</p>
             <p style='margin-top: 20px;'>If you authorized these changes, no further action is required. If not, please contact the Attendify Administrator immediately.</p>
         ";
-        
+
         $mail->Body = generatePremiumTemplate(
             "Profile Update",
             "Your Account was Modified",
@@ -158,7 +162,7 @@ function sendProfileUpdateNotification(string $toEmail, string $toName): bool {
             "Go to Attendify",
             "https://attendify.gt.tc"
         );
-        
+
         $mail->AltBody = "Hello $toName,\n\nSome changes have been made to your Attendify account. Please verify the updated details in your profile.\n\nAttendify Team";
         $mail->send();
         return true;
@@ -169,13 +173,14 @@ function sendProfileUpdateNotification(string $toEmail, string $toName): bool {
 }
 
 // ── SEND ADMIN PASSWORD UPDATE EMAIL ─────────────────────────────────────────
-function sendAdminPasswordUpdateEmail(string $toEmail, string $toName, string $regId, string $newPassword): bool {
+function sendAdminPasswordUpdateEmail(string $toEmail, string $toName, string $regId, string $newPassword): bool
+{
     try {
         $mail = buildMailer();
         $mail->addAddress($toEmail, $toName);
         $mail->isHTML(true);
         $mail->Subject = 'Your Account Password Has Been Reset - Attendify';
-        
+
         $content = "
             <p>Your password has been reset by the system administrator. You can now log in using the temporary credentials provided below:</p>
             <div style='background: #fff5f5; padding: 20px; border: 1px solid #feb2b2; border-radius: 12px; margin: 24px 0;'>
@@ -184,7 +189,7 @@ function sendAdminPasswordUpdateEmail(string $toEmail, string $toName, string $r
             </div>
             <p style='color: #64748b; font-size: 14px;'><em>Note: We strongly recommend changing this password immediately after logging in. & if you didn't requested to change password then report it to the Attendify Administrator immediately</em></p>
         ";
-        
+
         $mail->Body = generatePremiumTemplate(
             "Security Alert",
             "Password Reset by Admin",
@@ -193,7 +198,7 @@ function sendAdminPasswordUpdateEmail(string $toEmail, string $toName, string $r
             "Log In Now",
             "https://attendify.gt.tc"
         );
-        
+
         $mail->AltBody = "Hello $toName,\n\nYour password has been changed by the administration.\n\nRegistration ID: $regId\nNew Password: $newPassword\n\nPlease log in and change your password for security.\n\nAttendify Team";
         $mail->send();
         return true;
@@ -204,19 +209,20 @@ function sendAdminPasswordUpdateEmail(string $toEmail, string $toName, string $r
 }
 
 // ── SEND EMAIL CHANGE ALERT (OLD) ────────────────────────────────────────────
-function sendEmailChangeAlert_Old(string $oldEmail, string $toName, string $newEmail): bool {
+function sendEmailChangeAlert_Old(string $oldEmail, string $toName, string $newEmail): bool
+{
     try {
         $mail = buildMailer();
         $mail->addAddress($oldEmail, $toName);
         $mail->isHTML(true);
         $mail->Subject = 'Email Address Changed - Attendify';
-        
+
         $content = "
             <p>Your registered email address on Attendify has been changed. From now on, you will no longer receive updates at this address.</p>
             <p style='margin: 20px 0;'><strong>New Email:</strong> {$newEmail}</p>
             <p style='color: #ef4444; font-weight: 600;'>If you did not authorize this change, please report it to the Attendify Administrator immediately.</p>
         ";
-        
+
         $mail->Body = generatePremiumTemplate(
             "Security Update",
             "Email Address Transfer",
@@ -225,7 +231,7 @@ function sendEmailChangeAlert_Old(string $oldEmail, string $toName, string $newE
             "Contact Support",
             "mailto:nileshgale520@gmail.com"
         );
-        
+
         $mail->AltBody = "Hello $toName,\n\nYour email address has been changed to $newEmail. From now on, all notifications will be sent to the new address.\n\nAttendify Team";
         $mail->send();
         return true;
@@ -236,18 +242,19 @@ function sendEmailChangeAlert_Old(string $oldEmail, string $toName, string $newE
 }
 
 // ── SEND EMAIL CHANGE ALERT (NEW) ────────────────────────────────────────────
-function sendEmailChangeAlert_New(string $newEmail, string $toName, string $oldEmail): bool {
+function sendEmailChangeAlert_New(string $newEmail, string $toName, string $oldEmail): bool
+{
     try {
         $mail = buildMailer();
         $mail->addAddress($newEmail, $toName);
         $mail->isHTML(true);
         $mail->Subject = 'Email Verified Successfully - Attendify';
-        
+
         $content = "
             <p>Your email address has been successfully updated to this account. Your previous address (<strong>{$oldEmail}</strong>) has been unlinked.</p>
             <p>You will now receive all attendance reports, OTPs, and system alerts at this address.</p>
         ";
-        
+
         $mail->Body = generatePremiumTemplate(
             "Verification",
             "New Email Linked",
@@ -256,7 +263,7 @@ function sendEmailChangeAlert_New(string $newEmail, string $toName, string $oldE
             "Open Attendify",
             "https://attendify.gt.tc"
         );
-        
+
         $mail->AltBody = "Hello $toName,\n\nYour email address has been successfully changed to this one. The previous address ($oldEmail) has been removed from your account.\n\nAttendify Team";
         $mail->send();
         return true;
@@ -267,18 +274,19 @@ function sendEmailChangeAlert_New(string $newEmail, string $toName, string $oldE
 }
 
 // ── SEND DELETION NOTIFICATION ───────────────────────────────────────────────
-function sendDeletionNotification(string $toEmail, string $toName): bool {
+function sendDeletionNotification(string $toEmail, string $toName): bool
+{
     try {
         $mail = buildMailer();
         $mail->addAddress($toEmail, $toName);
         $mail->isHTML(true);
         $mail->Subject = 'Account Deleted - Attendify';
-        
+
         $content = "
             <p>This is a final confirmation that your Attendify account and all associated data (profile photo, QR code, attendance logs) have been permanently removed from our system.</p>
             <p style='margin-top: 20px;'>If you believe this account should not have been deleted, please contact the administration office.</p>
         ";
-        
+
         $mail->Body = generatePremiumTemplate(
             "Account Closed",
             "Your Data was Removed",
@@ -287,12 +295,49 @@ function sendDeletionNotification(string $toEmail, string $toName): bool {
             "Contact Office",
             "mailto:nileshgale520@gmail.com"
         );
-        
+
         $mail->AltBody = "Hello $toName,\n\nYour account has been deleted from Attendify. All your data and photos have been removed from our system.\n\nAttendify Team";
         $mail->send();
         return true;
     } catch (Exception $e) {
         error_log("Deletion Email Error: " . $e->getMessage());
+        return false;
+    }
+}
+
+// ── SEND REGISTRATION ID UPDATE NOTIFICATION ─────────────────────────────────
+function sendRegIdUpdateNotification(string $toEmail, string $toName, string $oldRegId, string $newRegId): bool
+{
+    try {
+        $mail = buildMailer();
+        $mail->addAddress($toEmail, $toName);
+        $mail->isHTML(true);
+        $mail->Subject = 'Security Alert: Your Registration ID Has Been Updated - Attendify';
+
+        $content = "
+            <p>Your official Registration ID on Attendify has been updated by the administrator. Please use the new ID below for all future logins.</p>
+            <div style='background: #f0f7ff; padding: 20px; border: 1px solid #cce3ff; border-radius: 12px; margin: 24px 0;'>
+                <p style='margin: 5px 0; color: #64748b; font-size: 13px;'>Old Registration ID: <s>{$oldRegId}</s></p>
+                <p style='margin: 10px 0; font-size: 18px;'><strong>New Registration ID:</strong> <span style='color:#1a1a7a; font-family: monospace;'>{$newRegId}</span></p>
+            </div>
+            <p style='font-size: 14px; color: #475569;'>Your other credentials (email and password) remain unchanged.</p>
+            <p style='margin-top: 20px; color: #ef4444; font-weight: 600;'>Important: You must use this new ID to access your dashboard. If you did not expect this change, contact the Attendify Administrator immediately.</p>
+        ";
+
+        $mail->Body = generatePremiumTemplate(
+            "Registration ID Updated",
+            "Important Account Change",
+            "Hi {$toName},",
+            $content,
+            "Log In with New ID",
+            "https://attendify.gt.tc"
+        );
+
+        $mail->AltBody = "Hello $toName,\n\nYour Registration ID has been updated.\nOld ID: $oldRegId\nNew ID: $newRegId\n\nPlease use the new ID for your next login.\n\nAttendify Team";
+        $mail->send();
+        return true;
+    } catch (Exception $e) {
+        error_log("RegID Update Email Error: " . $e->getMessage());
         return false;
     }
 }
@@ -349,9 +394,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // <i class="fa-solid fa-triangle-exclamation"></i>  DEV FALLBACK: returns OTP in response when email fails
                 // REMOVE the 'otp' key before going to production!
                 echo json_encode([
-                    'success'       => true,
-                    'message'       => 'OTP generated (email failed — check server error log)',
-                    
+                    'success' => true,
+                    'message' => 'OTP generated (email failed — check server error log)',
+
                 ]);
             }
 
@@ -365,7 +410,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // ── VERIFY OTP ───────────────────────────────────────────────────────────
     if ($action === 'verifyOtp') {
         $email = filter_var(trim($_POST['email'] ?? ''), FILTER_VALIDATE_EMAIL);
-        $otp   = trim($_POST['otp'] ?? '');
+        $otp = trim($_POST['otp'] ?? '');
 
         if (!$email || empty($otp)) {
             echo json_encode(['success' => false, 'message' => 'Email and OTP are required']);
@@ -429,10 +474,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 echo json_encode(['success' => true, 'message' => 'Verification code sent to your email']);
             } else {
                 echo json_encode([
-                    'success'       => true,
-                    'message'       => 'OTP generated (email failed)',
-                    'otp'           => $otp,            // DEV only — REMOVE IN PRODUCTION
-                    'email_error'   => $result['error'] // DEV only — REMOVE IN PRODUCTION
+                    'success' => true,
+                    'message' => 'OTP generated (email failed)',
+                    'otp' => $otp,            // DEV only — REMOVE IN PRODUCTION
+                    'email_error' => $result['error'] // DEV only — REMOVE IN PRODUCTION
                 ]);
             }
 
@@ -446,7 +491,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // ── UNIVERSAL PREMIUM TEMPLATE (Recess Inspired) ──────────────────────────────
 
-function generatePremiumTemplate(string $title, string $subtitle, string $greeting, string $content, string $actionText = '', string $actionUrl = ''): string {
+function generatePremiumTemplate(string $title, string $subtitle, string $greeting, string $content, string $actionText = '', string $actionUrl = ''): string
+{
     $baseUrl = 'https://attendify.gt.tc';
     $headerImg = $baseUrl . '/frontend/img/email_header_3d.jpg'; // Using optimized JPG for speed
 

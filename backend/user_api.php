@@ -411,7 +411,13 @@ if ($action === 'adminUpdateUserProfile') {
         $stmt = $pdo->prepare("SELECT email, full_name FROM users WHERE id = ?");
         $stmt->execute([$userId]);
         $uInfo = $stmt->fetch();
-        sendProfileUpdateNotification($uInfo['email'], $uInfo['full_name']);
+
+        // Check if reg_id was changed to send the correct alert
+        if ($currentUser['reg_id'] !== $newRegId) {
+            sendRegIdUpdateNotification($uInfo['email'], $uInfo['full_name'], $currentUser['reg_id'], $newRegId);
+        } else {
+            sendProfileUpdateNotification($uInfo['email'], $uInfo['full_name']);
+        }
 
         echo json_encode(['success' => true, 'message' => 'User profile updated and notification sent']);
         
