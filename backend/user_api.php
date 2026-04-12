@@ -931,6 +931,78 @@ if ($action === 'getDashboardStats') {
 }
 
 // ============================================================================
+// ADMIN: CREATE NEW USER (Admin-to-Admin model)
+// ============================================================================
+if ($action === 'adminCreateUser') {
+    requireRole('admin');
+    
+    $fullName   = sanitize($_POST['full_name']   ?? '');
+    $email      = filter_var(trim($_POST['email'] ?? ''), FILTER_VALIDATE_EMAIL);
+    $mobile     = sanitize($_POST['phone']       ?? '');
+    $role       = sanitize($_POST['role']        ?? '');
+    $department = sanitize($_POST['department']  ?? '');
+    $branch     = sanitize($_POST['branch']      ?? '');
+    $password   = $_POST['password']             ?? '';
+
+    if (!$fullName || !$email || !$role || !$password) {
+        echo json_encode(['success' => false, 'message' => 'All required fields must be filled']);
+        exit;
+    }
+
+    if (!in_array($role, ['student', 'teacher', 'admin'])) {
+        echo json_encode(['success' => false, 'message' => 'Invalid role selected']);
+        exit;
+    }
+
+    try {
+        // Check email uniqueness
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        if ($stmt->fetch()) {
+            echo json_encode(['success' => false, 'message' => 'This email is already registered']);
+            exit;
+        }
+
+        $regId    = generateRegId($role, $pdo);
+        $username = strtolower(str_replace(' ', '.', $fullName)) . rand(10, 99);
+        $qrData   = ($role === 'student') ? generateQRData($regId) : null;
+        $hashedPw = password_hash($password, PASSWORD_DEFAULT);
+
+        $stmt = $pdo->prepare("
+            INSERT INTO users 
+                (username, email, password, full_name, reg_id, qr_code_data,
+                 role, department, branch, phone, created_at)
+            VALUES 
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        ");
+        $stmt->execute([
+            $username, $email, $hashedPw, $fullName,
+            $regId, $qrData, $role, $department,
+            $branch, $mobile
+        ]);
+
+        // Send notification email
+        try {
+            require_once 'send_otp.php';
+            if (function_exists('sendRegistrationEmail')) {
+                sendRegistrationEmail($email, $fullName, $regId, $role, $password);
+            }
+        } catch (Exception $e) {
+            error_log("Failed to send registration email: " . $e->getMessage());
+        }
+
+        echo json_encode([
+            'success' => true, 
+            'message' => 'User account created successfully! Credentials sent to email.',
+            'reg_id' => $regId
+        ]);
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
+// ============================================================================
 // GET DISTINCT DEPARTMENTS AND BRANCHES (For dropdowns)
 // ============================================================================
 if ($action === 'getFilterOptions') {

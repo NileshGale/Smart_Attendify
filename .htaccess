@@ -1,0 +1,34 @@
+# Attendify Security Configuration
+RewriteEngine On
+
+# Force HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# --- Stealth Registration ---
+# 1. Map the secret registration URL to the actual file
+# URL: /v1/enroll/secure-signup-7f8a9b
+RewriteRule ^v1/enroll/secure-signup-7f8a9b$ frontend/register.html [L,QSA]
+
+# 2. Block direct access to the frontend/register.html file
+# If someone tries to go to Attendify/frontend/register.html directly, they get a 403.
+RewriteCond %{THE_REQUEST} \s/Attendify/frontend/register\.html [NC,OR]
+RewriteCond %{THE_REQUEST} \s/frontend/register\.html [NC]
+RewriteRule ^ - [F]
+
+# 3. Fix paths for the cloaked URL (allow it to find the backend)
+RewriteRule ^v1/enroll/backend/(.*)$ backend/$1 [L,QSA]
+
+# --- General Protection ---
+# Prevent directory listing
+Options -Indexes
+
+# Protect sensitive backend files
+<FilesMatch "\.(php|ini|log|json)$">
+    # Note: We allow direct access to APIs, but this is a reminder to keep them secure
+</FilesMatch>
+
+# Specifically protect db_config.php and other configs if they were at root (they are in backend/ though)
+<Directory "backend">
+    # Additional protection for backend contents if needed
+</Directory>

@@ -1576,6 +1576,44 @@
         </div>
     </div>
 
+    <!-- DIRECT ADD USER MODAL -->
+    <div class="modal" id="directAddUserModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <button class="close" onclick="closeDirectAddModal()">✕</button>
+            <h2 id="directAddTitle"><i class="fa-solid fa-user-plus"></i> Add New User</h2>
+            <form onsubmit="submitDirectAdd(event)">
+                <input type="hidden" id="directAddRole">
+                <div class="input-group">
+                    <label>Full Name</label>
+                    <input type="text" id="directAddFullName" required placeholder="Enter full name">
+                </div>
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" id="directAddEmail" required placeholder="name@example.com">
+                </div>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>Phone Number</label>
+                        <input type="tel" id="directAddPhone" required placeholder="10-digit mobile" pattern="[0-9]{10}">
+                    </div>
+                    <div class="input-group">
+                        <label>Department</label>
+                        <select id="directAddDept">
+                            <option value="">Select Dept</option>
+                            <option value="Commerce and Management">Commerce and Management</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Registration Password</label>
+                    <input type="password" id="directAddPassword" required placeholder="Min 6 characters" minlength="6">
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">This will be the user's initial password.</p>
+                </div>
+                <button type="submit" class="btn-primary" style="width:100%"><i class="fa-solid fa-floppy-disk"></i> Create Account</button>
+            </form>
+        </div>
+    </div>
+
     <!-- CHANGE PASSWORD MODAL -->
     <div class="modal" id="changePasswordModal">
         <div class="modal-content">
@@ -2552,9 +2590,65 @@
             }
         }
 
-        // ADD USER - redirect to register page with role preset
+        // --- DIRECT ADD USER LOGIC (Admin-to-Admin) ---
+        function openDirectAddModal(role) {
+            document.getElementById('directAddRole').value = role;
+            document.getElementById('directAddTitle').innerHTML = `<i class="fa-solid fa-user-plus"></i> Add New ${role.charAt(0).toUpperCase() + role.slice(1)}`;
+            document.getElementById('directAddUserModal').classList.add('show');
+        }
+
+        function closeDirectAddModal() {
+            document.getElementById('directAddUserModal').classList.remove('show');
+        }
+
+        async function submitDirectAdd(e) {
+            e.preventDefault();
+            
+            const role = document.getElementById('directAddRole').value;
+            const fullName = document.getElementById('directAddFullName').value.trim();
+            const email = document.getElementById('directAddEmail').value.trim();
+            const phone = document.getElementById('directAddPhone').value.trim();
+            const dept = document.getElementById('directAddDept').value;
+            const password = document.getElementById('directAddPassword').value;
+
+            if (!fullName || !email || !role || !password) {
+                showToast('All required fields must be filled', true);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('action', 'adminCreateUser');
+            formData.append('full_name', fullName);
+            formData.append('email', email);
+            formData.append('phone', phone);
+            formData.append('role', role);
+            formData.append('department', dept);
+            formData.append('password', password);
+
+            try {
+                showToast('Creating account...');
+                const res = await fetch('../backend/user_api.php', { method: 'POST', body: formData });
+                const data = await res.json();
+
+                if (data.success) {
+                    showToast(data.message);
+                    closeDirectAddModal();
+                    e.target.reset();
+                    if (typeof loadDashboardStats === 'function') loadDashboardStats();
+                } else {
+                    showToast(data.message || 'Operation failed', true);
+                }
+            } catch (err) {
+                showToast('Connection error', true);
+            }
+        }
+
+        // ADD USER - redirect to register page with role preset (using secret portal)
         function goToRegister(role) {
-            window.location.href = 'register.html?role=' + role + '&from=admin';
+            const secretKey = 'Attendify1916DNhope';
+            const secretPath = 'v1/enroll/secure-signup-7f8a9b';
+            // Use secret cloaked URL with access key
+            window.location.href = '../' + secretPath + '?role=' + role + '&key=' + secretKey + '&from=admin';
         }
 
 

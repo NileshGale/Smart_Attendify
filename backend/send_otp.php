@@ -448,7 +448,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 function generatePremiumTemplate(string $title, string $subtitle, string $greeting, string $content, string $actionText = '', string $actionUrl = ''): string {
     $baseUrl = 'https://attendify.gt.tc';
-    $headerImg = $baseUrl . '/frontend/img/email_header_3d.png'; // Using optimized JPG for speed
+    $headerImg = $baseUrl . '/frontend/img/email_header_3d.jpg'; // Using optimized JPG for speed
 
     $buttonHtml = '';
     if (!empty($actionText)) {

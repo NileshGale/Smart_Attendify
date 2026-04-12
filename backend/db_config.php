@@ -10,6 +10,9 @@ define('DB_NAME', 'if0_41396868_attendify_db');
 define('DB_USER', 'if0_41396868');
 define('DB_PASS', 'hope1916dhanno');
 
+// Registration Access Key for Stealth Registration
+define('REG_ACCESS_KEY', 'Attendify1916DNhope');
+
 // Create PDO connection
 try {
     $pdo = new PDO(

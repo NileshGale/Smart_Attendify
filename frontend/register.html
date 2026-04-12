@@ -570,6 +570,28 @@
 </head>
 
 <body>
+    <script>
+        // --- Stealth Registration Gatekeeper ---
+        (function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const key = urlParams.get('key');
+            const secretKey = 'Attendify1916DNhope';
+
+            if (key !== secretKey) {
+                document.write(`
+                <div style="height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #00BCD4 0%, #1e3a5f 100%); font-family: 'Segoe UI', sans-serif; padding: 20px;">
+                    <div style="background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; max-width: 450px;">
+                        <div style="font-size: 60px; margin-bottom: 20px;">🔒</div>
+                        <h1 style="color: #1e3a5f; margin-bottom: 15px; font-size: 28px;">Access Restricted</h1>
+                        <p style="color: #6b7280; line-height: 1.6; font-size: 16px;">This registration portal is secure and requires an authorized access key. Please contact your system administrator for the correct link.</p>
+                        <button onclick="window.location.href = (window.location.pathname.includes('/v1/enroll/') ? '../../frontend/Attendify.html' : 'Attendify.html')" style="margin-top: 25px; background: #00BCD4; color: white; border: none; padding: 12px 30px; border-radius: 10px; font-weight: 600; cursor: pointer;">Go to Login</button>
+                    </div>
+                </div>`);
+                window.stop();
+            }
+        })();
+    </script>
+
     <div class="container">
         <div class="header">
             <div class="logo-circle">A</div>
@@ -697,7 +719,7 @@
     <div class="modal hidden" id="successModal">
         <div class="modal-content"
             style="max-width: 380px; padding: 30px 25px; border-radius: 16px; position: relative;">
-            <button type="button" onclick="window.location.href='register.html'"
+            <button type="button" id="modalCloseCross"
                 style="position: absolute; top: 16px; right: 20px; background: none; border: none; font-size: 20px; color: #9ca3af; cursor: pointer; transition: color 0.2s;"
                 onmouseover="this.style.color='#4b5563'" onmouseout="this.style.color='#9ca3af'">
                 <i class="fa-solid fa-xmark"></i>
@@ -777,10 +799,28 @@
             uploadPhotoBtn
         ];
 
+        // Initialize from URL parameters
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const roleParam = params.get('role');
+            if (roleParam && ['student', 'teacher', 'admin'].includes(roleParam)) {
+                roleSelect.value = roleParam;
+                // Trigger the change event to update field visibility
+                roleSelect.dispatchEvent(new Event('change'));
+            }
+        });
+
         // State Variables
         let isEmailVerified = false;
         let otpTimerInterval = null;
         let selectedPhotoFile = null;
+
+        // --- Path Helper for Stealth URL ---
+        const getBackendPath = (file) => {
+            // If the URL contains /v1/enroll/, we are 3 levels deep
+            const isCloaked = window.location.pathname.includes('/v1/enroll/');
+            return (isCloaked ? '../../../backend/' : '../backend/') + file;
+        };
 
         // Toast Notification
         function showToast(message, type = 'success') {
@@ -841,7 +881,7 @@
                 formData.append('action', 'requestRegOtp');
                 formData.append('email', email);
 
-                const response = await fetch('../backend/send_otp.php', {
+                const response = await fetch(getBackendPath('send_otp.php'), {
                     method: 'POST',
                     body: formData
                 });
@@ -894,7 +934,7 @@
                 formData.append('email', email);
                 formData.append('otp', otp);
 
-                const response = await fetch('../backend/send_otp.php', {
+                const response = await fetch(getBackendPath('send_otp.php'), {
                     method: 'POST',
                     body: formData
                 });
@@ -1094,11 +1134,15 @@
                 formData.append('action', 'register');
                 formData.append('email', emailInput.value.trim());
 
+                // Append the stealth registration key from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                formData.append('reg_key', urlParams.get('key') || '');
+
                 if (selectedPhotoFile) {
                     formData.append('user_photo', selectedPhotoFile);
                 }
 
-                const response = await fetch('../backend/register_api.php', {
+                const response = await fetch(getBackendPath('register_api.php'), {
                     method: 'POST',
                     body: formData
                 });
@@ -1138,9 +1182,14 @@
         });
 
         // Modal Close
-        closeModal.addEventListener('click', () => {
-            successModal.classList.add('hidden');
-            window.location.href = 'Attendify.html';
+        const resetToLogin = () => {
+            const isCloaked = window.location.pathname.includes('/v1/enroll/');
+            window.location.href = isCloaked ? '../../frontend/Attendify.html' : 'Attendify.html';
+        };
+
+        closeModal.addEventListener('click', resetToLogin);
+        document.getElementById('modalCloseCross').addEventListener('click', () => {
+            window.location.reload();
         });
 
         // Date of Birth Max Date

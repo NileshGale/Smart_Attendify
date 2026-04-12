@@ -14,6 +14,13 @@ $action = $_POST['action'] ?? '';
 // REGISTER NEW USER
 // ============================================================================
 if ($action === 'register') {
+    // ── Stealth Registration Key Check ───────────────────────────────────────
+    $regKey = $_POST['reg_key'] ?? '';
+    if ($regKey !== REG_ACCESS_KEY) {
+        echo json_encode(['success' => false, 'message' => 'Access Denied: Invalid or missing registration key.']);
+        exit;
+    }
+
 
     // ── Collect & validate inputs ────────────────────────────────────────────
     $fullName   = sanitize($_POST['full_name']   ?? '');
@@ -33,7 +40,7 @@ if ($action === 'register') {
     }
 
     if (!in_array($role, ['student', 'teacher', 'admin'])) {
-        echo json_encode(['success' => false, 'message' => 'Invalid role selected']);
+        echo json_encode(['success' => false, 'message' => 'Invalid role selected.']);
         exit;
     }
 
