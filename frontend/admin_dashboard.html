@@ -2888,7 +2888,7 @@
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                         General Info
                     </div>
-                    <div class="mgmt-tab" onclick="switchMgmtTab('academic', this)" style="padding: 0.8rem 1.5rem; cursor: pointer; font-weight: 500; color: #64748b; display: flex; align-items: center; gap: 12px; transition: all 0.2s;">
+                    <div id="mgmtAcademicTab" class="mgmt-tab" onclick="switchMgmtTab('academic', this)" style="padding: 0.8rem 1.5rem; cursor: pointer; font-weight: 500; color: #64748b; display: flex; align-items: center; gap: 12px; transition: all 0.2s;">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
                         Academic Info
                     </div>
@@ -2962,14 +2962,14 @@
                                 <p id="regIdNotice" style="font-size: 0.75rem; margin-top: 5px; color: #64748b; font-style: italic;"></p>
                             </div>
 
-                            <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <div id="mgmtDeptGroup" class="form-group" style="margin-bottom: 1.5rem;">
                                 <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">Department</label>
                                 <select id="mgmtDept" class="form-control" style="width:100%; padding:0.8rem; border:1.5px solid #e2e8f0; border-radius:10px;">
                                     <option value="Commerce and Management">Commerce and Management</option>
                                 </select>
                             </div>
 
-                            <div class="form-group">
+                            <div id="mgmtBranchGroup" class="form-group">
                                 <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">Branch / Core</label>
                                 <select id="mgmtBranch" class="form-control" style="width:100%; padding:0.8rem; border:1.5px solid #e2e8f0; border-radius:10px;">
                                     <option value="BCCA">BCCA</option>
@@ -3087,6 +3087,21 @@
             document.getElementById('mgmtNewPass').value = '';
             document.getElementById('otpVerificationSection').style.display = 'none';
             document.getElementById('regIdNotice').textContent = '';
+
+            // Handle role-specific fields
+            if (user.role === 'admin') {
+                // Admin: Hide both Dept and Branch
+                document.getElementById('mgmtDeptGroup').style.display = 'none';
+                document.getElementById('mgmtBranchGroup').style.display = 'none';
+            } else if (user.role === 'teacher') {
+                // Teacher: Show Dept, Hide Branch
+                document.getElementById('mgmtDeptGroup').style.display = 'block';
+                document.getElementById('mgmtBranchGroup').style.display = 'none';
+            } else {
+                // Student: Show both
+                document.getElementById('mgmtDeptGroup').style.display = 'block';
+                document.getElementById('mgmtBranchGroup').style.display = 'block';
+            }
 
             // Default tab
             switchMgmtTab('general', document.querySelector('.mgmt-tab'));
