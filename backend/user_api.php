@@ -1045,6 +1045,7 @@ if ($action === 'getRecentRegistrations') {
     $role = sanitize($_GET['role'] ?? 'all');
     $dept = sanitize($_GET['dept'] ?? 'all');
     $search = sanitize($_GET['search'] ?? '');
+    $sort = sanitize($_GET['sort'] ?? 'default');
     
     try {
         $sql = "SELECT id, full_name, reg_id, role, department, branch, phone, dob, email, photo_path, created_at FROM users WHERE 1=1";
@@ -1064,7 +1065,15 @@ if ($action === 'getRecentRegistrations') {
             $params[] = "%$search%";
         }
         
-        $sql .= " ORDER BY created_at DESC";
+        // Handle Sorting
+        if ($sort === 'asc') {
+            $sql .= " ORDER BY full_name ASC";
+        } elseif ($sort === 'desc') {
+            $sql .= " ORDER BY full_name DESC";
+        } else {
+            $sql .= " ORDER BY created_at DESC";
+        }
+
         $limit = $_GET['limit'] ?? 'all';
         if ($limit !== 'all' && is_numeric($limit)) {
             $sql .= " LIMIT " . intval($limit);

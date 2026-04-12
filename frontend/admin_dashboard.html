@@ -830,6 +830,18 @@
             gap: .75rem;
         }
 
+        /* Reduced Filter Size */
+        .search-row input,
+        .search-row select {
+            padding: .4rem .75rem !important;
+            font-size: .8rem !important;
+            min-width: 140px !important;
+            height: 36px !important;
+        }
+        .search-row > div {
+            min-width: 200px;
+        }
+
         /* TOAST */
         #toast {
             position: fixed;
@@ -1390,6 +1402,13 @@
                                     <option value="all">All Departments</option>
                                     <option value="Commerce and Management">Commerce and Management</option>
                                 </select>
+                                <select id="recentSortFilter"
+                                    style="width: auto; background:var(--surface); color:var(--text); cursor:pointer;"
+                                    onchange="filterRecentRegistrations()">
+                                    <option value="default">Default Sort</option>
+                                    <option value="asc">Name (A-Z)</option>
+                                    <option value="desc">Name (Z-A)</option>
+                                </select>
                                 <select id="recentLimitFilter"
                                     style="width: auto; background:var(--surface); color:var(--text); cursor:pointer;"
                                     onchange="filterRecentRegistrations()">
@@ -1812,10 +1831,11 @@
             const role = document.getElementById('recentRoleFilter').value;
             const dept = document.getElementById('recentDeptFilter').value;
             const limit = document.getElementById('recentLimitFilter').value;
+            const sort = document.getElementById('recentSortFilter').value;
             const search = document.getElementById('recentSearchInput').value.trim();
 
             try {
-                const res = await fetch(`../backend/user_api.php?action=getRecentRegistrations&role=${encodeURIComponent(role)}&dept=${encodeURIComponent(dept)}&limit=${encodeURIComponent(limit)}&search=${encodeURIComponent(search)}`);
+                const res = await fetch(`../backend/user_api.php?action=getRecentRegistrations&role=${encodeURIComponent(role)}&dept=${encodeURIComponent(dept)}&limit=${encodeURIComponent(limit)}&search=${encodeURIComponent(search)}&sort=${encodeURIComponent(sort)}`);
                 const data = await res.json();
 
                 const tbody = document.getElementById('recentRegistrations');
@@ -2482,12 +2502,13 @@
             const currentRole = document.getElementById('recentRoleFilter').value;
             const currentDept = document.getElementById('recentDeptFilter').value;
             const currentLimit = document.getElementById('recentLimitFilter').value;
+            const currentSort = document.getElementById('recentSortFilter').value;
             const currentSearch = document.getElementById('recentSearchInput').value.trim();
 
             showToast('Fetching data for PDF...');
 
             try {
-                const res = await fetch(`../backend/user_api.php?action=getRecentRegistrations&role=${encodeURIComponent(currentRole)}&dept=${encodeURIComponent(currentDept)}&limit=${currentLimit}&search=${encodeURIComponent(currentSearch)}`);
+                const res = await fetch(`../backend/user_api.php?action=getRecentRegistrations&role=${encodeURIComponent(currentRole)}&dept=${encodeURIComponent(currentDept)}&limit=${currentLimit}&search=${encodeURIComponent(currentSearch)}&sort=${encodeURIComponent(currentSort)}`);
                 const data = await res.json();
 
                 if (!data.success || !data.recent_registrations || data.recent_registrations.length === 0) {

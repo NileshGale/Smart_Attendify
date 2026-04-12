@@ -83,7 +83,7 @@ function sendOTPEmail(string $toEmail, string $toName, string $otp): array {
         $mail->Body = generatePremiumTemplate(
             "Account Security",
             "Confirm Your Identity",
-            "hi {$toName},",
+            "Hi {$toName},",
             $content
         );
         
@@ -121,7 +121,7 @@ function sendRegistrationEmail(string $toEmail, string $toName, string $regId, s
         $mail->Body = generatePremiumTemplate(
             "Welcome to Attendify",
             "Thanks for signing up",
-            "hi {$toName},",
+            "Hi {$toName},",
             $content,
             "Go to Attendify",
             "https://attendify.gt.tc"
@@ -153,7 +153,7 @@ function sendProfileUpdateNotification(string $toEmail, string $toName): bool {
         $mail->Body = generatePremiumTemplate(
             "Profile Update",
             "Your Account was Modified",
-            "hi {$toName},",
+            "Hi {$toName},",
             $content,
             "Go to Attendify",
             "https://attendify.gt.tc"
@@ -188,7 +188,7 @@ function sendAdminPasswordUpdateEmail(string $toEmail, string $toName, string $r
         $mail->Body = generatePremiumTemplate(
             "Security Alert",
             "Password Reset by Admin",
-            "hi {$toName},",
+            "Hi {$toName},",
             $content,
             "Log In Now",
             "https://attendify.gt.tc"
@@ -220,7 +220,7 @@ function sendEmailChangeAlert_Old(string $oldEmail, string $toName, string $newE
         $mail->Body = generatePremiumTemplate(
             "Security Update",
             "Email Address Transfer",
-            "hi {$toName},",
+            "Hi {$toName},",
             $content,
             "Contact Support",
             "mailto:nileshgale520@gmail.com"
@@ -251,7 +251,7 @@ function sendEmailChangeAlert_New(string $newEmail, string $toName, string $oldE
         $mail->Body = generatePremiumTemplate(
             "Verification",
             "New Email Linked",
-            "hi {$toName},",
+            "Hi {$toName},",
             $content,
             "Open Attendify",
             "https://attendify.gt.tc"
@@ -282,7 +282,7 @@ function sendDeletionNotification(string $toEmail, string $toName): bool {
         $mail->Body = generatePremiumTemplate(
             "Account Closed",
             "Your Data was Removed",
-            "hi {$toName},",
+            "Hi {$toName},",
             $content,
             "Contact Office",
             "mailto:nileshgale520@gmail.com"
