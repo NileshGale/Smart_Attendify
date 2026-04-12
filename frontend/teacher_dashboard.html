@@ -17,7 +17,7 @@
             --navy-dark: #1e3a5f;
             --navy-light: #2c5282;
             --purple-accent: #7c3aed;
-            --success: #10b981;
+            --success: #00bcd4;
             --error: #ef4444;
             --danger: #ef4444;
             --warning: #f59e0b;
@@ -636,7 +636,7 @@
         }
 
         .method-card.code .method-icon {
-            background: linear-gradient(135deg, rgba(6, 182, 212, .15), rgba(16, 185, 129, .15));
+            background: linear-gradient(135deg, rgba(6, 182, 212, .15), rgba(0, 188, 212, .15));
         }
 
         .method-card h4 {
@@ -826,8 +826,8 @@
             align-items: center;
             justify-content: space-between;
             padding: .5rem .75rem;
-            background: rgba(16, 185, 129, .06);
-            border: 1px solid rgba(16, 185, 129, .2);
+            background: rgba(0, 188, 212, .06);
+            border: 1px solid rgba(0, 188, 212, .2);
             border-radius: 8px;
             margin-bottom: .375rem;
             animation: fadeIn .3s ease;
@@ -1297,8 +1297,8 @@
         }
 
         .badge-present {
-            background: rgba(16, 185, 129, .12);
-            color: var(--success);
+            background: rgba(0, 188, 212, .12);
+            color: var(--primary-cyan);
         }
 
         .badge-absent {
@@ -1466,7 +1466,7 @@
             display: inline-flex;
             align-items: center;
             gap: .375rem;
-            background: rgba(16, 185, 129, .1);
+            background: rgba(0, 188, 212, .1);
             color: var(--success);
             padding: .25rem .75rem;
             border-radius: 20px;
@@ -1752,9 +1752,9 @@
             font-size: .85rem;
             cursor: pointer;
             transition: all .3s ease;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            background: linear-gradient(135deg, #00bcd4 0%, #008394 100%);
             color: white;
-            box-shadow: 0 4px 14px rgba(16, 185, 129, .35);
+            box-shadow: 0 4px 14px rgba(0, 188, 212, .35);
         }
 
         .btn-save-record:hover {
@@ -3938,7 +3938,7 @@
                     1: { cellWidth: 55 },
                     2: { halign: 'center', cellWidth: 45 },
                     3: { halign: 'center', cellWidth: 35 },
-                    4: { halign: 'center', cellWidth: 25, textColor: [16, 185, 129], fontStyle: 'bold' }
+                    4: { halign: 'center', cellWidth: 25, textColor: [0, 188, 212], fontStyle: 'bold' }
                 },
                 alternateRowStyles: { fillColor: [248, 250, 252] },
                 margin: { left: 14, right: 14 }
@@ -4059,7 +4059,7 @@
                             1: { cellWidth: 55 },
                             2: { halign: 'center', cellWidth: 45 },
                             3: { halign: 'center', cellWidth: 35 },
-                            4: { halign: 'center', cellWidth: 25, textColor: [16, 185, 129], fontStyle: 'bold' }
+                            4: { halign: 'center', cellWidth: 25, textColor: [0, 188, 212], fontStyle: 'bold' }
                         },
                         alternateRowStyles: { fillColor: [248, 250, 252] },
                         margin: { left: 14, right: 14 }
@@ -4615,7 +4615,29 @@
                                 { label: 'Absent', data: absent, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,.08)', fill: true, tension: .4, pointRadius: 3 }
                             ]
                         },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,.05)' } } } }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'top', labels: { font: { size: 11 } } },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            const label = context.dataset.label || '';
+                                            const value = context.raw || 0;
+                                            const idx = context.dataIndex;
+                                            const ds = context.chart.data.datasets;
+                                            const pres = ds[0].data[idx] || 0;
+                                            const abs = ds[1].data[idx] || 0;
+                                            const total = pres + abs;
+                                            const pct = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                            return ` ${label}: ${value} Lectures (${pct}%)`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,.05)' } } }
+                        }
                     });
 
                     // Scatter Chart
@@ -4632,8 +4654,8 @@
                         type: 'scatter',
                         data: {
                             datasets: [
-                                { label: 'Present', data: scatterPresent, backgroundColor: 'rgba(16,185,129,.6)', pointRadius: 5 },
-                                { label: 'Absent', data: scatterAbsent, backgroundColor: 'rgba(239,68,68,.6)', pointRadius: 5 }
+                                { label: 'Present', data: scatterPresent, backgroundColor: 'rgba(0, 188, 212, .6)', pointRadius: 5 },
+                                { label: 'Absent', data: scatterAbsent, backgroundColor: 'rgba(239, 68, 68, .6)', pointRadius: 5 }
                             ]
                         },
                         options: {
@@ -4681,6 +4703,9 @@
                         const pres = parseInt(s.present_count) || 0;
                         return tot > 0 ? Math.round(pres / tot * 100) : 0;
                     });
+                    const subPresent = subjects.map(s => parseInt(s.present_count) || 0);
+                    const subTotal = subjects.map(s => parseInt(s.total_records) || 0);
+
                     destroyChart('bar');
                     chartInstances['bar'] = new Chart(document.getElementById('barChart'), {
                         type: 'bar',
@@ -4688,11 +4713,30 @@
                             labels: subNames,
                             datasets: [{
                                 label: 'Attendance %', data: subPct,
-                                backgroundColor: subPct.map(p => p >= 75 ? 'rgba(16,185,129,.75)' : p >= 60 ? 'rgba(245,158,11,.75)' : 'rgba(239,68,68,.75)'),
-                                borderRadius: 6
+                                backgroundColor: subPct.map(p => p >= 75 ? 'rgba(0, 188, 212, .75)' : p >= 60 ? 'rgba(245, 158, 11, .75)' : 'rgba(239, 68, 68, .75)'),
+                                borderRadius: 6,
+                                extra: { present: subPresent, total: subTotal }
                             }]
                         },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 100, ticks: { callback: v => v + '%' }, grid: { color: 'rgba(0,0,0,.05)' } } } }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            const pct = context.raw;
+                                            const idx = context.dataIndex;
+                                            const pres = context.dataset.extra.present[idx];
+                                            const tot = context.dataset.extra.total[idx];
+                                            return ` Attendance: ${pct}% (${pres}/${tot} Lectures)`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: { y: { min: 0, max: 100, ticks: { callback: v => v + '%' }, grid: { color: 'rgba(0,0,0,.05)' } } }
+                        }
                     });
 
                     // Doughnut
@@ -4701,9 +4745,27 @@
                         type: 'doughnut',
                         data: {
                             labels: ['Present', 'Absent'],
-                            datasets: [{ data: [totals.present, totals.absent], backgroundColor: ['var(--success)', '#ef4444'], hoverOffset: 4, borderWidth: 0 }]
+                            datasets: [{ data: [totals.present, totals.absent], backgroundColor: ['#00bcd4', '#ef4444'], hoverOffset: 4, borderWidth: 0 }]
                         },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }, cutout: '65%' }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'bottom', labels: { font: { size: 11 } } },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            const label = context.label || '';
+                                            const value = context.raw || 0;
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                            return ` ${label}: ${value} Lectures (${percentage}%)`;
+                                        }
+                                    }
+                                }
+                            },
+                            cutout: '65%'
+                        }
                     });
                 })
                 .catch(err => {
@@ -4727,10 +4789,11 @@
 
             // High-res canvas with padding for metadata
             const PAD = 20;
-            const HEADER = 70;
-            const FOOTER = 40;
+            const FOOTER = 50;
+            const chartY = currentStudentObject ? 145 : 75;
+            
             const W = original.width + (PAD * 2);
-            const H = original.height + HEADER + FOOTER;
+            const H = chartY + original.height + FOOTER;
 
             const exp = document.createElement('canvas');
             exp.width = W; exp.height = H;
@@ -4785,11 +4848,10 @@
             }
 
             // 4. Draw the Chart
-            const chartY = currentStudentObject ? 145 : 75;
             ctx.drawImage(original, PAD, chartY, original.width, original.height);
 
             // 5. Footer
-            const finalH = H - 25;
+            const finalH = H - 30;
             ctx.strokeStyle = '#e5e7eb';
             ctx.beginPath(); ctx.moveTo(PAD, finalH); ctx.lineTo(W - PAD, finalH); ctx.stroke();
 
@@ -5359,7 +5421,7 @@
                 }
 
                 const tr = document.createElement('tr');
-                const statusColor = isPresent ? '#10b981' : '#ef4444';
+                const statusColor = isPresent ? '#00bcd4' : '#ef4444';
                 const bgColor = isPresent ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)';
                 const borderColor = isPresent ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)';
                 const statusIcon = isPresent ? 'fa-check-circle' : 'fa-times-circle';
@@ -5492,7 +5554,7 @@
                 didParseCell: function (data) {
                     if (data.section === 'body' && data.column.index === 4) {
                         if (data.cell.raw === 'PRESENT') {
-                            data.cell.styles.textColor = [16, 185, 129];
+                            data.cell.styles.textColor = [0, 188, 212];
                         } else {
                             data.cell.styles.textColor = [239, 68, 68];
                         }
@@ -5616,7 +5678,7 @@
                     <td style="padding:1rem; font-weight:600">${s.full_name}</td>
                     <td style="padding:1rem; font-family:monospace; color:var(--text-light)">${s.reg_id}</td>
                     <td style="text-align:center; padding:1rem">${s.total_classes}</td>
-                    <td style="text-align:center; padding:1rem; color:#10b981; font-weight:700">${s.present_count}</td>
+                    <td style="text-align:center; padding:1rem; color:#00bcd4; font-weight:700">${s.present_count}</td>
                     <td style="text-align:center; padding:1rem; color:#ef4444; font-weight:700">${s.absent_count}</td>
                     <td style="text-align:center; padding:1rem">
                         <span class="badge ${statusCls}" style="font-size:0.8rem; padding:0.4rem 0.75rem">
