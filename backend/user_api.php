@@ -471,7 +471,7 @@ if ($action === 'adminSendEmailChangeOTP') {
         if ($result['sent']) {
             echo json_encode(['success' => true, 'message' => 'Verification code sent to the new email address']);
         } else {
-             echo json_encode(['success' => true, 'message' => 'OTP generated (Email failed)', 'otp' => $otp]);
+             echo json_encode(['success' => true, 'message' => 'OTP generated (Email delivery failed)']);
         }
 
     } catch (PDOException $e) {

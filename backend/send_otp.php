@@ -24,7 +24,7 @@ if (!$phpmailerBase) {
     header('Content-Type: application/json');
     echo json_encode([
         'success' => false,
-        'message' => 'PHPMailer not found on server. Searched paths: ' . implode(', ', $possiblePaths) . '. Please ensure the PHPMailer folder is uploaded correctly to the backend directory.'
+        'message' => 'PHPMailer configuration error. Please contact the administrator.'
     ]);
     exit();
 }
@@ -123,11 +123,11 @@ function sendRegistrationEmail(string $toEmail, string $toName, string $regId, s
 
         $mail->Body = generatePremiumTemplate(
             "Welcome to Attendify",
-            "Thanks for signing up",
+            "Account Setup Successful",
             "Hi {$toName},",
             $content,
-            "Go to Attendify",
-            "https://attendify.gt.tc"
+            "", 
+            ""
         );
 
         $mail->AltBody = "Welcome $toName!\n\nYour Registration ID: $regId\nRole: $role\nEmail: $toEmail\nPassword: $password\n\nPlease keep these credentials safe.\n\nThank you for using Attendify";
@@ -156,11 +156,11 @@ function sendProfileUpdateNotification(string $toEmail, string $toName): bool
 
         $mail->Body = generatePremiumTemplate(
             "Profile Update",
-            "Your Account was Modified",
+            "Activity Notification",
             "Hi {$toName},",
             $content,
-            "Go to Attendify",
-            "https://attendify.gt.tc"
+            "", 
+            ""
         );
 
         $mail->AltBody = "Hello $toName,\n\nSome changes have been made to your Attendify account. Please verify the updated details in your profile.\n\nAttendify Team";
@@ -191,12 +191,12 @@ function sendAdminPasswordUpdateEmail(string $toEmail, string $toName, string $r
         ";
 
         $mail->Body = generatePremiumTemplate(
-            "Security Alert",
+            "Security Notification",
             "Password Reset by Admin",
             "Hi {$toName},",
             $content,
-            "Log In Now",
-            "https://attendify.gt.tc"
+            "", 
+            ""
         );
 
         $mail->AltBody = "Hello $toName,\n\nYour password has been changed by the administration.\n\nRegistration ID: $regId\nNew Password: $newPassword\n\nPlease log in and change your password for security.\n\nAttendify Team";
@@ -224,7 +224,7 @@ function sendEmailChangeAlert_Old(string $oldEmail, string $toName, string $newE
         ";
 
         $mail->Body = generatePremiumTemplate(
-            "Security Update",
+            "Account Security",
             "Email Address Transfer",
             "Hi {$toName},",
             $content,
@@ -260,8 +260,8 @@ function sendEmailChangeAlert_New(string $newEmail, string $toName, string $oldE
             "New Email Linked",
             "Hi {$toName},",
             $content,
-            "Open Attendify",
-            "https://attendify.gt.tc"
+            "", 
+            ""
         );
 
         $mail->AltBody = "Hello $toName,\n\nYour email address has been successfully changed to this one. The previous address ($oldEmail) has been removed from your account.\n\nAttendify Team";
@@ -329,8 +329,8 @@ function sendRegIdUpdateNotification(string $toEmail, string $toName, string $ol
             "Important Account Change",
             "Hi {$toName},",
             $content,
-            "Log In with New ID",
-            "https://attendify.gt.tc"
+            "", 
+            ""
         );
 
         $mail->AltBody = "Hello $toName,\n\nYour Registration ID has been updated.\nOld ID: $oldRegId\nNew ID: $newRegId\n\nPlease use the new ID for your next login.\n\nAttendify Team";
@@ -475,9 +475,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 echo json_encode([
                     'success' => true,
-                    'message' => 'OTP generated (email failed)',
-                    'otp' => $otp,            // DEV only — REMOVE IN PRODUCTION
-                    'email_error' => $result['error'] // DEV only — REMOVE IN PRODUCTION
+                    'message' => 'OTP generated (email delivery failed)'
                 ]);
             }
 
@@ -493,8 +491,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 function generatePremiumTemplate(string $title, string $subtitle, string $greeting, string $content, string $actionText = '', string $actionUrl = ''): string
 {
-    $baseUrl = 'https://attendify.gt.tc';
-    $headerImg = $baseUrl . '/frontend/img/email_header_3d.jpg'; // Using optimized JPG for speed
+    // Removing all domain links and images to resolve Google's 'Dangerous Message' warning
+    $headerImg = ''; 
 
     $buttonHtml = '';
     if (!empty($actionText)) {
@@ -540,13 +538,8 @@ function generatePremiumTemplate(string $title, string $subtitle, string $greeti
     <center class="wrapper">
         <table class="main-table" cellpadding="0" cellspacing="0" border="0">
             <tr>
-                <td class="header-img-cell">
-                    <img src="{$headerImg}" alt="Attendify" class="header-img">
-                </td>
-            </tr>
-            <tr>
-                <td style="padding: 0 50px;">
-                    <div class="branding-text">Attendify</div>
+                <td class="header-img-cell" style="padding: 40px 20px 0;">
+                    <div class="branding-text" style="font-size: 36px; margin-bottom: 0;">Attendify</div>
                 </td>
             </tr>
             <tr>
