@@ -150,7 +150,7 @@ function sendProfileUpdateNotification(string $toEmail, string $toName): bool
 
         $content = "
             <p>This is a security notification to inform you that your profile information has been updated by the administrator.</p>
-            <p>The following fields may have been modified: <strong>Name, Phone, Academic Details, or Security Settings</strong>.</p>
+            <p>The following fields may have been modified: <strong>Profile photo, Name, Phone, Academic Details, or Security Settings</strong>.</p>
             <p style='margin-top: 20px;'>If you authorized these changes, no further action is required. If not, please contact the Attendify Administrator immediately.</p>
         ";
 

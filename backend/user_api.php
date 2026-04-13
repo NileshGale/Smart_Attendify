@@ -375,16 +375,21 @@ if ($action === 'adminUpdateUserProfile') {
     }
 
     try {
-        // 1. Check if reg_id changed and if it exists
-        $stmt = $pdo->prepare("SELECT reg_id FROM users WHERE id = ?");
+        // 1. Fetch current info for comparisons and preservation
+        $stmt = $pdo->prepare("SELECT reg_id, role, department, branch FROM users WHERE id = ?");
         $stmt->execute([$userId]);
         $currentUser = $stmt->fetch();
         
+        if (!$currentUser) {
+            echo json_encode(['success' => false, 'message' => 'User not found']);
+            exit;
+        }
+
+        // 2. Handle reg_id changes
         if ($currentUser['reg_id'] !== $newRegId) {
             $stmt = $pdo->prepare("SELECT id FROM users WHERE reg_id = ? AND id != ?");
             $stmt->execute([$newRegId, $userId]);
             if ($stmt->fetch()) {
-                // SUGGEST NEW ID
                 $suggestedId = generateRegId($role, $pdo);
                 echo json_encode([
                     'success' => false, 
@@ -395,7 +400,24 @@ if ($action === 'adminUpdateUserProfile') {
             }
         }
 
-        // 2. Perform Update
+        // 3. Determine final values for department and branch
+        // We preserve existing values if they are not relevant to the new role 
+        // OR if they weren't provided in the request (e.g. for Admins/Teachers)
+        $finalDept = $currentUser['department'];
+        $finalBranch = $currentUser['branch'];
+
+        if ($role === 'student') {
+            $finalDept = $_POST['department'] ?? $finalDept;
+            $finalBranch = $_POST['branch'] ?? $finalBranch;
+        } else if ($role === 'teacher') {
+            $finalDept = $_POST['department'] ?? $finalDept;
+            // Branch is not relevant for teachers, but we keep the existing one if any
+            // or we could null it if you prefer. User said "dont auto update".
+        } else if ($role === 'admin') {
+            // Admin doesn't have dept/branch fields in UI
+        }
+
+        // 4. Perform Update
         $stmt = $pdo->prepare("
             UPDATE users 
             SET full_name = ?, phone = ?, dob = ?, role = ?, department = ?, branch = ?, reg_id = ?
@@ -403,7 +425,7 @@ if ($action === 'adminUpdateUserProfile') {
         ");
         $stmt->execute([
             $fullName, $phone ?: null, $dob ?: null, $role, 
-            $department ?: null, $branch ?: null, $newRegId, $userId
+            $finalDept, $finalBranch, $newRegId, $userId
         ]);
 
         // 3. Notify user

@@ -2952,7 +2952,7 @@
                                 <div class="form-group">
                                     <label style="display:block; margin-bottom:0.5rem; font-size: 0.85rem; color: #64748b;">New Email Address</label>
                                     <div style="display: flex; gap: 10px;">
-                                        <input type="email" id="mgmtNewEmail" class="form-control" style="flex:1; padding:0.75rem; border:1.5px solid #e2e8f0; border-radius:10px;" placeholder="new@example.com">
+                                        <input type="email" id="mgmtNewEmail" class="form-control" style="flex:1; padding:0.75rem; border:1.5px solid #e2e8f0; border-radius:10px;" placeholder="new@example.com" onkeydown="if(event.key==='Enter'){ event.preventDefault(); initiateEmailChange(); }">
                                         <button id="mgmtSendOtpBtn" onclick="initiateEmailChange()" class="btn-primary" style="padding: 0 1rem; border-radius: 10px; font-size: 0.85rem;">Send OTP</button>
                                     </div>
                                 </div>
@@ -2960,7 +2960,7 @@
                                 <div id="otpVerificationSection" style="margin-top: 1rem; display: none;">
                                     <label style="display:block; margin-bottom:0.5rem; font-size: 0.85rem; color: #64748b;">Verify OTP</label>
                                     <div style="display: flex; gap: 10px;">
-                                        <input type="text" id="mgmtEmailOtp" class="form-control" style="flex:1; padding:0.75rem; border:1.5px solid #e2e8f0; border-radius:10px; text-align: center; letter-spacing: 4px; font-weight: bold;" placeholder="000000">
+                                        <input type="text" id="mgmtEmailOtp" class="form-control" style="flex:1; padding:0.75rem; border:1.5px solid #e2e8f0; border-radius:10px; text-align: center; letter-spacing: 4px; font-weight: bold;" placeholder="000000" onkeydown="if(event.key==='Enter'){ event.preventDefault(); verifyEmailChange(); }">
                                         <button id="mgmtVerifyBtn" onclick="verifyEmailChange()" class="btn-secondary" style="background:#10b981; color:#fff; border:none; padding: 0 1rem; border-radius: 10px;">Verify & Save</button>
                                     </div>
                                 </div>
@@ -2974,7 +2974,7 @@
                                 <div class="form-group">
                                     <label style="display:block; margin-bottom:0.5rem; font-size: 0.85rem; color: #64748b;">New Password</label>
                                     <div style="display: flex; gap: 10px;">
-                                        <input type="text" id="mgmtNewPass" class="form-control" style="flex:1; padding:0.75rem; border:1.5px solid #e2e8f0; border-radius:10px;" placeholder="Leave empty to keep current">
+                                        <input type="text" id="mgmtNewPass" class="form-control" style="flex:1; padding:0.75rem; border:1.5px solid #e2e8f0; border-radius:10px;" placeholder="Leave empty to keep current" onkeydown="if(event.key==='Enter'){ event.preventDefault(); updateUserPassword(); }">
                                         <button onclick="updateUserPassword()" class="btn-secondary" style="background:#f59e0b; border:none; color:#fff; padding: 0 1rem; border-radius: 10px; font-size: 0.85rem;">Update Pw</button>
                                     </div>
                                 </div>
@@ -3025,8 +3025,8 @@
             document.getElementById('mgmtDob').value = user.dob || '';
             document.getElementById('mgmtRegId').value = user.reg_id;
             document.getElementById('mgmtRole').value = user.role;
-            document.getElementById('mgmtDept').value = user.department || 'Commerce and Management';
-            document.getElementById('mgmtBranch').value = user.branch || 'BCCA';
+            document.getElementById('mgmtDept').value = user.department || '';
+            document.getElementById('mgmtBranch').value = user.branch || '';
             
             // Set profile photo with initials fallback
             const photoEl = document.getElementById('mgmtUserPhoto');
@@ -3117,9 +3117,15 @@
             formData.append('phone', phone);
             formData.append('dob', dob);
             formData.append('role', role);
-            formData.append('department', dept);
-            formData.append('branch', branch);
             formData.append('reg_id', regId);
+            
+            // Only send Department and Branch if relevant to the role
+            if (role === 'teacher' || role === 'student') {
+                formData.append('department', dept);
+            }
+            if (role === 'student') {
+                formData.append('branch', branch);
+            }
 
             showToast('Updating profile...');
             try {
