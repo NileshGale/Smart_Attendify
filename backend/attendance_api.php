@@ -256,6 +256,16 @@ if ($action === 'markByUniqueCode') {
             echo json_encode(['success' => false, 'message' => 'Invalid or expired code']);
             exit;
         }
+
+        // Subject validation: Ensure student selected the same subject the code was generated for
+        $selectedSubject = trim($_POST['selected_subject'] ?? '');
+        if ($selectedSubject !== $codeRecord['subject_name']) {
+            echo json_encode([
+                'success' => false, 
+                'message' => "Subject mismatch. This code is for '{$codeRecord['subject_name']}', but you selected '{$selectedSubject}'."
+            ]);
+            exit;
+        }
         
         // Geolocation proximity check
         if ($codeRecord['teacher_lat'] !== null && $codeRecord['max_distance_meters'] !== null) {

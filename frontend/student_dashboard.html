@@ -1814,6 +1814,11 @@
             const code = document.getElementById('attendanceCodeInput').value.trim().toUpperCase();
             const selectedSubject = document.getElementById('codeSubjectSelect').value;
 
+            if (!selectedSubject) {
+                showStatus('Please select a subject first', false);
+                return;
+            }
+
             if (code.length < 6) {
                 showStatus('Please enter a valid code (6-8 characters)', false);
                 return;
@@ -1852,7 +1857,7 @@
                 }
 
                 // Regular Subject Attendance via attendance_api.php
-                let bodyStr = `action=markByUniqueCode&unique_code=${encodeURIComponent(code)}`;
+                let bodyStr = `action=markByUniqueCode&unique_code=${encodeURIComponent(code)}&selected_subject=${encodeURIComponent(selectedSubject)}`;
                 if (lat !== null) {
                     bodyStr += `&student_lat=${lat}&student_lng=${lng}&student_accuracy=${accuracy}`;
                 }
