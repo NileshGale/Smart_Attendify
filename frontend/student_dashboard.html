@@ -2244,7 +2244,30 @@
                                 { label: 'Absent', data: scatterAbsent, backgroundColor: 'rgba(239,68,68,.8)', pointRadius: 7 }
                             ]
                         },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { min: -0.5, max: 1.5, ticks: { stepSize: 1, callback: v => v === 1 ? 'Present' : v === 0 ? 'Absent' : '' } }, x: { display: false } } }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'top' },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const dateLabel = labels[context.parsed.x];
+                                            const status = context.parsed.y === 1 ? 'Present' : 'Absent';
+                                            return ` ${dateLabel}: ${status}`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    min: -0.5,
+                                    max: 1.5,
+                                    ticks: { stepSize: 1, callback: v => v === 1 ? 'Present' : v === 0 ? 'Absent' : '' }
+                                },
+                                x: { display: false }
+                            }
+                        }
                     });
 
                     // Bar chart: subject-wise attendance %
@@ -2259,7 +2282,30 @@
                     sChartInstances['sBar'] = new Chart(document.getElementById('sBarChart'), {
                         type: 'bar',
                         data: { labels: subjects, datasets: [{ data: pcts, backgroundColor: pcts.map(p => p >= 75 ? 'rgba(16,185,129,.8)' : p >= 60 ? 'rgba(245,158,11,.8)' : 'rgba(239,68,68,.8)'), borderRadius: 6 }] },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 100, ticks: { callback: v => v + '%' } } } }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        title: (items) => {
+                                            if (!items.length) return '';
+                                            const item = items[0];
+                                            return data.subjects[item.dataIndex].subject_name;
+                                        },
+                                        label: (context) => {
+                                            const sub = data.subjects[context.dataIndex];
+                                            return ` Total Lectures: ${sub.total_classes} | Attendance: ${context.parsed.y}%`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: { min: 0, max: 100, ticks: { callback: v => v + '%' } },
+                                x: { ticks: { font: { size: 10 } } }
+                            }
+                        }
                     });
 
                     // Doughnut chart: overall present vs absent
@@ -2267,7 +2313,25 @@
                     sChartInstances['sDoughnut'] = new Chart(document.getElementById('sDoughnutChart'), {
                         type: 'doughnut',
                         data: { labels: ['Present', 'Absent'], datasets: [{ data: [data.totals.present, data.totals.absent], backgroundColor: ['#00BCD4', '#ef4444'], borderWidth: 0, hoverOffset: 4 }] },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '65%' }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'bottom' },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.label || '';
+                                            const value = context.parsed;
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                            return ` ${label}: ${value} Lectures (${percentage}%)`;
+                                        }
+                                    }
+                                }
+                            },
+                            cutout: '65%'
+                        }
                     });
                 })
                 .catch(err => {

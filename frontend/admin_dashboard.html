@@ -1093,6 +1093,88 @@
                 gap: 1rem;
             }
         }
+        /* ── PREMIUM PROFILE AVATAR ── */
+        .mgmt-avatar-wrapper {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border-radius: 50%;
+            padding: 4px;
+        }
+
+        .mgmt-avatar-glow {
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, transparent, var(--primary-cyan), transparent);
+            animation: rotateGlow 3s linear infinite;
+            opacity: 0.6;
+            filter: blur(8px);
+            z-index: 1;
+        }
+
+        @keyframes rotateGlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .mgmt-avatar-main {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: #1e293b;
+            border: 3px solid var(--primary-cyan);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            z-index: 2;
+            box-shadow: inset 0 0 15px rgba(0, 229, 255, 0.4);
+        }
+
+        .mgmt-avatar-main img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .mgmt-avatar-initials {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary-cyan);
+            text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+        }
+
+        .mgmt-edit-pill {
+            position: absolute;
+            bottom: 4px;
+            right: 0;
+            background: var(--primary-cyan);
+            color: #0f172a;
+            width: 36px;
+            height: 28px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 229, 255, 0.4);
+            z-index: 10;
+            border: 2px solid #fff;
+            transition: all 0.2s;
+        }
+
+        .mgmt-edit-pill:hover {
+            transform: scale(1.1);
+            background: #fff;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.8);
+        }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -2876,27 +2958,21 @@
                         <!-- GENERAL TAB -->
                         <div id="tab-general" class="mgmt-content">
                             <div style="text-align: center; margin-bottom: 2rem;">
-                                <div style="position: relative; width: 100px; height: 100px; margin: 0 auto;">
-                                    <div class="mgmt-photo-container" style="width: 100%; height: 100%; background: #f1f5f9; border-radius: 50%; border: 4px solid #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                                        <img id="mgmtUserPhoto" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                                <div class="mgmt-avatar-wrapper">
+                                    <div class="mgmt-avatar-glow"></div>
+                                    <div class="mgmt-avatar-main" id="mgmtPhotoContainer" data-initials="??">
+                                        <img id="mgmtUserPhoto" src="" style="display: none;">
+                                        <span class="mgmt-avatar-initials" id="mgmtUserInitials">??</span>
                                     </div>
-                                    <label for="mgmtPhotoInput" style="position: absolute; bottom: 0; right: 0; background: #1e3a5f; color: #fff; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); z-index: 20;">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                                    <label for="mgmtPhotoInput" class="mgmt-edit-pill">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                        </svg>
                                     </label>
                                     <input type="file" id="mgmtPhotoInput" style="display: none;" accept="image/*" onchange="previewMgmtPhoto(this)">
                                 </div>
-                                <style>
-                                    .mgmt-photo-container::before {
-                                        content: attr(data-initials);
-                                        font-size: 2.5rem;
-                                        font-weight: 700;
-                                        color: #64748b;
-                                    }
-                                    .mgmt-photo-container img {
-                                        z-index: 5;
-                                    }
-                                </style>
-                                <p style="font-size: 0.8rem; color: #64748b; margin-top: 8px;">Click to update profile photo</p>
+                                <p style="font-size: 0.85rem; color: var(--primary-cyan); margin-top: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Update User Profile</p>
                             </div>
 
                             <div class="form-group" style="margin-bottom: 1.5rem;">
@@ -3030,20 +3106,23 @@
             
             // Set profile photo with initials fallback
             const photoEl = document.getElementById('mgmtUserPhoto');
+            const initialsEl = document.getElementById('mgmtUserInitials');
             const initials = user.full_name ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : '??';
-            const photoContainer = photoEl.parentElement;
+            
+            initialsEl.textContent = initials;
             
             if (user.photo_path) {
                 photoEl.style.display = 'block';
                 photoEl.src = '../' + user.photo_path;
-                // If the real photo fails to load, show initials
+                initialsEl.style.display = 'none';
+                
                 photoEl.onerror = () => {
                     photoEl.style.display = 'none';
-                    photoContainer.setAttribute('data-initials', initials);
+                    initialsEl.style.display = 'block';
                 };
             } else {
                 photoEl.style.display = 'none';
-                photoContainer.setAttribute('data-initials', initials);
+                initialsEl.style.display = 'block';
             }
             
             // Reset security section
@@ -3055,22 +3134,17 @@
 
             // Handle role-specific fields
             if (user.role === 'admin') {
-                // Admin: Hide both Dept and Branch
                 document.getElementById('mgmtDeptGroup').style.display = 'none';
                 document.getElementById('mgmtBranchGroup').style.display = 'none';
             } else if (user.role === 'teacher') {
-                // Teacher: Show Dept, Hide Branch
                 document.getElementById('mgmtDeptGroup').style.display = 'block';
                 document.getElementById('mgmtBranchGroup').style.display = 'none';
             } else {
-                // Student: Show both
                 document.getElementById('mgmtDeptGroup').style.display = 'block';
                 document.getElementById('mgmtBranchGroup').style.display = 'block';
             }
 
-            // Default tab
             switchMgmtTab('general', document.querySelector('.mgmt-tab'));
-            
             document.getElementById('userMgmtModal').style.display = 'flex';
         }
 
@@ -3369,8 +3443,10 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const photoEl = document.getElementById('mgmtUserPhoto');
+                    const initialsEl = document.getElementById('mgmtUserInitials');
                     photoEl.src = e.target.result;
                     photoEl.style.display = 'block';
+                    initialsEl.style.display = 'none';
                     uploadMgmtPhoto(input.files[0]);
                 }
                 reader.readAsDataURL(input.files[0]);

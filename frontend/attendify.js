@@ -20,9 +20,14 @@ const ENDPOINTS = {
 // ============================================================================
 
 /**
- * Make API request
+ * Helper to wait for a specific duration
  */
-async function apiRequest(endpoint, action, data = {}, method = 'POST') {
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Make API request with automatic retries for InfinityFree limits (508/429)
+ */
+async function apiRequest(endpoint, action, data = {}, method = 'POST', retries = 3) {
     data.action = action;
     
     const options = {
@@ -40,15 +45,47 @@ async function apiRequest(endpoint, action, data = {}, method = 'POST') {
         ? `${endpoint}?${new URLSearchParams(data).toString()}`
         : endpoint;
     
-    const response = await fetch(url, options);
-    const json = await response.json();
+    let lastError;
     
-    // Auto-redirect if session is invalidated (e.g., logged in from another device)
-    if (json && json.message === 'Session expired. Please login again.') {
-        window.location.href = 'Attendify.html';
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            const response = await fetch(url, options);
+            
+            // Handle InfinityFree resource limits (508) or rate limits (429)
+            if (response.status === 508 || response.status === 429) {
+                if (attempt < retries) {
+                    // Random jitter delay between 1-3 seconds to spread the load
+                    const delay = 1000 + Math.random() * 2000;
+                    console.warn(`Server busy (${response.status}). Retrying attempt ${attempt}/${retries} in ${Math.round(delay)}ms...`);
+                    await sleep(delay);
+                    continue; // Try again
+                }
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const json = await response.json();
+            
+            // Auto-redirect if session is invalidated (e.g., logged in from another device)
+            if (json && json.message === 'Session expired. Please login again.') {
+                window.location.href = 'Attendify.html';
+            }
+            
+            return json;
+        } catch (e) {
+            lastError = e;
+            if (attempt === retries) break;
+            
+            // For network errors, also retry with backoff
+            const delay = 1000 * attempt;
+            await sleep(delay);
+        }
     }
     
-    return json;
+    console.error("API request failed after retries:", lastError);
+    return { success: false, message: "Server is temporarily unavailable. Please check your connection or try again later." };
 }
 
 // ============================================================================
@@ -61,15 +98,15 @@ if (!window.location.pathname.endsWith('Attendify.html') &&
     
     setInterval(async () => {
         try {
-            // Quietly checking session status without triggering alerts
-            const result = await fetch(`${ENDPOINTS.auth}?action=checkSession`).then(r => r.json());
-            if (result && !result.logged_in) {
+            // Use apiRequest for session checking to benefit from retry logic
+            const result = await apiRequest(ENDPOINTS.auth, 'checkSession', {}, 'GET');
+            if (result && result.logged_in === false) {
                 window.location.href = 'Attendify.html';
             }
         } catch (e) {
-            // Ignore network errors silently
+            // Ignore network errors silently for background polling
         }
-    }, 30000); // Check every 30 seconds
+    }, 60000); // Check every 60 seconds (increased from 30s to reduce server load)
 }
 
 /**
