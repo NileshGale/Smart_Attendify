@@ -168,6 +168,7 @@ CREATE TABLE IF NOT EXISTS attendance (
     marking_method        ENUM('manual','qr','unique_code') DEFAULT 'manual',
     status                ENUM('present','absent')          NOT NULL DEFAULT 'present',
     marked_at             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    distance_meters       INT DEFAULT NULL,
     created_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
@@ -229,6 +230,7 @@ CREATE TABLE IF NOT EXISTS event_attendance (
     student_id      INT NOT NULL,
     marking_method  ENUM('qr','unique_code') DEFAULT 'unique_code',
     scanned_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    distance_meters INT DEFAULT NULL,
 
     FOREIGN KEY (event_id)   REFERENCES events(id) ON DELETE CASCADE,
     FOREIGN KEY (student_id) REFERENCES users(id)  ON DELETE CASCADE,
@@ -286,6 +288,8 @@ SELECT 'Default password for all users: admin123'                    AS note;
 SELECT '⚠  Change all passwords after first login!'                  AS warning;
 SELECT 'Table teacher_schedules is ready for admin schedule mgmt'    AS info;
 
+ALTER TABLE attendance ADD COLUMN accuracy_meters INT DEFAULT NULL;
+ALTER TABLE event_attendance ADD COLUMN accuracy_meters INT DEFAULT NULL;
 
 
 -- UPDATE users SET department = 'Commerce and Management' WHERE department IN ('Computer Science', 'Information Technology', 'Electronics', 'Electrical');

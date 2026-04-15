@@ -132,3 +132,11 @@ thankyou
 *   **[2026-04-10]**: **Mobile UI Fix - Admin Dashboard**: Surgically fixed the alignment of the "Clear Search" cross icon in the Teacher Schedules tab. The issue was caused by a broad CSS selector in the media query applying `width: 100%` to all buttons; changed to a direct-child selector to preserve icon dimensions while keeping main buttons responsive.
 *   **[2026-04-10]**: **Enhanced User Search & UI Refinement - Recent Registrations**: Added real-time search and aligned all controls into a unified horizontal interface. Restored consistent project styling (rounded corners, themed borders) by correctly mapping elements to the `search-row` design system. Integrated the search query into the **PDF Report Generation** logic and enhanced the exported document with **full grid column lines** for improved data readability and structural clarity. Optimized backend API with search parameters and consolidated JavaScript logic.
 *   **[2026-04-10]**: **Complete Admin User Management (Edit/Delete)**: Implemented a robust administrative toolset for managing user accounts. Added **Action** controls (pen and trash icons) to the Recent Registrations table. Integrated a sophisticated **User Management Modal** for editing general profiles, academic details (branch, dept, role), and security settings. Features include **OTP-verified email changes**, direct **administrative password overrides**, and **Reg ID clash detection** with intelligent suggestion logic. Developed a comprehensive **Account Cleanup** process that unlinks profile photos/QR codes and deletes data with automated notification emails (Profile Update, Password Reset, Email Transfer, and Deletion alerts).
+*   **[2026-04-15]**: **Live Student Distance & Precision Tracking**: Enhanced the teacher dashboard to display student-teacher proximity with confidence ranges (e.g., `26m ±15m`).
+    *   **Advanced UI**: Introduced color-coded badges (Green for precise/nearby, Blue for standard).
+    *   **Data Integrity**: Added `accuracy_meters` tracking to the backend to help teachers understand GPS drift caused by indoor environments.
+    *   **SQL Migration**: 
+        ```sql
+        ALTER TABLE attendance ADD COLUMN accuracy_meters INT DEFAULT NULL;
+        ALTER TABLE event_attendance ADD COLUMN accuracy_meters INT DEFAULT NULL;
+        ```

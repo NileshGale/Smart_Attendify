@@ -117,6 +117,12 @@ try {
             // Column already exists
         }
     }
+    
+    // Auto-update attendance table for distance storage
+    try {
+        $pdo->exec("ALTER TABLE attendance ADD COLUMN distance_meters INT DEFAULT NULL");
+        $pdo->exec("ALTER TABLE attendance ADD COLUMN accuracy_meters INT DEFAULT NULL");
+    } catch (PDOException $ignore) { }
 } catch (PDOException $e) {
     // Table likely already exists, continue
 }
@@ -268,51 +274,44 @@ if ($action === 'markByUniqueCode') {
         }
         
         // Geolocation proximity check
-        if ($codeRecord['teacher_lat'] !== null && $codeRecord['max_distance_meters'] !== null) {
-            if ($studentLat === null || $studentLng === null) {
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'This code requires location access. Please enable GPS/location in your browser and try again.',
-                    'geo_required' => true
-                ]);
-                exit;
-            }
-            
-            // Proximity check with dynamic accuracy buffer
+        $distance = null;
+        if ($codeRecord['teacher_lat'] !== null && $studentLat !== null && $studentLng !== null) {
             $distance = haversineDistance(
                 $codeRecord['teacher_lat'], $codeRecord['teacher_lng'],
                 $studentLat, $studentLng
             );
-            $maxDist = intval($codeRecord['max_distance_meters']);
             
-            // Collect accuracies (fallback to 30m if not provided/available)
-            $tAcc = floatval($codeRecord['teacher_accuracy'] ?? 30);
-            $sAcc = floatval($studentAccuracy > 0 ? $studentAccuracy : 30);
-            
-            // Allowed distance = specified radius + teacher error + student error + 10m safety margin
-            $allowedDistance = $maxDist + $tAcc + $sAcc + 10;
-            
-            if ($distance > $allowedDistance) {
-                $distRounded = round($distance);
-                $allowedRounded = round($allowedDistance);
+                $distance = haversineDistance(
+                    $codeRecord['teacher_lat'], $codeRecord['teacher_lng'],
+                    $studentLat, $studentLng
+                );
                 
-                // Detailed message for users to understand if it's a GPS precision issue
-                $precisionMsg = "";
-                if ($tAcc > 50 || $sAcc > 50) {
-                    $precisionMsg = " (High GPS error: Teacher {$tAcc}m, Student {$sAcc}m)";
+                if ($codeRecord['max_distance_meters'] !== null) {
+                    $maxDist = intval($codeRecord['max_distance_meters']);
+                    
+                    // ABSOLUTE STRICT: No buffers added. 
+                    $allowedDistance = $maxDist;
+                    
+                    if ($distance > $allowedDistance) {
+                        $distRounded = round($distance, 1);
+                        echo json_encode([
+                            'success' => false, 
+                            'message' => "Location Match Failed: You are {$distRounded}m away, but the limit is {$maxDist}m.",
+                            'geo_rejected' => true,
+                            'distance' => $distRounded,
+                            'max_distance' => $maxDist
+                        ]);
+                        exit;
+                    }
                 }
-                
-                echo json_encode([
-                    'success' => false, 
-                    'message' => "Location match failed. Reported distance: {$distRounded}m. Max allowed: {$allowedRounded}m.{$precisionMsg}",
-                    'geo_rejected' => true,
-                    'distance' => $distRounded,
-                    'max_distance' => $maxDist,
-                    'teacher_accuracy' => $tAcc,
-                    'student_accuracy' => $sAcc
-                ]);
-                exit;
-            }
+        } elseif ($codeRecord['teacher_lat'] !== null && $codeRecord['max_distance_meters'] !== null) {
+            // Teacher set a lock but student didn't provide GPS
+            echo json_encode([
+                'success' => false, 
+                'message' => 'This code requires location access. Please enable GPS/location in your browser and try again.',
+                'geo_required' => true
+            ]);
+            exit;
         }
         
         // Check if student already marked attendance for this subject today (any method)
@@ -350,16 +349,21 @@ if ($action === 'markByUniqueCode') {
         // Mark attendance (ON DUPLICATE KEY UPDATE as safety net for unique constraint)
         $today = date('Y-m-d');
         $now = date('Y-m-d H:i:s');
+        $storedDistance = (isset($distance) && $distance !== null) ? round($distance) : null;
+        $storedAccuracy = ($studentAccuracy > 0) ? round($studentAccuracy) : null;
+
         $stmt = $pdo->prepare("
-            INSERT INTO attendance (student_id, subject_id, teacher_id, attendance_date, marking_method, status, marked_at)
-            VALUES (?, ?, ?, ?, 'unique_code', 'present', ?)
+            INSERT INTO attendance (student_id, subject_id, teacher_id, attendance_date, marking_method, status, marked_at, distance_meters, accuracy_meters)
+            VALUES (?, ?, ?, ?, 'unique_code', 'present', ?, ?, ?)
             ON DUPLICATE KEY UPDATE
                 status = 'present',
                 marking_method = 'unique_code',
                 teacher_id = VALUES(teacher_id),
-                marked_at = VALUES(marked_at)
+                marked_at = VALUES(marked_at),
+                distance_meters = VALUES(distance_meters),
+                accuracy_meters = VALUES(accuracy_meters)
         ");
-        $stmt->execute([$studentId, $subjectId, $codeRecord['teacher_id'], $today, $now]);
+        $stmt->execute([$studentId, $subjectId, $codeRecord['teacher_id'], $today, $now, $storedDistance, $storedAccuracy]);
         
         // Get student name for response
         $stmt = $pdo->prepare("SELECT full_name, reg_id FROM users WHERE id = ?");
@@ -580,7 +584,9 @@ if ($action === 'getCodeAttendance') {
                 u.reg_id,
                 u.full_name,
                 a.marked_at,
-                a.status
+                a.status,
+                a.distance_meters,
+                a.accuracy_meters
             FROM attendance a
             JOIN users u ON a.student_id = u.id
             WHERE a.teacher_id = ?

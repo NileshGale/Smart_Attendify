@@ -3,6 +3,12 @@ require_once 'db_config.php';
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
+// Auto-migration for InfinityFree
+try {
+    $pdo->exec("ALTER TABLE event_attendance ADD COLUMN distance_meters INT DEFAULT NULL");
+    $pdo->exec("ALTER TABLE event_attendance ADD COLUMN accuracy_meters INT DEFAULT NULL");
+} catch (Exception $e) { }
+
 // ============================================================================
 // HAVERSINE DISTANCE HELPER (returns distance in meters)
 // ============================================================================
@@ -119,34 +125,37 @@ if ($action === 'markEventAttendance') {
                 exit;
             }
 
-            // Location verification if event is geo-locked
-            if ($event['teacher_lat'] !== null && $event['max_distance_meters'] !== null) {
-                if ($studentLat === null || $studentLng === null) {
-                    echo json_encode([
-                        'success' => false, 
-                        'message' => 'This event requires location access. Please enable GPS and try again.',
-                        'geo_required' => true
-                    ]);
-                    exit;
-                }
-
+            // Geolocation proximity check and distance calculation
+            $distance = null;
+            if ($event['teacher_lat'] !== null && $studentLat !== null && $studentLng !== null) {
                 $distance = haversineDistance(
                     $event['teacher_lat'], $event['teacher_lng'],
                     $studentLat, $studentLng
                 );
-                $allowedDistance = intval($event['max_distance_meters']) + 30; // 30m accuracy buffer
 
-                if ($distance > $allowedDistance) {
-                    $distRounded = round($distance);
-                    echo json_encode([
-                        'success' => false, 
-                        'message' => "Location match failed. You are {$distRounded}m away from the event location (Max allowed: {$allowedDistance}m).",
-                        'geo_rejected' => true,
-                        'distance' => $distRounded,
-                        'max_distance' => $event['max_distance_meters']
-                    ]);
-                    exit;
+                if ($event['max_distance_meters'] !== null) {
+                    $allowedDistance = intval($event['max_distance_meters']) + 30; // 30m accuracy buffer
+
+                    if ($distance > $allowedDistance) {
+                        $distRounded = round($distance);
+                        echo json_encode([
+                            'success' => false, 
+                            'message' => "Location match failed. You are {$distRounded}m away from the event location (Max allowed: {$allowedDistance}m).",
+                            'geo_rejected' => true,
+                            'distance' => $distRounded,
+                            'max_distance' => $event['max_distance_meters']
+                        ]);
+                        exit;
+                    }
                 }
+            } elseif ($event['teacher_lat'] !== null && $event['max_distance_meters'] !== null) {
+                // Geo-lock is required but GPS was not provided
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'This event requires location access. Please enable GPS and try again.',
+                    'geo_required' => true
+                ]);
+                exit;
             }
 
             $eventId = $event['id'];
@@ -167,8 +176,10 @@ if ($action === 'markEventAttendance') {
             exit;
         }
 
-        $stmt = $pdo->prepare("INSERT INTO event_attendance (event_id, student_id, marking_method) VALUES (?, ?, ?)");
-        $stmt->execute([$eventId, $studentId, $method]);
+        $storedDistance = (isset($distance) && $distance !== null) ? round($distance) : null;
+        $storedAccuracy = ($studentAccuracy > 0) ? round($studentAccuracy) : null;
+        $stmt = $pdo->prepare("INSERT INTO event_attendance (event_id, student_id, marking_method, distance_meters, accuracy_meters) VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute([$eventId, $studentId, $method, $storedDistance, $storedAccuracy]);
         
         // Fetch event name if not already fetched
         if (!isset($event['event_name'])) {
@@ -280,7 +291,7 @@ if ($action === 'getEventStats') {
     
     try {
         $stmt = $pdo->prepare("
-            SELECT u.full_name, u.reg_id, ea.scanned_at 
+            SELECT u.full_name, u.reg_id, ea.scanned_at, ea.distance_meters, ea.accuracy_meters 
             FROM event_attendance ea
             JOIN users u ON ea.student_id = u.id
             WHERE ea.event_id = ?
