@@ -1098,6 +1098,10 @@ if ($action === 'getRecentRegistrations') {
             $sql .= " ORDER BY full_name ASC";
         } elseif ($sort === 'desc') {
             $sql .= " ORDER BY full_name DESC";
+        } elseif ($sort === 'reg_asc') {
+            $sql .= " ORDER BY reg_id ASC";
+        } elseif ($sort === 'reg_desc') {
+            $sql .= " ORDER BY reg_id DESC";
         } else {
             $sql .= " ORDER BY created_at DESC";
         }
