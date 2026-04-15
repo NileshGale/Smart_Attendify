@@ -134,16 +134,22 @@ if ($action === 'markEventAttendance') {
                 );
 
                 if ($event['max_distance_meters'] !== null) {
-                    $allowedDistance = intval($event['max_distance_meters']) + 30; // 30m accuracy buffer
+                    $maxDist = intval($event['max_distance_meters']);
+                    
+                    // SMART PRECISION BUFFER: 
+                    $teacherAcc = floatval($event['teacher_accuracy'] ?? 0);
+                    $combinedAccuracy = $studentAccuracy + $teacherAcc;
 
-                    if ($distance > $allowedDistance) {
-                        $distRounded = round($distance);
+                    if (($distance - $combinedAccuracy) > $maxDist) {
+                        $distRounded = round($distance, 1);
+                        $accRounded = round($combinedAccuracy, 1);
                         echo json_encode([
                             'success' => false, 
-                            'message' => "Location match failed. You are {$distRounded}m away from the event location (Max allowed: {$allowedDistance}m).",
+                            'message' => "Location Match Failed: You are {$distRounded}m away (±{$accRounded}m drift), but the limit is {$maxDist}m.",
                             'geo_rejected' => true,
                             'distance' => $distRounded,
-                            'max_distance' => $event['max_distance_meters']
+                            'precision_buffer' => $accRounded,
+                            'max_distance' => $maxDist
                         ]);
                         exit;
                     }

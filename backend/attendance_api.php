@@ -263,14 +263,24 @@ if ($action === 'markByUniqueCode') {
             exit;
         }
 
-        // Subject validation: Ensure student selected the same subject the code was generated for
+        // Subject validation: Robustness with Smart Fallback
         $selectedSubject = trim($_POST['selected_subject'] ?? '');
-        if ($selectedSubject !== $codeRecord['subject_name']) {
-            echo json_encode([
-                'success' => false, 
-                'message' => "Subject mismatch. This code is for '{$codeRecord['subject_name']}', but you selected '{$selectedSubject}'."
-            ]);
-            exit;
+        $expectedSubject = trim($codeRecord['subject_name']); 
+        
+        // If the subject doesn't match, check if it's because it's empty (fallback case) or actually wrong
+        if ($selectedSubject !== $expectedSubject) {
+            if ($selectedSubject !== '') {
+                // The student explicitly selected the WRONG subject
+                echo json_encode([
+                    'success' => false, 
+                    'message' => "Subject mismatch. This code is for '{$expectedSubject}', but you selected '{$selectedSubject}'."
+                ]);
+                exit;
+            } else {
+                // The student's browser sent an EMPTY subject (common on cached mobile versions).
+                // Since the code itself is valid and unique, we allow the fallback.
+                // Log this internally or just proceed.
+            }
         }
         
         // Geolocation proximity check
@@ -280,25 +290,26 @@ if ($action === 'markByUniqueCode') {
                 $codeRecord['teacher_lat'], $codeRecord['teacher_lng'],
                 $studentLat, $studentLng
             );
-            
-                $distance = haversineDistance(
-                    $codeRecord['teacher_lat'], $codeRecord['teacher_lng'],
-                    $studentLat, $studentLng
-                );
                 
                 if ($codeRecord['max_distance_meters'] !== null) {
                     $maxDist = intval($codeRecord['max_distance_meters']);
                     
-                    // ABSOLUTE STRICT: No buffers added. 
-                    $allowedDistance = $maxDist;
+                    // SMART PRECISION BUFFER: 
+                    // We use the uncertainty radius (accuracy) of both devices.
+                    // If a device has 100m drift, we account for that.
+                    $teacherAcc = floatval($codeRecord['teacher_accuracy'] ?? 0);
+                    $combinedAccuracy = $studentAccuracy + $teacherAcc;
                     
-                    if ($distance > $allowedDistance) {
+                    // The student is "possibly" within range if (Distance - Accuracy <= MaxDist)
+                    if (($distance - $combinedAccuracy) > $maxDist) {
                         $distRounded = round($distance, 1);
+                        $accRounded = round($combinedAccuracy, 1);
                         echo json_encode([
                             'success' => false, 
-                            'message' => "Location Match Failed: You are {$distRounded}m away, but the limit is {$maxDist}m.",
+                            'message' => "Location Match Failed: You are {$distRounded}m away (±{$accRounded}m drift), but the limit is {$maxDist}m.",
                             'geo_rejected' => true,
                             'distance' => $distRounded,
+                            'precision_buffer' => $accRounded,
                             'max_distance' => $maxDist
                         ]);
                         exit;

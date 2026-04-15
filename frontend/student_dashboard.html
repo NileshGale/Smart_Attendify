@@ -1330,9 +1330,12 @@
                             Permission</button>
                     </div>
                     <div id="geoSuccess"
-                        style="margin-bottom:1.5rem; padding:.75rem; background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.2); border-radius:12px; display:none; align-items:center; gap:.5rem; justify-content:center;">
-                        <i class="fa-solid fa-circle-check" style="color:#22c55e;"></i>
-                        <span style="font-size:.825rem; font-weight:600; color:#166534;">Location access granted</span>
+                        style="margin-bottom:1.5rem; padding:.75rem; background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.2); border-radius:12px; display:none; align-items:center; gap:.25rem; justify-content:center; flex-direction:column;">
+                        <div style="display:flex; align-items:center; gap:.5rem;">
+                            <i class="fa-solid fa-circle-check" style="color:#22c55e;"></i>
+                            <span style="font-size:.825rem; font-weight:600; color:#166534;">Location access granted</span>
+                        </div>
+                        <div id="geoAccuracySpan" style="font-size:.7rem; font-weight:700; color:#166534; opacity:.8;">📍 Accuracy: ±--m</div>
                     </div>
 
                     <div class="card" id="codeFormCard">
@@ -1857,15 +1860,25 @@
                 }
 
                 // Regular Subject Attendance via attendance_api.php
-                let bodyStr = `action=markByUniqueCode&unique_code=${encodeURIComponent(code)}&selected_subject=${encodeURIComponent(selectedSubject)}`;
+                const formData = new FormData();
+                formData.append('action', 'markByUniqueCode');
+                formData.append('unique_code', code);
+                formData.append('selected_subject', selectedSubject);
                 if (lat !== null) {
-                    bodyStr += `&student_lat=${lat}&student_lng=${lng}&student_accuracy=${accuracy}`;
+                    formData.append('student_lat', lat);
+                    formData.append('student_lng', lng);
+                    formData.append('student_accuracy', accuracy);
                 }
+                
+                // Cache-busting version to force mobile browsers to fetch fresh
+                const v = Date.now();
 
                 if (!navigator.onLine) {
+                    const params = new URLSearchParams(formData);
+                    const bodyStr = params.toString();
                     const offlineData = JSON.parse(localStorage.getItem('offline_attendance') || '[]');
                     offlineData.push({
-                        url: '../backend/attendance_api.php',
+                        url: `../backend/attendance_api.php?v=${v}`,
                         body: bodyStr,
                         at: new Date().toLocaleString()
                     });
@@ -1875,10 +1888,9 @@
                     return;
                 }
 
-                fetch('../backend/attendance_api.php', {
+                fetch(`../backend/attendance_api.php?v=${v}`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: bodyStr
+                    body: formData
                 })
                     .then(r => r.json())
                     .then(d => {
@@ -1906,6 +1918,12 @@
 
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
+                        const acc = Math.round(pos.coords.accuracy);
+                        const accEl = document.getElementById('geoAccuracySpan');
+                        if (accEl) {
+                            accEl.textContent = `📍 Accuracy: ±${acc}m`;
+                            accEl.style.color = acc < 20 ? '#166534' : (acc < 50 ? '#92400e' : '#b91c1c');
+                        }
                         doFinalSubmit(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
                     },
                     (err) => {
@@ -1914,6 +1932,12 @@
                         // Fallback to standard accuracy if high accuracy times out/fails
                         navigator.geolocation.getCurrentPosition(
                             (pos2) => {
+                                const acc = Math.round(pos2.coords.accuracy);
+                                const accEl = document.getElementById('geoAccuracySpan');
+                                if (accEl) {
+                                    accEl.textContent = `📍 Accuracy: ±${acc}m (Low Precision Mode)`;
+                                    accEl.style.color = '#b91c1c';
+                                }
                                 doFinalSubmit(pos2.coords.latitude, pos2.coords.longitude, pos2.coords.accuracy);
                             },
                             (err2) => {
