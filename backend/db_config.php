@@ -139,31 +139,41 @@ function sanitize($input) {
 }
 
 /**
+ * Check if a specific value is unique in a table column
+ */
+function isFieldUnique($pdo, $table, $column, $value) {
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM $table WHERE `$column` = ?");
+    $stmt->execute([$value]);
+    return intval($stmt->fetchColumn()) === 0;
+}
+
+/**
  * Generate unique registration ID
  */
 function generateRegId($role, $pdo) {
     $prefix = '';
     switch ($role) {
-        case 'student':
-            $prefix = 'SEE';
-            break;
-        case 'teacher':
-            $prefix = 'TEA';
-            break;
-        case 'admin':
-            $prefix = 'ADMIN';
-            break;
+        case 'student': $prefix = 'SEE'; break;
+        case 'teacher': $prefix = 'TEA'; break;
+        case 'admin':   $prefix = 'ADMIN'; break;
     }
     
-    // Get last ID
-    $stmt = $pdo->prepare("SELECT reg_id FROM users WHERE reg_id LIKE ? ORDER BY id DESC LIMIT 1");
+    // Get last ID for this prefix
+    $stmt = $pdo->prepare("SELECT reg_id FROM users WHERE reg_id LIKE ? ORDER BY LENGTH(reg_id) DESC, reg_id DESC LIMIT 1");
     $stmt->execute([$prefix . '%']);
     $last = $stmt->fetch();
     
     if ($last) {
-        $num = intval(substr($last['reg_id'], strlen($prefix))) + 1;
+        // Extract the numeric part and increment
+        $lastId = $last['reg_id'];
+        $numPart = substr($lastId, strlen($prefix));
+        if (is_numeric($numPart)) {
+            $num = intval($numPart) + 1;
+        } else {
+            $num = ($role === 'student' ? 2004001 : 2024001);
+        }
     } else {
-        $num = $role === 'student' ? 2004001 : 2024001;
+        $num = ($role === 'student' ? 2004001 : 2024001);
     }
     
     return $prefix . $num;

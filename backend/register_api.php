@@ -115,10 +115,47 @@ if ($action === 'register') {
             exit;
         }
 
-        // Generate registration ID and username
-        $regId    = generateRegId($role, $pdo);
-        $username = strtolower(str_replace(' ', '.', $fullName)) . rand(10, 99);
-        $qrData   = ($role === 'student') ? generateQRData($regId) : null;
+        // Generate base ID and prepare smart incrementing
+        $prefix = ($role === 'student') ? 'SEE' : (($role === 'teacher') ? 'TEA' : 'ADMIN');
+        $baseRegId = generateRegId($role, $pdo);
+        $baseNum = intval(substr($baseRegId, strlen($prefix)));
+
+        $regId = '';
+        $username = '';
+        $qrData = '';
+        $attempts = 0;
+        $maxAttempts = 10; // Increase attempts for better coverage
+        $isUnique = false;
+
+        while (!$isUnique && $attempts < $maxAttempts) {
+            // Increment ID by the attempt number to automatically "jump" over collisions
+            $currentNum = $baseNum + $attempts;
+            $regId = $prefix . $currentNum;
+            $username = strtolower(str_replace(' ', '.', $fullName)) . rand(1000, 9999);
+            $qrData = ($role === 'student') ? generateQRData($regId) : null;
+            
+            // Check uniqueness for registration ID, username, and QR data
+            $regUnique = isFieldUnique($pdo, 'users', 'reg_id', $regId);
+            $userUnique = isFieldUnique($pdo, 'users', 'username', $username);
+            $qrUnique = ($qrData === null) || isFieldUnique($pdo, 'users', 'qr_code_data', $qrData);
+
+            if ($regUnique && $userUnique && $qrUnique) {
+                $isUnique = true;
+            } else {
+                $attempts++;
+            }
+        }
+
+        if (!$isUnique) {
+            $total = 0;
+            try { $total = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn(); } catch(Exception $e){}
+            echo json_encode([
+                'success' => false, 
+                'message' => "Could not find a unique ID after $maxAttempts tries. System sees $total total users. Please contact support."
+            ]);
+            exit;
+        }
+
         $hashedPw = password_hash($password, PASSWORD_DEFAULT);
 
         $pdo->beginTransaction();
@@ -157,11 +194,24 @@ if ($action === 'register') {
         ]);
 
     } catch (PDOException $e) {
-        $pdo->rollBack();
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
 
-        if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
-            echo json_encode(['success' => false, 'message' => 'Username or email already exists']);
-        } elseif (strpos($e->getMessage(), "Unknown column 'dob'") !== false) {
+        $errorMsg = $e->getMessage();
+        if (strpos($errorMsg, 'Duplicate entry') !== false) {
+            if (strpos($errorMsg, 'email') !== false) {
+                echo json_encode(['success' => false, 'message' => 'This email is already registered.']);
+            } elseif (strpos($errorMsg, 'username') !== false) {
+                echo json_encode(['success' => false, 'message' => 'This username is already taken. Please try again.']);
+            } elseif (strpos($errorMsg, 'reg_id') !== false) {
+                echo json_encode(['success' => false, 'message' => 'Registration ID collision. Please try again.']);
+            } elseif (strpos($errorMsg, 'qr_code_data') !== false) {
+                echo json_encode(['success' => false, 'message' => 'QR Code collision detected. Please contact Admin.']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Data collision detected: ' . $errorMsg]);
+            }
+        } elseif (strpos($errorMsg, "Unknown column 'dob'") !== false) {
             // If dob or photo_path columns don't exist yet, retry without them
             try {
                 $pdo->beginTransaction();

@@ -991,9 +991,42 @@ if ($action === 'adminCreateUser') {
             exit;
         }
 
-        $regId    = generateRegId($role, $pdo);
-        $username = strtolower(str_replace(' ', '.', $fullName)) . rand(10, 99);
-        $qrData   = ($role === 'student') ? generateQRData($regId) : null;
+        // Generate base ID and prepare smart incrementing
+        $prefix = ($role === 'student') ? 'SEE' : (($role === 'teacher') ? 'TEA' : 'ADMIN');
+        $baseRegId = generateRegId($role, $pdo);
+        $baseNum = intval(substr($baseRegId, strlen($prefix)));
+
+        $regId = '';
+        $username = '';
+        $qrData = '';
+        $attempts = 0;
+        $maxAttempts = 10;
+        $isUnique = false;
+
+        while (!$isUnique && $attempts < $maxAttempts) {
+            // Increment ID by the attempt number to automatically "jump" over collisions
+            $currentNum = $baseNum + $attempts;
+            $regId = $prefix . $currentNum;
+            $username = strtolower(str_replace(' ', '.', $fullName)) . rand(1000, 9999);
+            $qrData = ($role === 'student') ? generateQRData($regId) : null;
+            
+            // Check uniqueness for registration ID, username, and QR data
+            $regUnique = isFieldUnique($pdo, 'users', 'reg_id', $regId);
+            $userUnique = isFieldUnique($pdo, 'users', 'username', $username);
+            $qrUnique = ($qrData === null) || isFieldUnique($pdo, 'users', 'qr_code_data', $qrData);
+
+            if ($regUnique && $userUnique && $qrUnique) {
+                $isUnique = true;
+            } else {
+                $attempts++;
+            }
+        }
+
+        if (!$isUnique) {
+            echo json_encode(['success' => false, 'message' => "Failed to find a unique ID after $maxAttempts attempts. Please try again or contact support."]);
+            exit;
+        }
+
         $hashedPw = password_hash($password, PASSWORD_DEFAULT);
 
         $stmt = $pdo->prepare("
@@ -1022,10 +1055,26 @@ if ($action === 'adminCreateUser') {
         echo json_encode([
             'success' => true, 
             'message' => 'User account created successfully! Credentials sent to email.',
-            'reg_id' => $regId
+            'reg_id' => $regId,
+            'username' => $username
         ]);
     } catch (PDOException $e) {
-        echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+        $errorMsg = $e->getMessage();
+        if (strpos($errorMsg, 'Duplicate entry') !== false) {
+            if (strpos($errorMsg, 'email') !== false) {
+                echo json_encode(['success' => false, 'message' => 'This email is already registered.']);
+            } elseif (strpos($errorMsg, 'username') !== false) {
+                echo json_encode(['success' => false, 'message' => 'The generated username is already in use. Please try again.']);
+            } elseif (strpos($errorMsg, 'reg_id') !== false) {
+                echo json_encode(['success' => false, 'message' => 'Registration ID collision. Please try again.']);
+            } elseif (strpos($errorMsg, 'qr_code_data') !== false) {
+                echo json_encode(['success' => false, 'message' => 'QR Code collision detected. Please try again.']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Data collision detected: ' . $errorMsg]);
+            }
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Database error: ' . $errorMsg]);
+        }
     }
     exit;
 }
