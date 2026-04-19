@@ -251,7 +251,7 @@ if ($action === 'markByUniqueCode') {
         $stmt = $pdo->prepare("
             SELECT id, code, teacher_id, subject_name, expires_at, teacher_lat, teacher_lng, teacher_accuracy, max_distance_meters
             FROM attendance_codes
-            WHERE code = ? AND expires_at > ?
+            WHERE code = ? AND DATE_ADD(expires_at, INTERVAL 10 SECOND) > ?
             ORDER BY id DESC
             LIMIT 1
         ");

@@ -1922,7 +1922,7 @@
                         const accEl = document.getElementById('geoAccuracySpan');
                         if (accEl) {
                             accEl.textContent = `📍 Accuracy: ±${acc}m`;
-                            accEl.style.color = acc < 20 ? '#166534' : (acc < 50 ? '#92400e' : '#b91c1c');
+                            accEl.style.color = acc <= 10 ? '#166534' : (acc <= 30 ? '#92400e' : '#b91c1c');
                         }
                         doFinalSubmit(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
                     },
