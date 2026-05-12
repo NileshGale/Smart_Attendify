@@ -650,6 +650,47 @@
             color: var(--text-muted);
         }
 
+        .method-card.coming-soon {
+            opacity: 0.5;
+            cursor: not-allowed;
+            position: relative;
+        }
+
+        .method-card.coming-soon:hover {
+            border-color: var(--border);
+            background: var(--bg);
+            transform: none;
+        }
+
+        .method-card .coming-soon-tag {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            font-size: 0.6rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .method-card.group .method-icon {
+            background: linear-gradient(135deg, rgba(124, 58, 237, .15), rgba(139, 92, 246, .15));
+        }
+
+        .method-card.voice .method-icon {
+            background: linear-gradient(135deg, rgba(16, 185, 129, .15), rgba(5, 150, 105, .15));
+        }
+
+        .method-card .python-hint {
+            font-size: 0.65rem;
+            color: #f59e0b;
+            font-style: italic;
+            margin-top: 4px;
+        }
+
         .method-modal-close {
             position: absolute;
             top: 1rem;
@@ -2881,6 +2922,20 @@
                     <div class="method-icon"><i class="fa-solid fa-key"></i></div>
                     <h4>Unique Code</h4>
                     <p>Generate a random code. Students enter it to mark themselves present.</p>
+                </div>
+                <div class="method-card group coming-soon">
+                    <span class="coming-soon-tag">Coming Soon</span>
+                    <div class="method-icon"><i class="fa-solid fa-users"></i></div>
+                    <h4>Group Attendance</h4>
+                    <p>Upload a group photo. AI detects and marks all students automatically.</p>
+                    <div class="python-hint"><i class="fa-solid fa-flask"></i> Powered by Python AI</div>
+                </div>
+                <div class="method-card voice coming-soon">
+                    <span class="coming-soon-tag">Coming Soon</span>
+                    <div class="method-icon"><i class="fa-solid fa-microphone"></i></div>
+                    <h4>Voice Attendance</h4>
+                    <p>Call student names. Voice recognition marks attendance hands-free.</p>
+                    <div class="python-hint"><i class="fa-solid fa-flask"></i> Powered by Python AI</div>
                 </div>
             </div>
         </div>
