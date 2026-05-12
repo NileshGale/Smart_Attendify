@@ -2945,6 +2945,10 @@
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                         Security
                     </div>
+                    <div id="mgmtAttendanceTab" class="mgmt-tab" onclick="switchMgmtTab('attendance', this)" style="padding: 0.8rem 1.5rem; cursor: pointer; font-weight: 500; color: #64748b; display: flex; align-items: center; gap: 12px; transition: all 0.2s; display: none;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                        Attendance Photo
+                    </div>
                     <div class="mgmt-tab" onclick="showAccountCleanup()" style="padding: 0.8rem 1.5rem; cursor: pointer; font-weight: 500; color: #ef4444; display: flex; align-items: center; gap: 12px; margin-top: auto; transition: all 0.2s;">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                         Delete User
@@ -2952,122 +2956,163 @@
                 </div>
 
                 <!-- Content Area -->
-                <div style="padding: 2rem; background: #fff; max-height: 600px; overflow-y: auto;">
-                    <form id="mgmtUserForm" onsubmit="return false;">
-                        <input type="hidden" id="mgmtUserId">
-                        <input type="hidden" id="mgmtRole">
-                        
-                        <!-- GENERAL TAB -->
-                        <div id="tab-general" class="mgmt-content">
-                            <div style="text-align: center; margin-bottom: 2rem;">
-                                <div class="mgmt-avatar-wrapper">
-                                    <div class="mgmt-avatar-glow"></div>
-                                    <div class="mgmt-avatar-main" id="mgmtPhotoContainer" data-initials="??">
-                                        <img id="mgmtUserPhoto" src="" style="display: none;">
-                                        <span class="mgmt-avatar-initials" id="mgmtUserInitials">??</span>
+                <div style="display: flex; flex-direction: column; background: #fff; max-height: calc(100vh - 200px); overflow: hidden;">
+                    <div style="padding: 2rem; overflow-y: auto; flex: 1;">
+                        <form id="mgmtUserForm" onsubmit="return false;">
+                            <input type="hidden" id="mgmtUserId">
+                            <input type="hidden" id="mgmtRole">
+                            
+                            <!-- GENERAL TAB -->
+                            <div id="tab-general" class="mgmt-content">
+                                <div style="text-align: center; margin-bottom: 2rem;">
+                                    <div class="mgmt-avatar-wrapper">
+                                        <div class="mgmt-avatar-glow"></div>
+                                        <div class="mgmt-avatar-main" id="mgmtPhotoContainer" data-initials="??">
+                                            <img id="mgmtUserPhoto" src="" style="display: none;">
+                                            <span class="mgmt-avatar-initials" id="mgmtUserInitials">??</span>
+                                            <div id="mgmtPhotoLoading" style="display: none; position: absolute; inset: 0; background: rgba(255,255,255,0.7); align-items: center; justify-content: center; border-radius: 50%; z-index: 10;">
+                                                <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 1.5rem; color: var(--primary-cyan);"></i>
+                                            </div>
+                                        </div>
+                                        <label for="mgmtPhotoInput" class="mgmt-edit-pill">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                            </svg>
+                                        </label>
+                                        <input type="file" id="mgmtPhotoInput" style="display: none;" accept="image/*" onchange="previewMgmtPhoto(this)">
                                     </div>
-                                    <label for="mgmtPhotoInput" class="mgmt-edit-pill">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                        </svg>
-                                    </label>
-                                    <input type="file" id="mgmtPhotoInput" style="display: none;" accept="image/*" onchange="previewMgmtPhoto(this)">
+                                    <p style="font-size: 0.85rem; color: var(--primary-cyan); margin-top: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Update User Profile</p>
                                 </div>
-                                <p style="font-size: 0.85rem; color: var(--primary-cyan); margin-top: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Update User Profile</p>
-                            </div>
 
-                            <div class="form-group" style="margin-bottom: 1.5rem;">
-                                <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">Full Name</label>
-                                <input type="text" id="mgmtFullName" class="form-control" style="width:100%; padding:0.8rem; border:1.5px solid #e2e8f0; border-radius:10px;" placeholder="Enter full name">
-                            </div>
-
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                                <div class="form-group">
-                                    <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">Mobile Number</label>
-                                    <input type="tel" id="mgmtPhone" class="form-control" style="width:100%; padding:0.8rem; border:1.5px solid #e2e8f0; border-radius:10px;" placeholder="10-digit number">
+                                <div class="form-group" style="margin-bottom: 1.5rem;">
+                                    <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">Full Name</label>
+                                    <input type="text" id="mgmtFullName" class="form-control" style="width:100%; padding:0.8rem; border:1.5px solid #e2e8f0; border-radius:10px;" placeholder="Enter full name">
                                 </div>
-                                <div class="form-group">
-                                    <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">Date of Birth</label>
-                                    <input type="date" id="mgmtDob" class="form-control" style="width:100%; padding:0.8rem; border:1.5px solid #e2e8f0; border-radius:10px;">
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                    <div class="form-group">
+                                        <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">Mobile Number</label>
+                                        <input type="tel" id="mgmtPhone" class="form-control" style="width:100%; padding:0.8rem; border:1.5px solid #e2e8f0; border-radius:10px;" placeholder="10-digit number">
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">Date of Birth</label>
+                                        <input type="date" id="mgmtDob" class="form-control" style="width:100%; padding:0.8rem; border:1.5px solid #e2e8f0; border-radius:10px;">
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- ACADEMIC TAB -->
-                        <div id="tab-academic" class="mgmt-content" style="display: none;">
+                            <!-- ACADEMIC TAB -->
+                            <div id="tab-academic" class="mgmt-content" style="display: none;">
 
-                            <div class="form-group" style="margin-bottom: 1.5rem;">
-                                <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">Registration ID</label>
-                                <div style="display: flex; gap: 10px;">
-                                    <input type="text" id="mgmtRegId" class="form-control" style="flex: 1; padding:0.8rem; border:1.5px solid #e2e8f0; border-radius:10px;" placeholder="e.g. SEE2004034">
-                                </div>
-                                <p id="regIdNotice" style="font-size: 0.75rem; margin-top: 5px; color: #64748b; font-style: italic;"></p>
-                            </div>
-
-                            <div id="mgmtDeptGroup" class="form-group" style="margin-bottom: 1.5rem;">
-                                <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">Department</label>
-                                <select id="mgmtDept" class="form-control" style="width:100%; padding:0.8rem; border:1.5px solid #e2e8f0; border-radius:10px;">
-                                    <option value="Commerce and Management">Commerce and Management</option>
-                                </select>
-                            </div>
-
-                            <div id="mgmtBranchGroup" class="form-group">
-                                <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">Branch / Core</label>
-                                <select id="mgmtBranch" class="form-control" style="width:100%; padding:0.8rem; border:1.5px solid #e2e8f0; border-radius:10px;">
-                                    <option value="BCCA">BCCA</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- SECURITY TAB -->
-                        <div id="tab-security" class="mgmt-content" style="display: none;">
-                            <div style="background: rgba(79, 70, 229, 0.03); border: 1.5px solid rgba(79, 70, 229, 0.1); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem;">
-                                <h4 style="margin: 0 0 1rem 0; color: #4f46e5; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                                    Change Email Address
-                                </h4>
-                                <div class="form-group">
-                                    <label style="display:block; margin-bottom:0.5rem; font-size: 0.85rem; color: #64748b;">New Email Address</label>
+                                <div class="form-group" style="margin-bottom: 1.5rem;">
+                                    <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">Registration ID</label>
                                     <div style="display: flex; gap: 10px;">
-                                        <input type="email" id="mgmtNewEmail" class="form-control" style="flex:1; padding:0.75rem; border:1.5px solid #e2e8f0; border-radius:10px;" placeholder="new@example.com" onkeydown="if(event.key==='Enter'){ event.preventDefault(); initiateEmailChange(); }">
-                                        <button id="mgmtSendOtpBtn" onclick="initiateEmailChange()" class="btn-primary" style="padding: 0 1rem; border-radius: 10px; font-size: 0.85rem;">Send OTP</button>
+                                        <input type="text" id="mgmtRegId" class="form-control" style="flex: 1; padding:0.8rem; border:1.5px solid #e2e8f0; border-radius:10px;" placeholder="e.g. SEE2004034">
+                                    </div>
+                                    <p id="regIdNotice" style="font-size: 0.75rem; margin-top: 5px; color: #64748b; font-style: italic;"></p>
+                                </div>
+
+                                <div id="mgmtDeptGroup" class="form-group" style="margin-bottom: 1.5rem;">
+                                    <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">Department</label>
+                                    <select id="mgmtDept" class="form-control" style="width:100%; padding:0.8rem; border:1.5px solid #e2e8f0; border-radius:10px;">
+                                        <option value="Commerce and Management">Commerce and Management</option>
+                                    </select>
+                                </div>
+
+                                <div id="mgmtBranchGroup" class="form-group">
+                                    <label style="display:block; margin-bottom:0.5rem; font-weight:600; color:#1e3a5f;">Branch / Core</label>
+                                    <select id="mgmtBranch" class="form-control" style="width:100%; padding:0.8rem; border:1.5px solid #e2e8f0; border-radius:10px;">
+                                        <option value="BCCA">BCCA</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- SECURITY TAB -->
+                            <div id="tab-security" class="mgmt-content" style="display: none;">
+                                <div style="background: rgba(79, 70, 229, 0.03); border: 1.5px solid rgba(79, 70, 229, 0.1); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem;">
+                                    <h4 style="margin: 0 0 1rem 0; color: #4f46e5; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                                        Change Email Address
+                                    </h4>
+                                    <div class="form-group">
+                                        <label style="display:block; margin-bottom:0.5rem; font-size: 0.85rem; color: #64748b;">New Email Address</label>
+                                        <div style="display: flex; gap: 10px;">
+                                            <input type="email" id="mgmtNewEmail" class="form-control" style="flex:1; padding:0.75rem; border:1.5px solid #e2e8f0; border-radius:10px;" placeholder="new@example.com" onkeydown="if(event.key==='Enter'){ event.preventDefault(); initiateEmailChange(); }">
+                                            <button id="mgmtSendOtpBtn" onclick="initiateEmailChange()" class="btn-primary" style="padding: 0 1rem; border-radius: 10px; font-size: 0.85rem;">Send OTP</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="otpVerificationSection" style="margin-top: 1rem; display: none;">
+                                        <label style="display:block; margin-bottom:0.5rem; font-size: 0.85rem; color: #64748b;">Verify OTP</label>
+                                        <div style="display: flex; gap: 10px;">
+                                            <input type="text" id="mgmtEmailOtp" class="form-control" style="flex:1; padding:0.75rem; border:1.5px solid #e2e8f0; border-radius:10px; text-align: center; letter-spacing: 4px; font-weight: bold;" placeholder="000000" onkeydown="if(event.key==='Enter'){ event.preventDefault(); verifyEmailChange(); }">
+                                            <button id="mgmtVerifyBtn" onclick="verifyEmailChange()" class="btn-secondary" style="background:#10b981; color:#fff; border:none; padding: 0 1rem; border-radius: 10px;">Verify & Save</button>
+                                        </div>
                                     </div>
                                 </div>
-                                
-                                <div id="otpVerificationSection" style="margin-top: 1rem; display: none;">
-                                    <label style="display:block; margin-bottom:0.5rem; font-size: 0.85rem; color: #64748b;">Verify OTP</label>
-                                    <div style="display: flex; gap: 10px;">
-                                        <input type="text" id="mgmtEmailOtp" class="form-control" style="flex:1; padding:0.75rem; border:1.5px solid #e2e8f0; border-radius:10px; text-align: center; letter-spacing: 4px; font-weight: bold;" placeholder="000000" onkeydown="if(event.key==='Enter'){ event.preventDefault(); verifyEmailChange(); }">
-                                        <button id="mgmtVerifyBtn" onclick="verifyEmailChange()" class="btn-secondary" style="background:#10b981; color:#fff; border:none; padding: 0 1rem; border-radius: 10px;">Verify & Save</button>
+
+                                <div style="background: rgba(245, 158, 11, 0.03); border: 1.5px solid rgba(245, 158, 11, 0.1); padding: 1.5rem; border-radius: 12px;">
+                                    <h4 style="margin: 0 0 1rem 0; color: #f59e0b; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                        Direct Password Override
+                                    </h4>
+                                    <div class="form-group">
+                                        <label style="display:block; margin-bottom:0.5rem; font-size: 0.85rem; color: #64748b;">New Password</label>
+                                        <div style="display: flex; gap: 10px;">
+                                            <input type="text" id="mgmtNewPass" class="form-control" style="flex:1; padding:0.75rem; border:1.5px solid #e2e8f0; border-radius:10px;" placeholder="Leave empty to keep current" onkeydown="if(event.key==='Enter'){ event.preventDefault(); updateUserPassword(); }">
+                                            <button onclick="updateUserPassword()" class="btn-secondary" style="background:#f59e0b; border:none; color:#fff; padding: 0 1rem; border-radius: 10px; font-size: 0.85rem;">Update Pw</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div style="background: rgba(245, 158, 11, 0.03); border: 1.5px solid rgba(245, 158, 11, 0.1); padding: 1.5rem; border-radius: 12px;">
-                                <h4 style="margin: 0 0 1rem 0; color: #f59e0b; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                    Direct Password Override
-                                </h4>
-                                <div class="form-group">
-                                    <label style="display:block; margin-bottom:0.5rem; font-size: 0.85rem; color: #64748b;">New Password</label>
-                                    <div style="display: flex; gap: 10px;">
-                                        <input type="text" id="mgmtNewPass" class="form-control" style="flex:1; padding:0.75rem; border:1.5px solid #e2e8f0; border-radius:10px;" placeholder="Leave empty to keep current" onkeydown="if(event.key==='Enter'){ event.preventDefault(); updateUserPassword(); }">
-                                        <button onclick="updateUserPassword()" class="btn-secondary" style="background:#f59e0b; border:none; color:#fff; padding: 0 1rem; border-radius: 10px; font-size: 0.85rem;">Update Pw</button>
+                            <!-- ATTENDANCE TAB (ATTENDANCE PHOTO) -->
+                            <div id="tab-attendance" class="mgmt-content" style="display: none;">
+                                <div style="text-align: center; margin-bottom: 2rem;">
+                                    <div class="mgmt-avatar-wrapper" style="width: 150px; height: 150px; margin: 0 auto;">
+                                        <div id="mgmtAttnPhotoContainer" class="mgmt-avatar-main" style="width: 100%; height: 100%; background: #f1f5f9; border: 2px dashed var(--primary-cyan); border-radius: 20px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
+                                            <img id="mgmtUserAttnPhoto" src="" style="display: none; width:100%; height:100%; object-fit:cover;">
+                                            <span id="mgmtAttnPlaceholder" style="font-size: 3rem; color: var(--primary-cyan); opacity: 0.3;">
+                                                <i class="fa-solid fa-camera"></i>
+                                            </span>
+                                            <div id="mgmtAttnLoading" style="display: none; position: absolute; inset: 0; background: rgba(255,255,255,0.85); flex-direction: column; align-items: center; justify-content: center; z-index: 10;">
+                                                <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem; color: var(--primary-cyan); margin-bottom: 10px;"></i>
+                                                <span style="font-size: 0.7rem; font-weight: 800; color: var(--navy-dark); text-transform: uppercase; letter-spacing: 1px;">AI Matching...</span>
+                                            </div>
+                                        </div>
+                                        <label for="mgmtAttnPhotoInput" class="mgmt-edit-pill" style="bottom: 5px; right: 5px;">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                        </label>
+                                        <input type="file" id="mgmtAttnPhotoInput" style="display: none;" accept="image/*" onchange="handleMgmtAttnPhotoUpload(this)">
                                     </div>
+                                    <h4 style="margin-top: 1.5rem; color: #1e3a5f; font-weight: 700;">Attendance Photo</h4>
+                                    <p style="font-size: 0.85rem; color: #64748b; margin-top: 5px; max-width: 300px; margin-left: auto; margin-right: auto;">This photo is used to recognize the student in group photos. Please ensure the face is clearly visible.</p>
+                                </div>
+
+                                <div style="background: rgba(0, 188, 212, 0.05); border: 1.5px solid rgba(0, 188, 212, 0.1); padding: 1.2rem; border-radius: 12px; margin-bottom: 1rem;">
+                                    <h5 style="color: var(--primary-cyan); margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-circle-info"></i> Matching Instructions
+                                    </h5>
+                                    <ul style="font-size: 0.8rem; color: #64748b; padding-left: 1.2rem; margin: 0; line-height: 1.5;">
+                                        <li>High quality portrait photo preferred.</li>
+                                        <li>Face should be well-lit and front-facing.</li>
+                                        <li>No sunglasses, hats, or masks that obscure features.</li>
+                                        <li>Updating this photo will automatically regenerate the 128-D AI encoding.</li>
+                                    </ul>
                                 </div>
                             </div>
-                        </div>
-
-                        <div style="display: flex; gap: 1rem; margin-top: 2rem; border-top: 1px solid #f1f5f9; padding-top: 2rem;">
-                            <button onclick="saveMgmtProfile()" id="saveMgmtBtn" class="btn-primary" style="flex: 1; padding: 1rem; border-radius: 12px; font-weight: 700; height: auto;">
-                                Save All Changes
-                            </button>
-                            <button onclick="closeUserMgmtModal()" class="btn-secondary" style="flex: 1; padding: 1rem; border-radius: 12px; font-weight: 700; height: auto; background: #fff; border: 1.5px solid #e2e8f0; color: #64748b;">
-                                Cancel
-                            </button>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
+                    <!-- Fixed Footer -->
+                    <div style="padding: 1.5rem 2rem; border-top: 1px solid #f1f5f9; display: flex; gap: 1rem; background: #fff;">
+                        <button onclick="saveMgmtProfile()" id="saveMgmtBtn" class="btn-primary" style="flex: 1; padding: 1rem; border-radius: 12px; font-weight: 700; height: auto;">
+                            Save All Changes
+                        </button>
+                        <button onclick="closeUserMgmtModal()" class="btn-secondary" style="flex: 1; padding: 1rem; border-radius: 12px; font-weight: 700; height: auto; background: #fff; border: 1.5px solid #e2e8f0; color: #64748b;">
+                            Cancel
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -3134,16 +3179,34 @@
             document.getElementById('otpVerificationSection').style.display = 'none';
             document.getElementById('regIdNotice').textContent = '';
 
-            // Handle role-specific fields
+            // Handle role-specific fields & Attendance Tab
+            const attnTab = document.getElementById('mgmtAttendanceTab');
+            const attnPhotoImg = document.getElementById('mgmtUserAttnPhoto');
+            const attnPlaceholder = document.getElementById('mgmtAttnPlaceholder');
+
             if (user.role === 'admin') {
                 document.getElementById('mgmtDeptGroup').style.display = 'none';
                 document.getElementById('mgmtBranchGroup').style.display = 'none';
+                attnTab.style.display = 'none';
             } else if (user.role === 'teacher') {
                 document.getElementById('mgmtDeptGroup').style.display = 'block';
                 document.getElementById('mgmtBranchGroup').style.display = 'none';
+                attnTab.style.display = 'none';
             } else {
                 document.getElementById('mgmtDeptGroup').style.display = 'block';
                 document.getElementById('mgmtBranchGroup').style.display = 'block';
+                attnTab.style.display = 'flex'; // Student only
+
+                // Load attendance photo if exists
+                if (user.attendance_photo_path) {
+                    attnPhotoImg.src = '../' + user.attendance_photo_path;
+                    attnPhotoImg.style.display = 'block';
+                    attnPlaceholder.style.display = 'none';
+                } else {
+                    attnPhotoImg.src = '';
+                    attnPhotoImg.style.display = 'none';
+                    attnPlaceholder.style.display = 'block';
+                }
             }
 
             switchMgmtTab('general', document.querySelector('.mgmt-tab'));
@@ -3226,6 +3289,52 @@
                 }
             } catch (err) {
                 showToast('Connection error during update', true);
+            }
+        }
+
+        async function handleMgmtAttnPhotoUpload(input) {
+            if (!input.files || !input.files[0] || !currentMgmtUserId) return;
+            
+            const file = input.files[0];
+            const formData = new FormData();
+            formData.append('action', 'adminUpdateAttendancePhoto');
+            formData.append('user_id', currentMgmtUserId);
+            formData.append('photo', file);
+
+            const container = document.getElementById('mgmtAttnPhotoContainer');
+            const img = document.getElementById('mgmtUserAttnPhoto');
+            const placeholder = document.getElementById('mgmtAttnPlaceholder');
+            const loading = document.getElementById('mgmtAttnLoading');
+
+            showToast('Uploading & Processing AI Encoding...', false);
+            loading.style.display = 'flex';
+            container.style.opacity = '0.7';
+
+            try {
+                const res = await fetch('../backend/user_api.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    showToast('AI Attendance photo updated successfully');
+                    // Update preview
+                    img.src = '../' + data.photo_path + '?v=' + new Date().getTime();
+                    img.style.display = 'block';
+                    placeholder.style.display = 'none';
+                    
+                    // Refresh parent list so the new path is cached in the UI data
+                    filterRecentRegistrations();
+                } else {
+                    showToast(data.message || 'Update failed', true);
+                }
+            } catch (err) {
+                showToast('Network error during upload', true);
+            } finally {
+                loading.style.display = 'none';
+                container.style.opacity = '1';
+                input.value = '';
             }
         }
 
@@ -3460,7 +3569,10 @@
             const formData = new FormData();
             formData.append('action', 'uploadProfilePhoto');
             formData.append('photo', file);
-            formData.append('user_id_override', userId); // Need to ensure backend accepts this
+            formData.append('user_id_override', userId);
+
+            const loading = document.getElementById('mgmtPhotoLoading');
+            loading.style.display = 'flex';
 
             showToast('Uploading new photo...');
             try {
@@ -3474,6 +3586,8 @@
                 }
             } catch (err) {
                 showToast('Photo upload failed', true);
+            } finally {
+                loading.style.display = 'none';
             }
         }
     </script>

@@ -105,6 +105,81 @@ if ($action === 'register') {
         $photoPath = 'uploads/photos/' . $filename;
     }
 
+    // ── Attendance photo upload + face encoding ───────────────────────────────
+    $attendancePhotoPath = null;
+    $faceEncoding = null;
+
+    if (isset($_FILES['attendance_photo']) && $_FILES['attendance_photo']['error'] === UPLOAD_ERR_OK) {
+        $attFile   = $_FILES['attendance_photo'];
+        $attAllowed = ['image/jpeg', 'image/jpg', 'image/png'];
+        $attMaxSize = 2 * 1024 * 1024; // 2 MB
+
+        if (!in_array($attFile['type'], $attAllowed)) {
+            echo json_encode(['success' => false, 'message' => 'Attendance photo: Only JPG, JPEG, and PNG are allowed']);
+            exit;
+        }
+
+        if ($attFile['size'] > $attMaxSize) {
+            echo json_encode(['success' => false, 'message' => 'Attendance photo must be less than 2MB']);
+            exit;
+        }
+
+        // Save to ../uploads/attendance_photos/
+        $attUploadDir = __DIR__ . '/../uploads/attendance_photos/';
+        if (!file_exists($attUploadDir)) {
+            mkdir($attUploadDir, 0755, true);
+        }
+
+        $attExt      = pathinfo($attFile['name'], PATHINFO_EXTENSION);
+        $attFilename = 'att_' . uniqid() . '.' . $attExt;
+        $attDestPath = $attUploadDir . $attFilename;
+
+        if (!move_uploaded_file($attFile['tmp_name'], $attDestPath)) {
+            echo json_encode(['success' => false, 'message' => 'Failed to save attendance photo.']);
+            exit;
+        }
+
+        $attendancePhotoPath = 'uploads/attendance_photos/' . $attFilename;
+
+        // Call Python Face API to generate 128-D encoding
+        $photoBase64 = base64_encode(file_get_contents($attDestPath));
+        
+        $apiPayload = json_encode(['photo' => $photoBase64]);
+        
+        $ch = curl_init(FACE_API_URL . '/generate-encoding');
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $apiPayload,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 30,
+            CURLOPT_HTTPHEADER     => [
+                'Content-Type: application/json',
+                'X-API-Key: ' . FACE_API_KEY
+            ]
+        ]);
+        
+        $apiResponse = curl_exec($ch);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+        
+        if ($curlError) {
+            // Face API not reachable — save photo but skip encoding (can be generated later)
+            error_log('Face API error during registration: ' . $curlError);
+        } else {
+            $apiResult = json_decode($apiResponse, true);
+            if ($apiResult && $apiResult['success']) {
+                $faceEncoding = json_encode($apiResult['encoding']);
+            } else {
+                // Face not detected or API error — reject the photo
+                $errorMsg = $apiResult['message'] ?? 'Please upload a clear front-facing photo for attendance verification';
+                // Delete the uploaded file since it's invalid
+                @unlink($attDestPath);
+                echo json_encode(['success' => false, 'message' => $errorMsg]);
+                exit;
+            }
+        }
+    }
+
     // ── Database insert ───────────────────────────────────────────────────────
     try {
         // Check email not already taken
@@ -163,16 +238,19 @@ if ($action === 'register') {
         $stmt = $pdo->prepare("
             INSERT INTO users 
                 (username, email, password, full_name, reg_id, qr_code_data,
-                 role, department, branch, phone, dob, photo_path)
+                 role, department, branch, phone, dob, photo_path,
+                 attendance_photo_path, face_encoding)
             VALUES 
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         $stmt->execute([
             $username, $email, $hashedPw, $fullName,
             $regId, $qrData, $role, $department,
             $branch, $mobile,
             ($dob ?: null),
-            $photoPath
+            $photoPath,
+            $attendancePhotoPath,
+            $faceEncoding
         ]);
 
         $userId = $pdo->lastInsertId();
