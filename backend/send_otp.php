@@ -42,7 +42,7 @@ header('Content-Type: application/json');
 
 define('SMTP_HOST', 'smtp.gmail.com');
 define('SMTP_USERNAME', 'nileshgale520@gmail.com');   // ← your Gmail address
-define('SMTP_PASSWORD', 'pzrx ytob ltfe pqwq');       // ← 16-char App Password (spaces are fine)
+define('SMTP_PASSWORD', 'dqnt qwis rqnq fgnj');       // ← 16-char App Password (spaces are fine)
 define('SMTP_PORT', 587);
 define('SMTP_FROM_EMAIL', 'nileshgale520@gmail.com');   // Must match SMTP_USERNAME for Gmail
 define('SMTP_FROM_NAME', 'Attendify');
