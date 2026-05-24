@@ -13,11 +13,6 @@ define('DB_PASS', 'hope1916dhanno');
 // Registration Access Key for Stealth Registration
 define('REG_ACCESS_KEY', 'Attendify1916DNhope');
 
-// Face Recognition API (PythonAnywhere)
-// Update the URL after deploying face_engine.py to PythonAnywhere
-define('FACE_API_URL', 'https://nileshh1609.pythonanywhere.com');
-define('FACE_API_KEY', 'attendify-face-api-secret-2024');
-
 // Create PDO connection
 try {
     $pdo = new PDO(

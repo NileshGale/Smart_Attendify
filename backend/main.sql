@@ -292,15 +292,6 @@ ALTER TABLE attendance ADD COLUMN accuracy_meters INT DEFAULT NULL;
 ALTER TABLE event_attendance ADD COLUMN accuracy_meters INT DEFAULT NULL;
 
 
-
--- Add attendance photo path column (stores the dedicated face-recognition photo)
-ALTER TABLE users 
-  ADD COLUMN attendance_photo_path VARCHAR(255) NULL AFTER photo_path;
-
--- Add face encoding column (stores 128-D vector as JSON from Python AI)
-ALTER TABLE users 
-  ADD COLUMN face_encoding TEXT NULL AFTER attendance_photo_path;
-
 -- UPDATE users SET department = 'Commerce and Management' WHERE department IN ('Computer Science', 'Information Technology', 'Electronics', 'Electrical');
 --UPDATE users SET branch = 'BCCA' WHERE branch IN ('B.Tech', 'MCA');
 --UPDATE subjects SET department = 'Commerce and Management' WHERE department IN ('Computer Science', 'Commerce');

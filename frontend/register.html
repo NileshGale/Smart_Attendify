@@ -749,20 +749,19 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Attendance Photo -->
-                    <div id="attendancePhotoGroup">
+                    <!-- Attendance Photo (Future Feature) -->
+                    <div>
                         <label>Photo for Attendance</label>
-                        <div class="photo-section" id="attendancePhotoSection">
-                            <div class="photo-preview" id="attPhotoPreview">
-                                <span class="photo-placeholder" id="attPhotoPlaceholder"><i class="fa-solid fa-user"></i></span>
-                                <img id="attPreviewImage" src="" alt="Preview" style="display: none;">
+                        <div class="photo-section disabled-section" id="attendancePhotoSection">
+                            <span class="coming-soon-badge">Coming Soon</span>
+                            <div class="photo-preview">
+                                <span class="photo-placeholder"><i class="fa-solid fa-user"></i></span>
                             </div>
                             <div style="flex: 1;">
                                 <input type="file" id="attendancePhoto" name="attendance_photo" accept="image/*" style="display: none;" disabled>
-                                <button type="button" class="photo-upload-btn" id="uploadAttPhotoBtn" disabled>Choose Photo</button>
+                                <button type="button" class="photo-upload-btn" disabled>Choose Photo</button>
                                 <p class="help-text" style="margin-top: 10px;">JPG, JPEG or PNG (Max 2MB)</p>
-                                <button type="button" class="btn-link" id="removeAttPhoto" style="display: none; margin-top: 10px;">Remove Photo</button>
-                                <span class="attendance-photo-hint"><i class="fa-solid fa-circle-info"></i> Upload a clear front-facing photo for attendance verification</span>
+                                <span class="attendance-photo-hint"><i class="fa-solid fa-circle-info"></i> Used for group photo attendance</span>
                             </div>
                         </div>
                     </div>
@@ -850,14 +849,6 @@
         const loadingOverlay = document.getElementById('loadingOverlay');
         const loadingText = document.getElementById('loadingText');
 
-        // Attendance Photo DOM
-        const attendancePhotoGroup = document.getElementById('attendancePhotoGroup');
-        const uploadAttPhotoBtn = document.getElementById('uploadAttPhotoBtn');
-        const attendancePhotoInput = document.getElementById('attendancePhoto');
-        const attPhotoPlaceholder = document.getElementById('attPhotoPlaceholder');
-        const attPreviewImage = document.getElementById('attPreviewImage');
-        const removeAttPhoto = document.getElementById('removeAttPhoto');
-
         // Form Fields
         const formFields = [
             document.getElementById('fullName'),
@@ -867,11 +858,9 @@
             document.getElementById('branch'),
             document.getElementById('dob'),
             userPhotoInput,
-            attendancePhotoInput,
             document.getElementById('password'),
             document.getElementById('confirmPassword'),
-            uploadPhotoBtn,
-            uploadAttPhotoBtn
+            uploadPhotoBtn
         ];
 
         // Initialize from URL parameters
@@ -889,7 +878,6 @@
         let isEmailVerified = false;
         let otpTimerInterval = null;
         let selectedPhotoFile = null;
-        let selectedAttPhotoFile = null;
 
         // --- Path Helper for Stealth URL ---
         const getBackendPath = (file) => {
@@ -1088,19 +1076,16 @@
             if (role === 'student') {
                 departmentGroup.style.display = 'block';
                 branchGroup.style.display = 'block';
-                attendancePhotoGroup.style.display = 'block';
                 deptField.required = true;
                 branchField.required = true;
             } else if (role === 'teacher') {
                 departmentGroup.style.display = 'block';
                 branchGroup.style.display = 'none';
-                attendancePhotoGroup.style.display = 'none';
                 deptField.required = true;
                 branchField.required = false;
             } else {
                 departmentGroup.style.display = 'none';
                 branchGroup.style.display = 'none';
-                attendancePhotoGroup.style.display = 'none';
                 deptField.required = false;
                 branchField.required = false;
             }
@@ -1152,51 +1137,6 @@
             selectedPhotoFile = null;
         });
 
-        // Attendance Photo Upload
-        uploadAttPhotoBtn.addEventListener('click', () => {
-            if (!attendancePhotoInput.disabled) {
-                attendancePhotoInput.click();
-            }
-        });
-
-        attendancePhotoInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            if (file.size > 2 * 1024 * 1024) {
-                showToast('Attendance photo size must be less than 2MB', 'error');
-                attendancePhotoInput.value = '';
-                return;
-            }
-
-            const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-            if (!validTypes.includes(file.type)) {
-                showToast('Only JPG, JPEG, and PNG files are allowed for attendance', 'error');
-                attendancePhotoInput.value = '';
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                attPhotoPlaceholder.style.display = 'none';
-                attPreviewImage.src = event.target.result;
-                attPreviewImage.style.display = 'block';
-                removeAttPhoto.style.display = 'inline-block';
-                selectedAttPhotoFile = file;
-            };
-            reader.readAsDataURL(file);
-        });
-
-        removeAttPhoto.addEventListener('click', (e) => {
-            e.preventDefault();
-            attendancePhotoInput.value = '';
-            attPhotoPlaceholder.style.display = 'block';
-            attPreviewImage.style.display = 'none';
-            removeAttPhoto.style.display = 'none';
-            attPreviewImage.src = '';
-            selectedAttPhotoFile = null;
-        });
-
         // Form Validation
         function validateForm() {
             if (!isEmailVerified) {
@@ -1221,12 +1161,7 @@
             }
 
             if (!selectedPhotoFile) {
-                showToast('Please upload your profile photo', 'error');
-                return false;
-            }
-
-            if (role === 'student' && !selectedAttPhotoFile) {
-                showToast('Please upload your photo for attendance verification', 'error');
+                showToast('Please upload your photo', 'error');
                 return false;
             }
 
@@ -1271,10 +1206,6 @@
                     formData.append('user_photo', selectedPhotoFile);
                 }
 
-                if (selectedAttPhotoFile) {
-                    formData.append('attendance_photo', selectedAttPhotoFile);
-                }
-
                 const response = await fetch(getBackendPath('register_api.php'), {
                     method: 'POST',
                     body: formData
@@ -1293,14 +1224,6 @@
                     previewImage.style.display = 'none';
                     removePhoto.style.display = 'none';
                     selectedPhotoFile = null;
-                    
-                    // Reset attendance photo
-                    attendancePhotoInput.value = '';
-                    attPhotoPlaceholder.style.display = 'block';
-                    attPreviewImage.style.display = 'none';
-                    removeAttPhoto.style.display = 'none';
-                    attPreviewImage.src = '';
-                    selectedAttPhotoFile = null;
                     departmentGroup.style.display = 'none';
                     branchGroup.style.display = 'none';
                     otpSection.classList.remove('active');

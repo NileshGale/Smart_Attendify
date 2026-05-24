@@ -1,19 +1,4 @@
 <?php
-ob_start(); // Buffer output to prevent headers/warnings from breaking JSON
-
-// ── Fatal Error Handler ──────────────────────────────────────────────────────
-register_shutdown_function(function() {
-    $error = error_get_last();
-    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
-        if (ob_get_length()) ob_clean();
-        echo json_encode([
-            'success' => false, 
-            'message' => 'Critical Server Error: ' . $error['message'] . ' (This often happens due to memory limits with large photos)'
-        ]);
-        exit;
-    }
-});
-
 /**
  * Attendance Management API
  * Handles: Manual marking, QR code, Unique code attendance
@@ -21,11 +6,6 @@ register_shutdown_function(function() {
 
 require_once 'db_config.php';
 header('Content-Type: application/json');
-
-// Suppress error output to prevent breaking JSON response
-ini_set('display_errors', 0);
-error_reporting(E_ALL);
-set_time_limit(150); // Increase PHP execution time for AI processing
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
@@ -1041,7 +1021,7 @@ if ($action === 'getStudentReport') {
     try {
         // Find student by exact reg_id first, then by partial name match
         $stmt = $pdo->prepare("
-            SELECT id, full_name, email, reg_id, department, branch, photo_path, attendance_photo_path
+            SELECT id, full_name, email, reg_id, department, branch, photo_path
             FROM users 
             WHERE role = 'student' AND (reg_id = ? OR full_name LIKE ?)
             LIMIT 1
@@ -1739,205 +1719,5 @@ if ($action === 'getClassAttendanceByDate') {
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
-    exit;
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// GROUP PHOTO ATTENDANCE — AI Face Matching
-// ═══════════════════════════════════════════════════════════════════════════════
-if ($action === 'groupAttendance') {
-    requireRole('teacher');
-
-    $subjectId = intval($_POST['subject_id'] ?? 0);
-    $subjectName = sanitize($_POST['subject_name'] ?? '');
-    $teacherId = $_SESSION['user_id'] ?? 0;
-
-    if (!$subjectId && $subjectName) {
-        $stmt = $pdo->prepare("SELECT id FROM subjects WHERE subject_name = ? LIMIT 1");
-        $stmt->execute([$subjectName]);
-        $subjectId = intval($stmt->fetchColumn() ?: 0);
-    }
-
-    if (!$subjectId) {
-        echo json_encode(['success' => false, 'message' => 'Subject is required']);
-        exit;
-    }
-
-    // ── Prepare directory for group photos ─────────────────────────────────────
-    $sanitizedSubject = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $subjectName ?: 'Unknown_Subject');
-    $uploadDir = __DIR__ . '/../uploads/subject_group_photos/' . $sanitizedSubject . '/';
-    if (!file_exists($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
-    }
-
-    // ── Collect uploaded group photos ──────────────────────────────────────────
-    $groupPhotos = [];
-    $timestamp = time();
-
-    if (isset($_FILES['group_photos'])) {
-        $files = $_FILES['group_photos'];
-        $fileNames = is_array($files['name']) ? $files['name'] : [$files['name']];
-        $fileCount = count($fileNames);
-
-        for ($i = 0; $i < $fileCount; $i++) {
-            $tmpName = is_array($files['tmp_name']) ? $files['tmp_name'][$i] : $files['tmp_name'];
-            $error   = is_array($files['error']) ? $files['error'][$i] : $files['error'];
-            $size    = is_array($files['size']) ? $files['size'][$i] : $files['size'];
-            $name    = is_array($files['name']) ? $files['name'][$i] : $files['name'];
-
-            if ($error !== UPLOAD_ERR_OK) continue;
-            if ($size > 5 * 1024 * 1024) continue; // Skip files > 5MB
-
-            $ext = pathinfo($name, PATHINFO_EXTENSION) ?: 'jpg';
-            $saveName = 'group_' . $timestamp . '_' . ($i + 1) . '.' . $ext;
-            $destPath = $uploadDir . $saveName;
-
-            if (move_uploaded_file($tmpName, $destPath)) {
-                $imageData = file_get_contents($destPath);
-                if ($imageData) {
-                    $groupPhotos[] = base64_encode($imageData);
-                    unset($imageData); // Free memory immediately
-                }
-            }
-        }
-    }
-
-    if (empty($groupPhotos)) {
-        echo json_encode(['success' => false, 'message' => 'Please upload at least one group photo']);
-        exit;
-    }
-
-    // ── Get enrolled students with face encodings for this subject ─────────────
-    try {
-        $stmt = $pdo->prepare("
-            SELECT u.id, u.full_name, u.reg_id, u.face_encoding
-            FROM users u
-            JOIN student_subjects ss ON ss.student_id = u.id
-            WHERE ss.subject_id = ? 
-              AND u.role = 'student'
-              AND u.face_encoding IS NOT NULL
-        ");
-        $stmt->execute([$subjectId]);
-        $enrolledStudents = $stmt->fetchAll();
-
-        if (empty($enrolledStudents)) {
-            echo json_encode(['success' => false, 'message' => 'No students with face data found for this subject. Students must upload their attendance photo during registration.']);
-            exit;
-        }
-
-        // Prepare student data for Python API
-        $studentsForApi = [];
-        foreach ($enrolledStudents as $student) {
-            $encoding = json_decode($student['face_encoding'], true);
-            if ($encoding) {
-                $studentsForApi[] = [
-                    'id'       => $student['id'],
-                    'name'     => $student['full_name'],
-                    'reg_id'   => $student['reg_id'],
-                    'encoding' => $encoding
-                ];
-            }
-        }
-
-        // ── Call Python Face API ──────────────────────────────────────────────
-        $apiPayload = json_encode([
-            'photos'   => $groupPhotos,
-            'students' => $studentsForApi
-        ]);
-
-        if ($apiPayload === false) {
-            echo json_encode(['success' => false, 'message' => 'The uploaded photos are too large to process. Please try with fewer or smaller photos.']);
-            exit;
-        }
-
-        // Free up memory - photos are now in $apiPayload
-        unset($groupPhotos);
-        unset($studentsForApi);
-
-        $ch = curl_init(FACE_API_URL . '/match-faces');
-        curl_setopt_array($ch, [
-            CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => $apiPayload,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 120, // Classroom photos take longer to process
-            CURLOPT_HTTPHEADER     => [
-                'Content-Type: application/json',
-                'X-API-Key: ' . FACE_API_KEY
-            ]
-        ]);
-
-        $apiResponse = curl_exec($ch);
-        $curlError = curl_error($ch);
-        curl_close($ch);
-
-        if ($curlError) {
-            echo json_encode(['success' => false, 'message' => 'Face recognition service is unavailable. Please try again later.']);
-            exit;
-        }
-
-        $apiResult = json_decode($apiResponse, true);
-
-        if (!$apiResult || !$apiResult['success']) {
-            $msg = $apiResult['message'] ?? 'Face recognition failed. Please try again.';
-            ob_clean();
-            echo json_encode(['success' => false, 'message' => $msg]);
-            exit;
-        }
-
-        // ── Mark attendance for matched students ─────────────────────────────
-        $today = date('Y-m-d');
-        $now   = date('Y-m-d H:i:s');
-        $markedCount = 0;
-        $markedStudents = [];
-
-        $pdo->beginTransaction();
-
-        $insertStmt = $pdo->prepare("
-            INSERT INTO attendance (student_id, subject_id, teacher_id, attendance_date, marking_method, status, marked_at)
-            VALUES (?, ?, ?, ?, 'group_photo', 'present', ?)
-            ON DUPLICATE KEY UPDATE
-                status = 'present',
-                marking_method = 'group_photo',
-                teacher_id = VALUES(teacher_id),
-                marked_at = VALUES(marked_at)
-        ");
-
-        foreach ($apiResult['students'] as $matched) {
-            try {
-                $insertStmt->execute([
-                    $matched['id'],
-                    $subjectId,
-                    $teacherId,
-                    $today,
-                    $now
-                ]);
-                $markedCount++;
-                $markedStudents[] = [
-                    'name'       => $matched['name'],
-                    'reg_id'     => $matched['reg_id'],
-                    'confidence' => $matched['confidence']
-                ];
-            } catch (PDOException $e) {
-                error_log('Group attendance insert error for student ' . $matched['id'] . ': ' . $e->getMessage());
-            }
-        }
-
-        $pdo->commit();
-
-        ob_clean();
-        echo json_encode([
-            'success'              => true,
-            'message'              => $markedCount . ' students marked present via group photo',
-            'total_faces_detected' => $apiResult['total_faces_detected'] ?? 0,
-            'total_matched'        => $markedCount,
-            'students'             => $markedStudents
-        ]);
-
-    } catch (PDOException $e) {
-        if ($pdo->inTransaction()) $pdo->rollBack();
-        ob_clean();
-        echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
-    }
-    ob_end_flush();
     exit;
 }

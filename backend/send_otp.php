@@ -342,39 +342,6 @@ function sendRegIdUpdateNotification(string $toEmail, string $toName, string $ol
     }
 }
 
-// ── SEND ATTENDANCE PHOTO UPDATE NOTIFICATION ────────────────────────────────
-function sendAttendancePhotoUpdateNotification(string $toEmail, string $toName): bool
-{
-    try {
-        $mail = buildMailer();
-        $mail->addAddress($toEmail, $toName);
-        $mail->isHTML(true);
-        $mail->Subject = 'Attendance Verification Photo Updated - Attendify';
-
-        $content = "
-            <p>Your official attendance verification photo has been successfully updated in our records by the administrator.</p>
-            <p>Our AI Recognition Engine has re-processed your facial features to ensure accurate matching during classroom attendance.</p>
-            <p style='margin-top: 20px;'>If you did not authorize this change or believe it was made in error, please contact the Attendify Administrator immediately.</p>
-        ";
-
-        $mail->Body = generatePremiumTemplate(
-            "Security Notification",
-            "Photo Record Updated",
-            "Hi {$toName},",
-            $content,
-            "", 
-            ""
-        );
-
-        $mail->AltBody = "Hello $toName,\n\nYour attendance verification photo has been updated. If you did not authorize this, please contact the administrator.\n\nAttendify Team";
-        $mail->send();
-        return true;
-    } catch (Exception $e) {
-        error_log("Attendance Photo Update Email Error: " . $e->getMessage());
-        return false;
-    }
-}
-
 // ── REQUEST OTP ──────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';

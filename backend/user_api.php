@@ -20,7 +20,7 @@ if ($action === 'getMyProfile') {
     try {
         $stmt = $pdo->prepare("
             SELECT id, reg_id, username, email, full_name, role, department, branch, 
-                   phone, dob, photo_path, attendance_photo_path, qr_code_path, qr_code_data, created_at
+                   phone, dob, photo_path, qr_code_path, qr_code_data, created_at
             FROM users
             WHERE id = ?
         ");
@@ -592,114 +592,6 @@ if ($action === 'adminUpdatePassword') {
     exit;
 }
 
-// ============================================================================
-// ADMIN: UPDATE ATTENDANCE PHOTO (STUDENTS ONLY)
-// ============================================================================
-if ($action === 'adminUpdateAttendancePhoto') {
-    requireRole('admin');
-    
-    $userId = intval($_POST['user_id'] ?? 0);
-    
-    if (!$userId || !isset($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
-        echo json_encode(['success' => false, 'message' => 'Invalid request or missing photo']);
-        exit;
-    }
-
-    try {
-        // 1. Verify user is a student
-        $stmt = $pdo->prepare("SELECT role, full_name, attendance_photo_path FROM users WHERE id = ?");
-        $stmt->execute([$userId]);
-        $user = $stmt->fetch();
-
-        if (!$user || $user['role'] !== 'student') {
-            echo json_encode(['success' => false, 'message' => 'Attendance photo can only be updated for students']);
-            exit;
-        }
-
-        $file = $_FILES['photo'];
-        $uploadDir = __DIR__ . '/../uploads/attendance_photos/';
-        if (!file_exists($uploadDir)) mkdir($uploadDir, 0755, true);
-
-        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $filename = 'attn_' . $userId . '_' . time() . '.' . $ext;
-        $destPath = $uploadDir . $filename;
-
-        if (!move_uploaded_file($file['tmp_name'], $destPath)) {
-            echo json_encode(['success' => false, 'message' => 'Failed to save photo']);
-            exit;
-        }
-
-        $photoPath = 'uploads/attendance_photos/' . $filename;
-        
-        // Get full URL for Python API
-        $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? "https" : "http";
-        $host = $_SERVER['HTTP_HOST'];
-        $scriptPath = str_replace('backend/user_api.php', '', $_SERVER['PHP_SELF']);
-        $fullImageUrl = $protocol . "://" . $host . $scriptPath . $photoPath;
-
-        // 2. Call Python AI to generate new encoding
-        $imageData = file_get_contents($destPath);
-        $base64Image = base64_encode($imageData);
-        
-        $payload = json_encode(['photo' => $base64Image]);
-        if (!$payload) {
-            echo json_encode(['success' => false, 'message' => 'Image is too large to process. Please upload a smaller photo.']);
-            exit;
-        }
-
-        $ch = curl_init(FACE_API_URL . '/generate-encoding');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30); // Give it enough time
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
-            'X-API-Key: ' . FACE_API_KEY,
-            'Content-Length: ' . strlen($payload)
-        ]);
-
-        $response = curl_exec($ch);
-        $err = curl_error($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        if ($err) {
-            echo json_encode(['success' => false, 'message' => 'Connection Error: ' . $err]);
-            exit;
-        }
-
-
-        $encoding = json_encode($resData['encoding']);
-
-        // 3. Update DB
-        $stmt = $pdo->prepare("UPDATE users SET attendance_photo_path = ?, face_encoding = ? WHERE id = ?");
-        $stmt->execute([$photoPath, $encoding, $userId]);
-
-        // 4. Send notification email
-        try {
-            require_once 'send_otp.php';
-            $stmt = $pdo->prepare("SELECT email, full_name FROM users WHERE id = ?");
-            $stmt->execute([$userId]);
-            $updatedUser = $stmt->fetch();
-            if ($updatedUser) {
-                sendAttendancePhotoUpdateNotification($updatedUser['email'], $updatedUser['full_name']);
-            }
-        } catch (Exception $e) {
-            error_log("Failed to send attendance photo update email: " . $e->getMessage());
-        }
-
-        echo json_encode([
-            'success' => true, 
-            'message' => 'Attendance photo updated and AI encoding regenerated',
-            'photo_path' => $photoPath
-        ]);
-
-    } catch (PDOException $e) {
-        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
-    }
-    exit;
-}
-
 if ($action === 'getAllSubjects') {
     requireLogin();
     
@@ -1233,7 +1125,7 @@ if ($action === 'getRecentRegistrations') {
     $sort = sanitize($_GET['sort'] ?? 'default');
     
     try {
-        $sql = "SELECT id, full_name, reg_id, role, department, branch, phone, dob, email, photo_path, attendance_photo_path, created_at FROM users WHERE 1=1";
+        $sql = "SELECT id, full_name, reg_id, role, department, branch, phone, dob, email, photo_path, created_at FROM users WHERE 1=1";
         $params = [];
         
         if ($role !== 'all') {
