@@ -208,12 +208,6 @@
         }
 
         /* Photo Upload */
-        .photos-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
         .photo-section {
             display: flex;
             align-items: center;
@@ -222,28 +216,6 @@
             background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
             border-radius: 12px;
             border: 2px dashed var(--primary-cyan);
-            position: relative;
-        }
-
-        .photo-section.disabled-section {
-            opacity: 0.55;
-            pointer-events: none;
-        }
-
-        .coming-soon-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            color: white;
-            font-size: 11px;
-            font-weight: 700;
-            padding: 4px 10px;
-            border-radius: 20px;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
-            pointer-events: auto;
         }
 
         .photo-preview {
@@ -268,17 +240,6 @@
         .photo-placeholder {
             font-size: 48px;
             color: var(--primary-cyan);
-        }
-
-        .attendance-photo-hint {
-            display: inline-block;
-            background: #e0f2fe;
-            color: var(--navy-dark);
-            font-size: 12px;
-            font-style: italic;
-            padding: 4px 10px;
-            border-radius: 6px;
-            margin-top: 8px;
         }
 
         .photo-upload-btn {
@@ -559,10 +520,6 @@
                 grid-template-columns: 1fr;
             }
 
-            .photos-grid {
-                grid-template-columns: 1fr;
-            }
-
             .photo-section {
                 flex-direction: column;
                 text-align: center;
@@ -729,41 +686,20 @@
 
             <!-- Photo Upload Section -->
             <div class="form-group full-width">
-                <div class="photos-grid">
-                    <!-- Profile Photo -->
-                    <div>
-                        <label>Upload Profile Photo <span class="required">*</span></label>
-                        <div class="photo-section">
-                            <div class="photo-preview" id="photoPreview">
-                                <span class="photo-placeholder" id="photoPlaceholder"><i class="fa-solid fa-camera"></i></span>
-                                <img id="previewImage" src="" alt="Preview" style="display: none;">
-                            </div>
-                            <div style="flex: 1;">
-                                <input type="file" id="userPhoto" name="user_photo" accept="image/*" style="display: none;"
-                                    disabled>
-                                <button type="button" class="photo-upload-btn" id="uploadPhotoBtn" disabled>Choose
-                                    Photo</button>
-                                <p class="help-text" style="margin-top: 10px;">JPG, JPEG or PNG (Max 2MB)</p>
-                                <button type="button" class="btn-link" id="removePhoto"
-                                    style="display: none; margin-top: 10px;">Remove Photo</button>
-                            </div>
-                        </div>
+                <label>Upload Your Photo <span class="required">*</span></label>
+                <div class="photo-section">
+                    <div class="photo-preview" id="photoPreview">
+                        <span class="photo-placeholder" id="photoPlaceholder"><i class="fa-solid fa-camera"></i></span>
+                        <img id="previewImage" src="" alt="Preview" style="display: none;">
                     </div>
-                    <!-- Attendance Photo (Future Feature) -->
-                    <div>
-                        <label>Photo for Attendance</label>
-                        <div class="photo-section disabled-section" id="attendancePhotoSection">
-                            <span class="coming-soon-badge">Coming Soon</span>
-                            <div class="photo-preview">
-                                <span class="photo-placeholder"><i class="fa-solid fa-user"></i></span>
-                            </div>
-                            <div style="flex: 1;">
-                                <input type="file" id="attendancePhoto" name="attendance_photo" accept="image/*" style="display: none;" disabled>
-                                <button type="button" class="photo-upload-btn" disabled>Choose Photo</button>
-                                <p class="help-text" style="margin-top: 10px;">JPG, JPEG or PNG (Max 2MB)</p>
-                                <span class="attendance-photo-hint"><i class="fa-solid fa-circle-info"></i> Used for group photo attendance</span>
-                            </div>
-                        </div>
+                    <div style="flex: 1;">
+                        <input type="file" id="userPhoto" name="user_photo" accept="image/*" style="display: none;"
+                            disabled>
+                        <button type="button" class="photo-upload-btn" id="uploadPhotoBtn" disabled>Choose
+                            Photo</button>
+                        <p class="help-text" style="margin-top: 10px;">JPG, JPEG or PNG (Max 2MB)</p>
+                        <button type="button" class="btn-link" id="removePhoto"
+                            style="display: none; margin-top: 10px;">Remove Photo</button>
                     </div>
                 </div>
             </div>
