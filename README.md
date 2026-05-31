@@ -115,28 +115,19 @@ Attendify now includes robust security measures to prevent multi-device login an
 
 ---
 *Developed with ❤️ for Smart Attendance Management.*
+
+#Official link
+https://attendify.gt.tc
+
+student login
+Reg Id: SEE2004002
+Password: 123456
+
+teacher login
+Reg Id:  TEA2024002
+password: 123456
+
+
+use these credential for demo purpose
 thankyou
 
-## 📝 Changelog
-
-*   **[2026-03-27]**: Fixed mobile layout issue where the bottom of the dashboard content was cut off on smaller screens. Added `padding-bottom` to the `.main-content` container in `@media (max-width: 768px)` and `@media (max-width: 480px)` breakpoints across `student_dashboard.html`, `teacher_dashboard.html`, and `admin_dashboard.html`.
-*   **[2026-03-27]**: Fixed 'Overall Attendance' calculation in the student dashboard. It now accurately calculates the percentage based on `(Total Present / Total Lectures) * 100` across all subjects, instead of incorrectly averaging the individual subject percentages.
-*   **[2026-04-04]**: **Modernized Attendance Reporting & Mobile UI/UX Optimizations**:
-    *   **Advanced Filtering**: Integrated dynamic "Show Rows" (All/10/20) and "Status" (All/Present/Absent) filters for attendance records.
-    *   **Mobile UX: Selective Toast Positioning**: Implemented localized toast notifications on mobile—"Login successful" stays at the top for prominence, while operational messages (e.g., "Generating PDF") now appear at the bottom to keep the main view clear.
-    *   **Mobile UX: Definitive Search Bar Fix**: Surgically anchored the "Clear (X)" search icon to the far right edge in the Admin Dashboard, ensuring a professional and non-overlapping layout on small screens.
-    *   **Premium Visuals & Smart PDF Exports**: Refreshed dashboard themes with Navy & Cyan-Teal accents. PDFs now perfectly reflect active filters and maintain sequential numbering.
-    *   **Data Integrity & UX Refinement**: Optimized backend SQL for complete class list reports and added dismissal "X" icons to search results and live attendee panels for a faster workflow.
-*   **[2026-04-05]**: **System Audit & Maintenance**: Verified dashboard stability and confirmed all existing analytics and security features are operational.
-
-*   **[2026-04-10]**: **Mobile UI Fix - Admin Dashboard**: Surgically fixed the alignment of the "Clear Search" cross icon in the Teacher Schedules tab. The issue was caused by a broad CSS selector in the media query applying `width: 100%` to all buttons; changed to a direct-child selector to preserve icon dimensions while keeping main buttons responsive.
-*   **[2026-04-10]**: **Enhanced User Search & UI Refinement - Recent Registrations**: Added real-time search and aligned all controls into a unified horizontal interface. Restored consistent project styling (rounded corners, themed borders) by correctly mapping elements to the `search-row` design system. Integrated the search query into the **PDF Report Generation** logic and enhanced the exported document with **full grid column lines** for improved data readability and structural clarity. Optimized backend API with search parameters and consolidated JavaScript logic.
-*   **[2026-04-10]**: **Complete Admin User Management (Edit/Delete)**: Implemented a robust administrative toolset for managing user accounts. Added **Action** controls (pen and trash icons) to the Recent Registrations table. Integrated a sophisticated **User Management Modal** for editing general profiles, academic details (branch, dept, role), and security settings. Features include **OTP-verified email changes**, direct **administrative password overrides**, and **Reg ID clash detection** with intelligent suggestion logic. Developed a comprehensive **Account Cleanup** process that unlinks profile photos/QR codes and deletes data with automated notification emails (Profile Update, Password Reset, Email Transfer, and Deletion alerts).
-*   **[2026-04-15]**: **Live Student Distance & Precision Tracking**: Enhanced the teacher dashboard to display student-teacher proximity with confidence ranges (e.g., `26m ±15m`).
-    *   **Advanced UI**: Introduced color-coded badges (Green for precise/nearby, Blue for standard).
-    *   **Data Integrity**: Added `accuracy_meters` tracking to the backend to help teachers understand GPS drift caused by indoor environments.
-    *   **SQL Migration**: 
-        ```sql
-        ALTER TABLE attendance ADD COLUMN accuracy_meters INT DEFAULT NULL;
-        ALTER TABLE event_attendance ADD COLUMN accuracy_meters INT DEFAULT NULL;
-        ```
